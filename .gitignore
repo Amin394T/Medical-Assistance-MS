@@ -42,4 +42,4 @@ next-env.d.ts
 
 # database
 /db/*.db
-/db/migrations/
+/db/migration/

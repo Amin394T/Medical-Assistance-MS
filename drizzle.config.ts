@@ -1,8 +1,8 @@
 import type { Config } from "drizzle-kit";
 
 export default {
-  schema: "./db/schema.ts",
-  out: "./db/migrations",
+  schema: "./db/schemas/*.ts",
+  out: "./db/migration",
   dialect: "sqlite",
   dbCredentials: {
     url: "./db/local.db",
