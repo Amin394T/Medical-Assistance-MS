@@ -11,8 +11,8 @@ export async function listInsurancePolicies() {
 }
 
 export async function getInsurancePolicy(id: number) {
-  const rows = await db.select().from(insurancePolicies).where(eq(insurancePolicies.id, id));
-  return rows[0] ?? null;
+  const [record] = await db.select().from(insurancePolicies).where(eq(insurancePolicies.id, id));
+  return record ?? null;
 }
 
 export async function createInsurancePolicy(input: NewInsurancePolicy) {

@@ -11,8 +11,8 @@ export async function listServiceProviders() {
 }
 
 export async function getServiceProvider(id: number) {
-  const rows = await db.select().from(serviceProviders).where(eq(serviceProviders.id, id));
-  return rows[0] ?? null;
+  const [record] = await db.select().from(serviceProviders).where(eq(serviceProviders.id, id));
+  return record ?? null;
 }
 
 export async function createServiceProvider(input: NewServiceProvider) {

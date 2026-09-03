@@ -11,8 +11,8 @@ export async function listMedicalDocuments() {
 }
 
 export async function getMedicalDocument(id: number) {
-  const rows = await db.select().from(medicalDocuments).where(eq(medicalDocuments.id, id));
-  return rows[0] ?? null;
+  const [record] = await db.select().from(medicalDocuments).where(eq(medicalDocuments.id, id));
+  return record ?? null;
 }
 
 export async function createMedicalDocument(input: NewMedicalDocument) {

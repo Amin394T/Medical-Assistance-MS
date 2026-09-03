@@ -11,8 +11,8 @@ export async function listInsuranceClients() {
 }
 
 export async function getInsuranceClient(id: number) {
-  const rows = await db.select().from(insuranceClients).where(eq(insuranceClients.id, id));
-  return rows[0] ?? null;
+  const [record] = await db.select().from(insuranceClients).where(eq(insuranceClients.id, id));
+  return record ?? null;
 }
 
 export async function createInsuranceClient(input: NewInsuranceClient) {
