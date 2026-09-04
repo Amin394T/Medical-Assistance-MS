@@ -71,16 +71,10 @@ export function Sidebar() {
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-slate-200 shadow-md bg-white">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5">
-        
-          <Image src="/logo-icon.png" alt="Medical Assistance Logo" width={35} height={35} />
+      <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5">        
+        <Image src="/logo-icon.png" alt="Medical Assistance Logo" width={30} height={30} />
 
-        <div>
-          <div className="text-sm font-semibold text-gray-900">
-            Medical Assistance
-          </div>
-          <div className="text-xs text-gray-500">Portal</div>
-        </div>
+        <div className="text-lg font-semibold text-teal-800"> Medical Assistance </div>
       </div>
 
       {/* Navigation */}
@@ -88,7 +82,7 @@ export function Sidebar() {
         <div className="space-y-6">
           {navigation.map((section) => (
             <div key={section.category}>
-              <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-teal-700">
                 {section.category}
               </div>
 
@@ -97,8 +91,8 @@ export function Sidebar() {
                   const Icon = item.icon;
 
                   return (
-                    <Link key={item.href} href={item.href} className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900">
-                      <Icon className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
+                    <Link key={item.href} href={item.href} className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-md font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900">
+                      <Icon className="h-5 w-5 shrink-0 text-gray-400 transition-colors group-hover:text-gray-600" />
                       <span>{item.label}</span>
                     </Link>
                   );
@@ -110,14 +104,14 @@ export function Sidebar() {
       </nav>
 
       {/* User */}
-      <div className="border-t border-slate-100 p-3">
-        <div className="flex items-center gap-4 rounded-lg px-2 py-2">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-200 text-sm font-semibold text-gray-600">
+      <div className="border-t border-slate-100 px-2 py-1">
+        <div className="flex items-center gap-4 px-2 py-2">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-sm font-semibold text-gray-600">
             <User className="text-gray-400" />
           </div>
 
-          <div className="min-w-0 flex-1 truncate text-sm font-medium text-gray-700">
-              Admin User
+          <div className="min-w-0 flex-1 truncate text-md font-medium text-gray-700">
+              Amin Hassan
           </div>
 
           <button type="button" title="Logout" className="rounded-md p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700">

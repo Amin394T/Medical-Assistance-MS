@@ -5,11 +5,6 @@
   src: url("/Cairo-VariableFont.ttf") format("truetype");
 }
 
-html,
-body {
-  margin: 0;
-  box-sizing: border-box;
-  background-color: #f5efe6;
-  color: #1e1e1e;
+html {
   font-family: Cairo, Helvetica, Arial, sans-serif;
 }
