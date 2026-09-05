@@ -1,6 +1,7 @@
 ## REMINDER
 - transform some enumerations into tables (service profiles, accident causes, ...),
 - verify authentication in server actions,
+- reference number should use dash as separator and sequence should have 2 digits only
 
 
 ## IMPROVEMENTS

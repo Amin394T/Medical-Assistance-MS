@@ -3,11 +3,28 @@
 import { eq } from "drizzle-orm";
 
 import { db } from "../index";
-import { insurancePolicies } from "../schemas";
-import type { NewInsurancePolicy } from "../schemas";
+import { insuranceClients, insurancePolicies, insuranceProviders } from "../schemas";
+import type { InsurancePolicy, NewInsurancePolicy } from "../schemas";
+
+export type InsurancePolicyListItem = InsurancePolicy & {
+  clientCompanyLabel: string;
+  insuranceCompanyLabel: string;
+  intermediateLabel: string | null;
+};
 
 export async function listInsurancePolicies() {
-  return db.select().from(insurancePolicies);
+  const rows = await db
+    .select()
+    .from(insurancePolicies)
+    .innerJoin(insuranceClients, eq(insurancePolicies.clientCompanyId, insuranceClients.id))
+    .innerJoin(insuranceProviders, eq(insurancePolicies.insuranceCompanyId, insuranceProviders.id));
+
+  return rows.map(({ insurance_policies, insurance_clients, insurance_providers }) => ({
+    ...insurance_policies,
+    clientCompanyLabel: insurance_clients.label,
+    insuranceCompanyLabel: insurance_providers.label,
+    intermediateLabel: null,
+  })) satisfies InsurancePolicyListItem[];
 }
 
 export async function getInsurancePolicy(id: number) {

@@ -118,7 +118,6 @@ export function MedicalRecordCallForm({ clients, policies, providers, previousRe
             </Link>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Assistance / Emergency call</p>
             <h1 className="text-3xl font-bold tracking-tight text-slate-950">Open a medical record</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-500">Capture the accident declaration, caller details, and victim information.</p>
           </div>
           <div className="hidden rounded-xl bg-teal-50 p-3 text-teal-700 sm:block">
             <ClipboardPlus className="h-6 w-6" aria-hidden="true" />
@@ -136,7 +135,7 @@ export function MedicalRecordCallForm({ clients, policies, providers, previousRe
             void form.handleSubmit();
           }}
         >
-          <FormSection eyebrow="01 / Record" title="Accident details" description="Start with the incident and the client coverage context.">
+          <FormSection eyebrow="01 / Record" title="Accident details">
             <div className="grid gap-5 md:grid-cols-2">
               <Field form={form as unknown as FormRenderer} name="accidentDate" label="Accident date" required type="date" />
                 <form.Field name="recordType" children={(field) => <SelectField field={field as unknown as RenderableField} label="Record type" options={[{ value: "normal", label: "Normal" }, { value: "verification", label: "Verification" }]} />} />
@@ -149,7 +148,7 @@ export function MedicalRecordCallForm({ clients, policies, providers, previousRe
             </div>
           </FormSection>
 
-          <FormSection eyebrow="02 / Report" title="Caller information" description="Record who reported the incident and how they can be reached.">
+          <FormSection eyebrow="02 / Report" title="Caller information">
             <div className="grid gap-5 md:grid-cols-3">
               <Field form={form as unknown as FormRenderer} name="reporterFirstName" label="First name" required />
               <Field form={form as unknown as FormRenderer} name="reporterLastName" label="Last name" />
@@ -157,7 +156,7 @@ export function MedicalRecordCallForm({ clients, policies, providers, previousRe
             </div>
           </FormSection>
 
-          <FormSection eyebrow="03 / Victim" title="Victim information" description="Capture the identity and contact details of the affected person.">
+          <FormSection eyebrow="03 / Victim" title="Victim information">
             <div className="grid gap-5 md:grid-cols-2">
               <Field form={form as unknown as FormRenderer} name="victimFirstName" label="First name" required />
               <Field form={form as unknown as FormRenderer} name="victimLastName" label="Last name" required />
@@ -190,8 +189,8 @@ function CoverageSummary({ clientCompanyId, policies, providers }: { clientCompa
   return <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Inferred coverage</p><p className="mt-1 text-sm font-semibold text-slate-800">{policy ? policy.policyNumber : "Select a client company"}</p><p className="mt-1 text-xs text-slate-500">{provider?.label ?? "The active policy and insurer will be assigned automatically."}</p></div>;
 }
 
-function FormSection({ eyebrow, title, description, children }: { eyebrow: string; title: string; description: string; children: React.ReactNode }) {
-  return <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><div className="mb-6 border-b border-slate-100 pb-4"><p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">{eyebrow}</p><h2 className="mt-1 text-xl font-bold text-slate-950">{title}</h2><p className="mt-1 text-sm text-slate-500">{description}</p></div>{children}</section>;
+function FormSection({ eyebrow, title, children }: { eyebrow: string; title: string; children: React.ReactNode }) {
+  return <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><div className="mb-6 border-b border-slate-100 pb-4"><p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">{eyebrow}</p><h2 className="mt-1 text-xl font-bold text-slate-950">{title}</h2></div>{children}</section>;
 }
 
 function Notice({ icon, tone, children }: { icon: React.ReactNode; tone: "success" | "error"; children: React.ReactNode }) {

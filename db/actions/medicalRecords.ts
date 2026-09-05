@@ -3,8 +3,13 @@
 import { and, desc, eq, like, lte } from "drizzle-orm";
 
 import { db } from "../index";
-import { insurancePolicies, medicalRecords } from "../schemas";
-import type { NewMedicalRecord } from "../schemas";
+import { insuranceClients, insurancePolicies, medicalRecords } from "../schemas";
+import type { MedicalRecord, NewMedicalRecord } from "../schemas";
+
+export type MedicalRecordListItem = MedicalRecord & {
+  policyNumber: string;
+  clientCompany: string;
+};
 
 export type CreateMedicalRecordFromCallInput = {
   accidentDate: string;
@@ -30,8 +35,18 @@ export type CreateMedicalRecordFromCallInput = {
     | "";
 };
 
-export async function listMedicalRecords() {
-  return db.select().from(medicalRecords);
+export async function listMedicalRecords(): Promise<MedicalRecordListItem[]> {
+  const rows = await db
+    .select()
+    .from(medicalRecords)
+    .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
+    .innerJoin(insuranceClients, eq(medicalRecords.clientCompanyId, insuranceClients.id));
+
+  return rows.map(({ medical_records, insurance_policies, insurance_clients }) => ({
+    ...medical_records,
+    policyNumber: insurance_policies.policyNumber,
+    clientCompany: insurance_clients.label,
+  }));
 }
 
 export async function getMedicalRecord(id: number) {

@@ -3,11 +3,26 @@
 import { eq } from "drizzle-orm";
 
 import { db } from "../index";
-import { medicalServices } from "../schemas";
-import type { NewMedicalService } from "../schemas";
+import { medicalRecords, medicalServices, serviceProviders } from "../schemas";
+import type { MedicalService, NewMedicalService } from "../schemas";
+
+export type MedicalServiceListItem = MedicalService & {
+  recordReference: string;
+  providerLabel: string;
+};
 
 export async function listMedicalServices() {
-  return db.select().from(medicalServices);
+  const rows = await db
+    .select()
+    .from(medicalServices)
+    .innerJoin(medicalRecords, eq(medicalServices.medicalRecordId, medicalRecords.id))
+    .innerJoin(serviceProviders, eq(medicalServices.providerId, serviceProviders.id));
+
+  return rows.map(({ medical_services, medical_records, service_providers }) => ({
+    ...medical_services,
+    recordReference: medical_records.referenceNumber,
+    providerLabel: service_providers.label,
+  })) satisfies MedicalServiceListItem[];
 }
 
 export async function getMedicalService(id: number) {
