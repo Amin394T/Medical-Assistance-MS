@@ -73,8 +73,8 @@ export function MedicalRecordsTable({ records }: MedicalRecordsTableProps) {
       <div className="mx-auto max-w-375">
         <header className="mb-8 flex flex-col gap-5 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Assistance / Records</p>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-950">Medical records</h1>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Assistance</p>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-950">Medical Records</h1>
           </div>
           <div className="text-left sm:text-right"><p className="text-3xl font-semibold text-slate-950">{records.length}</p><p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total records</p></div>
         </header>

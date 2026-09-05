@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export default async function InsuranceCompaniesPage() {
 	const providers = await listInsuranceProviders();
 
-	return <EntityListTable title="Insurance companies" description="Manage insurers, agents, and brokers used across the assistance workflow." rows={providers} columns={[
+	return <EntityListTable title="Insurance Companies" rows={providers} columns={[
 		{ key: "label", label: "Label" },
 		{ key: "companyName", label: "Company name" },
 		{ key: "companyId", label: "Company ID" },

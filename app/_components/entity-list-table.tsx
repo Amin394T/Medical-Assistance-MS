@@ -14,12 +14,11 @@ export type EntityColumn = {
 
 type EntityListTableProps = {
   title: string;
-  description: string;
   rows: EntityRow[];
   columns: EntityColumn[];
 };
 
-export function EntityListTable({ title, description, rows, columns }: EntityListTableProps) {
+export function EntityListTable({ title, rows, columns }: EntityListTableProps) {
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
   const filteredRows = useMemo(

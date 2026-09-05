@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export default async function InsurancePoliciesPage() {
 	const policies = await listInsurancePolicies();
 
-	return <EntityListTable title="Client policies" description="Review the insurance policies connected to client companies." rows={policies} columns={[
+	return <EntityListTable title="Client Policies" rows={policies} columns={[
 		{ key: "policyNumber", label: "Policy number" },
 		{ key: "clientCompanyLabel", label: "Client company" },
 		{ key: "effectiveDate", label: "Effective date", format: formatDate },

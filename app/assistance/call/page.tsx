@@ -13,6 +13,15 @@ export default async function CallPage() {
 		listInsuranceProviders(),
 		listMedicalRecords(),
 	]);
+	const now = new Date();
+	const datePart = now.toISOString().slice(2, 10).replaceAll("-", "");
+	const referencePrefix = `AT/${datePart}/`;
+	const nextSequence = records.reduce((highest, record) => {
+		if (!record.referenceNumber.startsWith(referencePrefix)) return highest;
+		const sequence = Number(record.referenceNumber.split("/").at(-1));
+		return Number.isNaN(sequence) ? highest : Math.max(highest, sequence);
+	}, 0) + 1;
+	const displayReference = `${referencePrefix}${String(nextSequence).padStart(3, "0")}`.replaceAll("/", "-");
 
 	return (
 		<MedicalRecordCallForm
@@ -32,6 +41,8 @@ export default async function CallPage() {
 				clientCompanyId,
 				victimName: `${victimFirstName} ${victimLastName}`,
 			}))}
+			displayReference={displayReference}
+			displayReportingDate={now.toISOString()}
 		/>
 	);
 }
