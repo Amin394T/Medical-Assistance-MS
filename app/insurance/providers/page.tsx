@@ -3,10 +3,10 @@ import { EntityListTable, formatLabel } from "@/app/_components/entity-list-tabl
 
 export const dynamic = "force-dynamic";
 
-export default async function InsuranceCompaniesPage() {
+export default async function InsuranceProvidersPage() {
 	const providers = await listInsuranceProviders();
 
-	return <EntityListTable title="Insurance Companies" rows={providers} columns={[
+	return <EntityListTable title="Insurance Providers" icon="building" rows={providers} columns={[
 		{ key: "label", label: "Label" },
 		{ key: "companyName", label: "Company name" },
 		{ key: "companyId", label: "Company ID" },

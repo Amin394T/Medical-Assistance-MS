@@ -9,7 +9,7 @@ import {
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, Filter, RotateCcw } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, ClipboardList, Filter, RotateCcw } from "lucide-react";
 
 import type { MedicalRecordListItem } from "@/db/actions/medicalRecords";
 
@@ -76,7 +76,7 @@ export function MedicalRecordsTable({ records }: MedicalRecordsTableProps) {
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Assistance</p>
             <h1 className="text-3xl font-bold tracking-tight text-slate-950">Medical Records</h1>
           </div>
-          <div className="text-left sm:text-right"><p className="text-3xl font-semibold text-slate-950">{records.length}</p><p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total records</p></div>
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-teal-50 text-teal-700"><ClipboardList className="h-6 w-6" aria-hidden="true" /></div>
         </header>
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">

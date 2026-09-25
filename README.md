@@ -1,46 +1,59 @@
-## DESCRIPTION
-- application used by medical assistance providers,
-- manages workplace accidents and subsequent medical needs:
-    + emergency calls are received from client companies of contracted insurance companies,
-    + medical intervention (ambulances, doctors, pharmacies...) are requested by phone,
-    + medical coverage papers are printed and sent to medical entites (hospitals, pharmacies, ...),
-    + follow-up incoming and outgoing calls are made until the case is emergency is settled,
-- everything is recorded and traced in a medical record:
-    + opened at the initial phone call,
-    + enriched with further medical services (medicine, treatments, check-ups, relapse...),
-    + closed when emergency is settled,
+## WORKFLOWS
+- workplace accident declaration:
+    1. medical record is created:
+        + emergency phone call received from victim's company,
+        + caller provides a valid insurance policy or already has one registered,
+        + initial data about the accident, reporter, victim are recorded,
+    2. medical intervention is sent:
+        + service providers (ambulances, doctors...) are called and directed to the accident place,
+        + intervention service data are added to the medical record,
+    3. medical documents are generated and printed:
+        + medical record file initiates the physical record,
+        + medical coverage are sent to relevant service providers (hospitals, pharmacies...),
 
-
-## WORKFLOW
-- workplace accident management:
-    + emergency phone call received from insurance client,
-    + client must provide valid insurance policy or have one already registered and still valid,
-    + medical record opened with initial data about the accident, reporter, victim,
-    + medical intervention is called and directed to the accident place,
-    + medical coverage documents are generated, printed, sent to medical entites,
-    + follow-up calls are made when needed,
-    + subsequent medical services are added to the record,
+- workplace accident follow-up (TO VERIFY & DETAIL):
+    + follow-up incoming and outgoing calls are made,
+    + subsequent medical services (medicine, treatments, check-ups, relapse...) are added to the record,
+    + new medical documents (coverges, certifictes...)
     + record is closed when settled or abandonned,
-- insurance company exchanges
-    + insured clients and policies are loaded from spreadsheets sent periodically by insurance companies,
-    + reports are generated and sent to insurance companies,
+
+- special service request (TO COMPLETE):
+    + ?
+
+- policy verification (TO COMPLETE):
+    + ?
+
+- delta files handling:
+    + insurance company periodically sends latest client policies spreadsheet,
+    + file is uploaded to system, policies are added or their status is updated,
+
+- data report sending:
+    + insurance company requests a report by email,
+    + report is generated and sent by email,
+    
+- rejected records revalidation (TO COMPLETE):
+    + ?
+
+- insurance records delegation (TO COMPLETE):
+    + ?
 
 
 ## SCREENS
-- medical record management:
-    + declaration form, used to collect data from call,
-    + list, sorted by date and shows open records by default,
-    + details form, for follow-up, includes sevices list and documents list,
-    + history, shows record actions (updates, services, documents, ...)
-- referential lists, editable lists with filters:
-    + medical service providers, full CRUD,
-    + insurance companies, brokers, agents, full CRUD,
-    + insured clients, loaded from delta spreadsheet,
-    + insurance policies, loaded from delta spreadsheet,
+- record management:
+    + emergency call: form used to collect data from calls, creates medical records,
+    + medical records: list sorted by date, filter available for most visible columns,
+    + record details: form to visualize all record data, includes editable lists for sevices and documents,
+- issurance management:
+    + client policies: list of insurance policies, row filter,
+    + insurance providers: editable list of insurance companies, agents, brokers, row filter,
+    + policy update: delta file upload screen, updates policies (new + status change),
+- service management:
+    + healthcare providers: editable list of medical service providers, row filter,
+    + medical services: editable list of medical services, row filter,
 
 
 ## TECHNICAL STAKES
-- deployed on-premise at insurance company, access provided by computer,
+- deployed on-premise,
 - open-source technologies only, free to use and host,
 - data volume is relatively small, few thousands of medical records per year,
 - remaining data are short referencial lists (services, clients, insurances, ...),
@@ -53,91 +66,86 @@
 - standard authentication with no user types or permissions,
 
 
-## TECHNOLOGY CHOICES
-- front-end: React + TypeScript
-- form handling: TanStack Forms + Zod
-- table handling: TanStack Table + TanStack Query
-- routing: NextJS router
-- style: Tailwind
-- UI components: shadcn/UI
-- back-end: NextJS + RSC + TypeScript
-- runtime: NodeJS
-- ORM: Drizzle
-- DB: SQLite + file system
-
-
 ## DATA STRUCTURE
-- medical record
+- medical record:
     // record data:
-    + accident date: required, default to NOW,
-    + insurance policy: required, read-only infered from client company (latest valid policy),
-    + insurance company: read-only, infered from policy,
-    + reference number: read-only, generated (AT/MD/SP + YYMMDD + daily sequence),
-    + client company: required, selectable, infered from insurance policy when typed manually,
-    + record type: list (normal, verification), defaults to "normal",
+    + reference: read-only, generated (record type AT/MD/VF/SS/PR + accident date YYYYMMDD + daily 2-digits sequence),
+    + record type: list (workplace accident - AT, illness & pain - MD, policy verification - VF, special service - SS, occupational disease - PR), defaults to "AT",
+    + insurance policy: required, selectable (list searchable by policy and client name),
+    + client company: required, inferred (from selected insurance policy),
+    + insurance company: read-only, inferred (from selected insurance policy),
+    + intermediary: read-only, inferred (from selected insurance policy),
     // report data:
-    + reporting date: max NOW, defaults to NOW,
+    + reporting date: required, date-time, defaults to "NOW",
     + reporter first name: required,
     + reporter last name: optional,
     + reporter phone: required,
-    + accident type: optional, list (initial, relapse, sickness),
-    + initial accident: required when accident type = relapse, selectable from reference numbers of other client records
-    + accident place: required, list (workshop, route, office, site),
+    + accident place: required, list (workshop - WS, route - RT, office - OF, construction - CS),
     // victim data:
+    + accident date: required, date-time, defaults to "NOW",
+    + accident cause: optional, list (falling or slipping - FALL, machine or equipment - EQIP, overexertion and fatigue - FATG, hazardous substance - HAZD, workplace violence - VIOL, moving objects - OBJC),
     + victim first name: required,
     + victim last name: required,
-    + victim national ID: required,
     + victim phone: optional,
-    + accident cause: optional, list (falling or slipping, machine or equipment, overexertion and fatigue, hazardous substance, workplace violence, moving objects),
-    // tracking data:
-    + record status: list (in progress, settled, closed, abandoned, billable), defaults to "in progress",
-    + record fate: list (waiting, approved, rejected, abandoned), defaults to "waiting",
-    + fate reason: optional, list (suspended policy, cancelled policy, absent coverage, unsigned coverage, ?)
-    + intermediate: optional, selectable from insurance provider where type is "agent" or "broker",
-    + managed by: read-only, defaults to application user,
-- medical service:
-    + service: required,
-    + provider: required, selectable,
-    + mission date: read-only, defaults to NOW,
+    + victim national ID: required,
+    + victim job: optional, combo-box,
+    // evolution data:
+    + accident evolution: required, list (initial - INIT, delegation - DELG, relapse - RELP, death - DEAT, complement - COMP), defaults to "INIT",
+    + delegation date: optional, date-time,
+    + coverage issued: boolean,
+    + coverage date: optional, date,
+    + regulator: optional, selectable (from service providers with type "REGULATOR"),
+    // status data
+    + record status: list (in progress - PROG, settled - SETT, closed - CLOS, abandoned - ABAN, billed - BILL), defaults to "PROG",
+    + record fate: read-only, inferred (from policy validity, either "Approved" if valid, else "Rejected"),
+    + fate reason: read-only,
+    + last action: read-only, date-time, defaults to "NOW",
+    + managed by: read-only, defaults to "USER",
+    + observation: optional,
+
+- medical record service:
+    + record: required, selectable,
+    + service provider: required, selectable,
+    + service type: required, selectable (from service type, those corresponding to service provider profile),
+    + mission date: optional, defaults to "NOW",
     + mission place: optional,
-    + observations: optional,
-    + settled: boolean,
-- medical document:
-    + type: required, list (record details, coverage, others),
-    + last printed: read-only, automatically updated at printing time,
-    + observations: optional,
+    + observation: optional,
+
+- medical record document:
+    + record: required, selectable,
+    + type: required, combo-box,
+    + service provider: required, selectable,
+    + observation: optional,
     + signed: boolean,
+
 - insurance provider:
     + label: required, unique,
-    + company name: optional,
-    + company id: optional,
-    + type: required, list (company, agent, broker),
+    + corporate name: optional,
+    + corporate id: optional,
+    + type: required, list (company - CMP, agent - AGT, broker - BRK),
     + phone: optional,
-    + fax: optional,
     + email: optional,
-- insurance client:
-    + label: required, unique,
-    + name: optional,
-    + sector: optional,
-    + phone: required,
-    + fax: optional,
-    + email: optional,
+
 - insurance policy:
     + policy number: required,
     + client company: required, selectable,
     + effective date: required,
     + insurance company: required, selectable,
-    + intermediate: optional, selectable from insurance provider where type is "agent" or "broker",
+    + intermediate: optional, selectable (from insurance provider where type is "AGT" or "BRK"),
     + terminated: boolean,
     + termination date: optional,
-    + type: required, list (revisable, fixed-rate),
+    + type: required, list (revisable - REV, fixed-rate - FIX),
     + created at: read-only, defaults to NOW,
     + updated at: read-only, automatically updated at modification time,
+
+- service type:
+    + label: required
+    + target profile: required, combo-box,
+
 - service provider:
     + label: required, unique,
-    + name: optional,
-    + profile: required, list (ambulance, general practitioner, emergency physician, resuscitator, diabetologist, ?)
-    + worker name: optional,
+    + corporate name: optional,
+    + profile: required, selectable (distinct values of column "target profile" from "service type")
+    + contact name: optional,
     + phone: required,
-    + fax: optional,
     + email: optional,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Activity, Ambulance, Building2, Search, Shield } from "lucide-react";
 
 type EntityValue = string | number | boolean | Date | null;
 type EntityRow = Record<string, EntityValue>;
@@ -14,11 +14,15 @@ export type EntityColumn = {
 
 type EntityListTableProps = {
   title: string;
+  icon: "building" | "shield" | "ambulance" | "activity";
   rows: EntityRow[];
   columns: EntityColumn[];
 };
 
-export function EntityListTable({ title, rows, columns }: EntityListTableProps) {
+const icons = { building: Building2, shield: Shield, ambulance: Ambulance, activity: Activity } as const;
+
+export function EntityListTable({ title, icon, rows, columns }: EntityListTableProps) {
+  const Icon = icons[icon];
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
   const filteredRows = useMemo(
@@ -34,9 +38,8 @@ export function EntityListTable({ title, rows, columns }: EntityListTableProps) 
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Reference data</p>
             <h1 className="text-3xl font-bold tracking-tight text-slate-950">{title}</h1>
           </div>
-          <div className="text-left sm:text-right">
-            <p className="text-3xl font-semibold text-slate-950">{rows.length}</p>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total records</p>
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
+            <Icon className="h-6 w-6" aria-hidden="true" />
           </div>
         </header>
 
