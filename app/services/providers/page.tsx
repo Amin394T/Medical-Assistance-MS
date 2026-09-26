@@ -1,5 +1,5 @@
 import { listServiceProviders } from "@/db/actions/serviceProviders";
-import { EntityListTable, formatLabel } from "@/app/_components/entity-list-table";
+import { EntityListTable } from "@/app/_components/entity-list-table";
 
 export const dynamic = "force-dynamic";
 
@@ -8,11 +8,10 @@ export default async function ServiceProvidersPage() {
 
 	return <EntityListTable title="Healthcare Providers" icon="ambulance" rows={providers} columns={[
 		{ key: "label", label: "Label" },
-		{ key: "name", label: "Name" },
-		{ key: "profile", label: "Profile", format: formatLabel },
-		{ key: "workerName", label: "Worker name" },
+		{ key: "corporateName", label: "Corporate name" },
+		{ key: "profile", label: "Profile", format: "label" },
+		{ key: "contactName", label: "Contact name" },
 		{ key: "phone", label: "Phone" },
-		{ key: "fax", label: "Fax" },
 		{ key: "email", label: "Email" },
 	]} />;
 }

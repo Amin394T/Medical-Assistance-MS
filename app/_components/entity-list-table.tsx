@@ -9,7 +9,7 @@ type EntityRow = Record<string, EntityValue>;
 export type EntityColumn = {
   key: string;
   label: string;
-  format?: (value: EntityValue) => string;
+  format?: "date" | "label" | "policyType" | "insuranceProviderType";
 };
 
 type EntityListTableProps = {
@@ -72,25 +72,28 @@ export function EntityListTable({ title, icon, rows, columns }: EntityListTableP
   );
 }
 
-function formatValue(value: EntityValue, formatter?: (value: EntityValue) => string) {
-  if (formatter) return formatter(value);
+function formatValue(value: EntityValue, formatter?: EntityColumn["format"]) {
   if (value === null) return "-";
+  if (formatter === "date") return formatDate(value);
+  if (formatter === "label") return formatLabel(value);
+  if (formatter === "policyType") return ({ REV: "Revisable", FIX: "Fixed-rate" }[String(value)] ?? String(value));
+  if (formatter === "insuranceProviderType") return ({ CMP: "Company", AGT: "Agent", BRK: "Broker" }[String(value)] ?? String(value));
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (value instanceof Date) return formatDateTime(value);
   return String(value);
 }
 
-export function formatDateTime(value: EntityValue) {
+function formatDateTime(value: EntityValue) {
   if (!(value instanceof Date)) return value === null ? "-" : String(value);
   return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(value).replace(",", "");
 }
 
-export function formatDate(value: EntityValue) {
+function formatDate(value: EntityValue) {
   if (!(value instanceof Date)) return value === null ? "-" : String(value);
   return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(value);
 }
 
-export function formatLabel(value: EntityValue) {
+function formatLabel(value: EntityValue) {
   if (value === null) return "-";
   return String(value).replace(/\b\w/g, (letter) => letter.toUpperCase());
 }

@@ -56,7 +56,7 @@
 - deployed on-premise,
 - open-source technologies only, free to use and host,
 - data volume is relatively small, few thousands of medical records per year,
-- remaining data are short referencial lists (services, clients, insurances, ...),
+- remaining data are short referencial lists (service providers, insurance providers, ...),
 - archiving of records and documents,
 - delegate heavy work to the server, keep the minimum on users machines,
 - target platform is desktop, accessible from LAN,
@@ -128,7 +128,7 @@
 
 - insurance policy:
     + policy number: required,
-    + client company: required, selectable,
+    + client company: required,
     + effective date: required,
     + insurance company: required, selectable,
     + intermediate: optional, selectable (from insurance provider where type is "AGT" or "BRK"),

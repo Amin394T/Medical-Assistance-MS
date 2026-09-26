@@ -1,20 +1,13 @@
-// TODO: repurpose
-
-import { listMedicalServices } from "@/db/actions/medicalServices";
-import { EntityListTable, formatDateTime } from "@/app/_components/entity-list-table";
+import { listServiceTypes } from "@/db/actions/serviceTypes";
+import { EntityListTable } from "@/app/_components/entity-list-table";
 
 export const dynamic = "force-dynamic";
 
-export default async function ServiceHistoryPage() {
-	const services = await listMedicalServices();
+export default async function ServiceTypesPage() {
+	const serviceTypes = await listServiceTypes();
 
-	return <EntityListTable title="Service History" icon="activity" rows={services} columns={[
-		{ key: "recordReference", label: "Record reference" },
-		{ key: "service", label: "Service" },
-		{ key: "providerLabel", label: "Provider" },
-		{ key: "missionDate", label: "Mission date", format: formatDateTime },
-		{ key: "missionPlace", label: "Mission place" },
-		{ key: "observations", label: "Observations" },
-		{ key: "settled", label: "Settled" },
+	return <EntityListTable title="Service Types" icon="activity" rows={serviceTypes} columns={[
+		{ key: "label", label: "Label" },
+		{ key: "targetProfile", label: "Target profile" },
 	]} />;
 }

@@ -1,49 +1,34 @@
-import { sqliteTable, integer, text, AnySQLiteColumn } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 
-import { insuranceClients } from "./insuranceClients";
 import { insurancePolicies } from "./insurancePolicies";
-import { insuranceProviders } from "./insuranceProviders";
+import { serviceProviders } from "./serviceProviders";
 
 export const medicalRecords = sqliteTable("medical_records", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  accidentDate: integer("accident_date", { mode: "timestamp_ms" }).notNull(),
+  reference: text("reference").notNull().unique(),
+  recordType: text("record_type", { enum: ["AT", "MD", "VF", "SS", "PR"] }).notNull().default("AT"),
   policyId: integer("policy_id").notNull().references(() => insurancePolicies.id),
-  insuranceCompanyId: integer("insurance_company_id").notNull().references(() => insuranceProviders.id),
-  referenceNumber: text("reference_number").notNull().unique(),
-  clientCompanyId: integer("client_company_id").notNull().references(() => insuranceClients.id),
-  recordType: text("record_type", { enum: ["normal", "verification"] }).notNull().default("normal"),
-  reportingDate: integer("reporting_date", { mode: "timestamp_ms" }).notNull(),
+  reportingDate: integer("reporting_date", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   reporterFirstName: text("reporter_first_name").notNull(),
   reporterLastName: text("reporter_last_name"),
   reporterPhone: text("reporter_phone").notNull(),
-  accidentType: text("accident_type", { enum: ["initial", "relapse", "sickness"] }),
-  initialAccidentId: integer("initial_accident_id").references((): AnySQLiteColumn => medicalRecords.id),
-  accidentPlace: text("accident_place", { enum: ["workshop", "route", "office", "site"] }).notNull(),
+  accidentPlace: text("accident_place", { enum: ["WS", "RT", "OF", "CS"] }).notNull(),
+  accidentDate: integer("accident_date", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  accidentCause: text("accident_cause", { enum: ["FALL", "EQIP", "FATG", "HAZD", "VIOL", "OBJC"] }),
   victimFirstName: text("victim_first_name").notNull(),
   victimLastName: text("victim_last_name").notNull(),
-  victimNationalId: text("victim_national_id").notNull(),
   victimPhone: text("victim_phone"),
-  accidentCause: text("accident_cause", {
-    enum: [
-      "falling or slipping",
-      "machine or equipment",
-      "overexertion and fatigue",
-      "hazardous substance",
-      "workplace violence",
-      "moving objects",
-    ],
-  }),
-  recordStatus: text("record_status", {
-    enum: ["in progress", "settled", "closed", "abandoned", "billable"],
-  }).notNull().default("in progress"),
-  recordFate: text("record_fate", {
-    enum: ["waiting", "approved", "rejected", "abandoned"],
-  }).notNull().default("waiting"),
-  fateReason: text("fate_reason"),
-  intermediateId: integer("intermediate_id").references(() => insuranceProviders.id),
-  managedBy: text("managed_by"),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  victimNationalId: text("victim_national_id").notNull(),
+  victimJob: text("victim_job"),
+  accidentEvolution: text("accident_evolution", { enum: ["INIT", "DELG", "RELP", "DEAT", "COMP"] }).notNull().default("INIT"),
+  delegationDate: integer("delegation_date", { mode: "timestamp_ms" }),
+  coverageIssued: integer("coverage_issued", { mode: "boolean" }),
+  coverageDate: integer("coverage_date", { mode: "timestamp_ms" }),
+  regulatorId: integer("regulator_id").references(() => serviceProviders.id),
+  recordStatus: text("record_status", { enum: ["PROG", "SETT", "CLOS", "ABAN", "BILL"] }).notNull().default("PROG"),
+  lastAction: integer("last_action", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()).$onUpdateFn(() => new Date()),
+  managedBy: text("managed_by").notNull().default("USER"),
+  observation: text("observation"),
 });
 
 export type MedicalRecord = typeof medicalRecords.$inferSelect;

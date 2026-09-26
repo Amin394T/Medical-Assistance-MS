@@ -42,4 +42,3 @@ next-env.d.ts
 
 # database
 /db/*.db
-/db/migration/

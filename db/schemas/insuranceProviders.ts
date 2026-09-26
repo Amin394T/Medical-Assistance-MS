@@ -3,14 +3,11 @@ import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 export const insuranceProviders = sqliteTable("insurance_providers", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   label: text("label").notNull().unique(),
-  companyName: text("company_name"),
-  companyId: text("company_id"),
-  type: text("type", { enum: ["company", "agent", "broker"] }).notNull(),
+  corporateName: text("corporate_name"),
+  corporateId: text("corporate_id"),
+  type: text("type", { enum: ["CMP", "AGT", "BRK"] }).notNull(),
   phone: text("phone"),
-  fax: text("fax"),
   email: text("email"),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
 
 export type InsuranceProvider = typeof insuranceProviders.$inferSelect;
