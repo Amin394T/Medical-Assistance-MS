@@ -40,6 +40,7 @@ Things to keep in mind:
 - "boolean" columns are not required, NULL is equivalent to FALSE,
 - "NOW" means current date + time,
 - "USER" means current application user, a UI directive,
+- "date-time" means date with time (up to seconds), while "date" means date without time,
 
 <!-- DB-data-structure:end -->
 

@@ -7,7 +7,7 @@ export const medicalDocuments = sqliteTable("medical_documents", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   medicalRecordId: integer("medical_record_id").notNull().references(() => medicalRecords.id),
   type: text("type").notNull(),
-  serviceProviderId: integer("service_provider_id").notNull().references(() => serviceProviders.id),
+  serviceProviderId: integer("service_provider_id").references(() => serviceProviders.id),
   observation: text("observation"),
   signed: integer("signed", { mode: "boolean" }),
 });

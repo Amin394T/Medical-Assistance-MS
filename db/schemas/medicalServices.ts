@@ -9,7 +9,7 @@ export const medicalServices = sqliteTable("medical_services", {
   medicalRecordId: integer("medical_record_id").notNull().references(() => medicalRecords.id),
   serviceProviderId: integer("service_provider_id").notNull().references(() => serviceProviders.id),
   serviceTypeId: integer("service_type_id").notNull().references(() => serviceTypes.id),
-  missionDate: integer("mission_date", { mode: "timestamp_ms" }).$defaultFn(() => new Date()),
+  missionDate: integer("mission_date", { mode: "timestamp" }),
   missionPlace: text("mission_place"),
   observation: text("observation"),
 });

@@ -64,6 +64,7 @@
 - concurrency is not a big concern, only few users,
 - data migration from spreadsheets to DB expected,
 - standard authentication with no user types or permissions,
+- for professional users
 
 
 ## DATA STRUCTURE
@@ -72,7 +73,7 @@
     + reference: read-only, generated (record type AT/MD/VF/SS/PR + accident date YYMMDD + daily 2-digits sequence),
     + record type: list (workplace accident - AT, illness & pain - MD, policy verification - VF, special service - SS, occupational disease - PR), defaults to "AT",
     + insurance policy: required, selectable (list searchable by policy and client name),
-    + client company: required, inferred (from selected insurance policy),
+    + client company: read-only, inferred (from selected insurance policy),
     + insurance company: read-only, inferred (from selected insurance policy),
     + intermediary: read-only, inferred (from selected insurance policy),
     // report data:
@@ -94,27 +95,27 @@
     + delegation date: optional, date-time,
     + coverage issued: boolean,
     + coverage date: optional, date,
-    + regulator: optional, selectable (from service providers with type "REGULATOR"),
     // status data
     + record status: list (in progress - PROG, settled - SETT, closed - CLOS, abandoned - ABAN, billed - BILL), defaults to "PROG",
     + record fate: read-only, inferred (from policy validity, either "Approved" if valid, else "Rejected"),
     + fate reason: read-only,
-    + last action: read-only, date-time, defaults to "NOW",
     + managed by: read-only, defaults to "USER",
     + observation: optional,
+    + created at: read-only, date-time, defaults to NOW,
+    + updated at: read-only, date-time, automatically updated at modification time,
 
-- medical record service:
+- medical service:
     + record: required, selectable,
     + service provider: required, selectable,
     + service type: required, selectable (from service type, those corresponding to service provider profile),
-    + mission date: optional, defaults to "NOW",
+    + mission date: optional, date,
     + mission place: optional,
     + observation: optional,
 
-- medical record document:
+- medical document:
     + record: required, selectable,
     + type: required, combo-box,
-    + service provider: required, selectable,
+    + service provider: optional, selectable,
     + observation: optional,
     + signed: boolean,
 
@@ -129,14 +130,14 @@
 - insurance policy:
     + policy number: required,
     + client company: required,
-    + effective date: required,
+    + effective date: required, date,
     + insurance company: required, selectable,
     + intermediate: optional, selectable (from insurance provider where type is "AGT" or "BRK"),
     + terminated: boolean,
-    + termination date: optional,
+    + termination date: optional, date,
     + type: required, list (revisable - REV, fixed-rate - FIX),
-    + created at: read-only, defaults to NOW,
-    + updated at: read-only, automatically updated at modification time,
+    + created at: read-only, date-time, defaults to NOW,
+    + updated at: read-only, date-time, automatically updated at modification time,
 
 - service type:
     + label: required
