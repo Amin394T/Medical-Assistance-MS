@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export default async function ServiceProvidersPage() {
 	const providers = await listServiceProviders();
 
-	return <EntityListTable title="Healthcare Providers" icon="ambulance" rows={providers} columns={[
+	return <EntityListTable title="Healthcare Providers" section="Services" icon="ambulance" rows={providers} columns={[
 		{ key: "label", label: "Label" },
 		{ key: "corporateName", label: "Corporate name" },
 		{ key: "profile", label: "Profile", format: "label" },

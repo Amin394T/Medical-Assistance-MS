@@ -7,7 +7,7 @@ import {
   Headset,
   LogOut,
   Ambulance,
-  ShieldPlus,
+  ShieldHalf,
   Triangle,
   Activity,
   User,
@@ -36,7 +36,7 @@ const navigation = [
       {
         label: "Client Policies",
         href: "/insurance/policies",
-        icon: ShieldPlus,
+        icon: ShieldHalf,
       },
       {
         label: "Insurance Providers",

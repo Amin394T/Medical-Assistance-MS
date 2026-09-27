@@ -69,7 +69,7 @@
 ## DATA STRUCTURE
 - medical record:
     // record data:
-    + reference: read-only, generated (record type AT/MD/VF/SS/PR + accident date YYYYMMDD + daily 2-digits sequence),
+    + reference: read-only, generated (record type AT/MD/VF/SS/PR + accident date YYMMDD + daily 2-digits sequence),
     + record type: list (workplace accident - AT, illness & pain - MD, policy verification - VF, special service - SS, occupational disease - PR), defaults to "AT",
     + insurance policy: required, selectable (list searchable by policy and client name),
     + client company: required, inferred (from selected insurance policy),

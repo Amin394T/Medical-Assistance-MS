@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Activity, Ambulance, Building2, Search, Shield } from "lucide-react";
+import { Activity, Ambulance, Building2, Search, ShieldHalf } from "lucide-react";
 
 type EntityValue = string | number | boolean | Date | null;
 type EntityRow = Record<string, EntityValue>;
@@ -14,14 +14,15 @@ export type EntityColumn = {
 
 type EntityListTableProps = {
   title: string;
+  section?: string;
   icon: "building" | "shield" | "ambulance" | "activity";
   rows: EntityRow[];
   columns: EntityColumn[];
 };
 
-const icons = { building: Building2, shield: Shield, ambulance: Ambulance, activity: Activity } as const;
+const icons = { building: Building2, shield: ShieldHalf, ambulance: Ambulance, activity: Activity } as const;
 
-export function EntityListTable({ title, icon, rows, columns }: EntityListTableProps) {
+export function EntityListTable({ title, section, icon, rows, columns }: EntityListTableProps) {
   const Icon = icons[icon];
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
@@ -35,7 +36,7 @@ export function EntityListTable({ title, icon, rows, columns }: EntityListTableP
       <div className="mx-auto max-w-375">
         <header className="mb-8 flex flex-col gap-5 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Reference data</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">{section}</p>
             <h1 className="text-3xl font-bold tracking-tight text-slate-950">{title}</h1>
           </div>
           <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
@@ -44,21 +45,17 @@ export function EntityListTable({ title, icon, rows, columns }: EntityListTableP
         </header>
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="font-semibold text-slate-900">{title} list</h2>
-              <p className="mt-1 text-xs text-slate-500">{filteredRows.length} records shown</p>
-            </div>
+          <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <label className="relative block w-full sm:max-w-sm">
               <span className="sr-only">Search {title}</span>
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Search all ${title.toLowerCase()} fields`} className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100" />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all fields" className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100" />
             </label>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-max border-collapse text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <thead className="bg-slate-50 border-y border-slate-200 text-xs uppercase tracking-wide text-slate-500">
                 <tr>{columns.map((column) => <th key={column.key} scope="col" className="whitespace-nowrap px-5 py-3 font-semibold">{column.label}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

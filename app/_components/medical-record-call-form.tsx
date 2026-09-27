@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { AlertCircle, ArrowLeft, CheckCircle2, ClipboardPlus } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Headset } from "lucide-react";
 import Link from "next/link";
 
 import { createMedicalRecordFromCall } from "@/db/actions/medicalRecords";
@@ -98,15 +98,11 @@ export function MedicalRecordCallForm({ policies, displayReportingDate }: Medica
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex items-start justify-between gap-4 border-b border-slate-200 pb-6">
           <div>
-            <Link href="/" className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-teal-700">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Medical Records
-            </Link>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Assistance</p>
             <h1 className="text-3xl font-bold tracking-tight text-slate-950">Emergency Call</h1>
           </div>
           <div className="hidden rounded-xl bg-teal-50 p-3 text-teal-700 sm:block">
-            <ClipboardPlus className="h-6 w-6" aria-hidden="true" />
+            <Headset className="h-6 w-6" aria-hidden="true" />
           </div>
         </div>
 
@@ -125,9 +121,14 @@ export function MedicalRecordCallForm({ policies, displayReportingDate }: Medica
             <div className="grid gap-5 md:grid-cols-2">
               <form.Field name="recordType" children={(field) => <SelectField field={field as unknown as RenderableField} label="Record type" required options={[{ value: "AT", label: "Workplace accident" }, { value: "MD", label: "Illness & pain" }, { value: "VF", label: "Policy verification" }, { value: "SS", label: "Special service" }, { value: "PR", label: "Occupational disease" }]} />} />
               <form.Field key={createdReference} name="policyId" children={(field) => <PolicyPicker field={field as unknown as RenderableField} policies={policies} />} />
-              <ReadOnlyField label="Client company" value={getSelectedPolicy(form.state.values.policyId, policies)?.clientCompanyLabel ?? "Select an insurance policy"} />
-              <ReadOnlyField label="Insurance company" value={getSelectedPolicy(form.state.values.policyId, policies)?.insuranceCompanyLabel ?? "Select an insurance policy"} />
-              <ReadOnlyField label="Intermediary" value={getSelectedPolicy(form.state.values.policyId, policies)?.intermediaryLabel ?? "-"} />
+              <form.Subscribe selector={(state) => state.values.policyId} children={(policyId) => {
+                const selectedPolicy = getSelectedPolicy(policyId, policies);
+                return <>
+                  <ReadOnlyField label="Client company" value={selectedPolicy?.clientCompanyLabel ?? "Select an insurance policy"} />
+                  <ReadOnlyField label="Insurance company" value={selectedPolicy?.insuranceCompanyLabel ?? "Select an insurance policy"} />
+                  <ReadOnlyField label="Intermediary" value={selectedPolicy?.intermediaryLabel ?? "-"} />
+                </>;
+              }} />
             </div>
           </FormSection>
 
@@ -172,10 +173,10 @@ function SelectField({ field, label, options, required, placeholder }: { field: 
 
 function PolicyPicker({ field, policies }: { field: RenderableField; policies: PolicyOption[] }) {
   const selectedPolicy = policies.find((policy) => String(policy.id) === String(field.state.value));
-  const [query, setQuery] = useState(selectedPolicy ? `${selectedPolicy.policyNumber} · ${selectedPolicy.clientCompanyLabel}` : "");
+  const [query, setQuery] = useState(selectedPolicy ? `${selectedPolicy.policyNumber} ${selectedPolicy.clientCompanyLabel}` : "");
   const matches = policies.filter((policy) => `${policy.policyNumber} ${policy.clientCompanyLabel}`.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8);
 
-  return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Insurance policy / client<span className="ml-1 text-teal-700">*</span></span><input value={query} onBlur={field.handleBlur} onChange={(event) => { setQuery(event.target.value); field.handleChange(""); }} className={inputClass} placeholder="Search policy number or client" role="combobox" aria-expanded={Boolean(query.trim())} aria-controls="policy-picker-options" aria-autocomplete="list" />{query.trim() ? <div id="policy-picker-options" role="listbox" className="mt-1 max-h-56 overflow-y-auto border border-slate-200 bg-white shadow-lg">{matches.length ? matches.map((policy) => <button key={policy.id} type="button" role="option" aria-selected={String(policy.id) === String(field.state.value)} onMouseDown={(event) => event.preventDefault()} onClick={() => { field.handleChange(String(policy.id)); setQuery(`${policy.policyNumber} · ${policy.clientCompanyLabel}`); }} className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm hover:bg-teal-50"><span className="block font-semibold text-slate-900">{policy.policyNumber}</span><span className="block text-xs text-slate-500">{policy.clientCompanyLabel}{policy.terminated ? " · Terminated" : ""}</span></button>) : <p className="px-3 py-2 text-sm text-slate-500">No matching policies.</p>}</div> : null}{field.state.meta.errors[0] ? <span className="mt-1 block text-xs text-rose-600">{String(field.state.meta.errors[0])}</span> : null}</label>;
+  return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Insurance policy / client<span className="ml-1 text-teal-700">*</span></span><input value={query} onBlur={field.handleBlur} onChange={(event) => { setQuery(event.target.value); field.handleChange(""); }} className={inputClass} placeholder="Search policy number or client" role="combobox" aria-expanded={Boolean(query.trim())} aria-controls="policy-picker-options" aria-autocomplete="list" />{query.trim() ? <div id="policy-picker-options" role="listbox" className="mt-1 max-h-56 overflow-y-auto border border-slate-200 bg-white shadow-lg">{matches.length ? matches.map((policy) => <button key={policy.id} type="button" role="option" aria-selected={String(policy.id) === String(field.state.value)} onMouseDown={(event) => event.preventDefault()} onClick={() => { field.handleChange(String(policy.id)); setQuery(`${policy.policyNumber} ${policy.clientCompanyLabel}`); }} className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm hover:bg-teal-50"><span className="block font-semibold text-slate-900">{policy.policyNumber}</span><span className="block text-xs text-slate-500">{policy.clientCompanyLabel}{policy.terminated ? " · Terminated" : ""}</span></button>) : <p className="px-3 py-2 text-sm text-slate-500">No matching policies.</p>}</div> : null}{field.state.meta.errors[0] ? <span className="mt-1 block text-xs text-rose-600">{String(field.state.meta.errors[0])}</span> : null}</label>;
 }
 
 function getSelectedPolicy(policyId: string, policies: PolicyOption[]) {
