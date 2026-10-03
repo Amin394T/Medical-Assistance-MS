@@ -26,3 +26,4 @@
 - how to process delta files (when to add, update, remove)?
 - how will data migration happen?
 - get full list of medical services, and service profiles,
+- how do you decide which service provider to send

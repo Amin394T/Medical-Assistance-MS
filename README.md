@@ -132,7 +132,7 @@
     + client company: required,
     + effective date: required, date,
     + insurance company: required, selectable,
-    + intermediate: optional, selectable (from insurance provider where type is "AGT" or "BRK"),
+    + intermediary: optional, selectable (from insurance provider where type is "AGT" or "BRK"),
     + terminated: boolean,
     + termination date: optional, date,
     + type: required, list (revisable - REV, fixed-rate - FIX),
