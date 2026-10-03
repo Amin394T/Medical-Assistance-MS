@@ -70,12 +70,12 @@
 ## DATA STRUCTURE
 - medical record:
     // record data:
-    + reference: read-only, generated (record type AT/MD/VF/SS/PR + accident date YYMMDD + daily 2-digits sequence),
-    + record type: list (workplace accident - AT, illness & pain - MD, policy verification - VF, special service - SS, occupational disease - PR), defaults to "AT",
+    + reference: read-only, generated (accident date YYMMDD + daily 2-digits sequence),
+    + type: list (workplace accident - AT, illness & pain - MD, policy verification - VF, special service - SS, occupational disease - PR), defaults to "AT",
     + insurance policy: required, selectable (list searchable by policy and client name),
-    + client company: read-only, inferred (from selected insurance policy),
-    + insurance company: read-only, inferred (from selected insurance policy),
-    + intermediary: read-only, inferred (from selected insurance policy),
+    + client company: read-only, inferred (from selected insurance policy), UI-only,
+    + insurance company: read-only, inferred (from selected insurance policy), UI-only,
+    + intermediary: read-only, inferred (from selected insurance policy), UI-only,
     // report data:
     + reporting date: required, date-time, defaults to "NOW",
     + reporter first name: required,
@@ -96,8 +96,8 @@
     + coverage issued: boolean,
     + coverage date: optional, date,
     // status data
-    + record status: list (in progress - PROG, settled - SETT, closed - CLOS, abandoned - ABAN, billed - BILL), defaults to "PROG",
-    + record fate: read-only, inferred (from policy validity, either "Approved" if valid, else "Rejected"),
+    + status: list (in progress - PROG, settled - SETT, closed - CLOS, abandoned - ABAN, billed - BILL), defaults to "PROG",
+    + fate: read-only, inferred (from policy validity, either "APPROVED" if valid, else "REJECTED"),
     + fate reason: read-only,
     + managed by: read-only, defaults to "USER",
     + observation: optional,
@@ -136,6 +136,7 @@
     + terminated: boolean,
     + termination date: optional, date,
     + type: required, list (revisable - REV, fixed-rate - FIX),
+    + nominativeList: optional, comma-separated strings,
     + created at: read-only, date-time, defaults to NOW,
     + updated at: read-only, date-time, automatically updated at modification time,
 

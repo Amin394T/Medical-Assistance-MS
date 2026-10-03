@@ -35,6 +35,7 @@ Things to keep in mind:
 - "selectable" means that its a foreign key, add "_id" to the name,
 - "list" means an enumeration, values are those separated by comma, when a value contains 2 parts separated by dash, the second part is the DB value, while the first is the UI display value,
 - "inferred" is a UI directive, does not indicate that the column is a foreign key,
+- "UI-only" indicates that the field is not a table column, rather it is fetched with joins,
 - "combo-box" is a UI directive, does not indicate an enumeration,
 - "read-only" is a UI directive, the field can still be set, just not from the UI,
 - "boolean" columns are not required, NULL is equivalent to FALSE,

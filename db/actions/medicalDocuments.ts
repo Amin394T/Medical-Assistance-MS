@@ -43,3 +43,5 @@ export async function deleteMedicalDocument(id: number) {
     .returning();
   return record ?? null;
 }
+
+// TODO: get distinct document types

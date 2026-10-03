@@ -20,6 +20,7 @@ export async function listInsurancePolicies() {
 
   return rows.map(({ insurance_policies, insuranceCompany, intermediary }) => ({
     ...insurance_policies,
+    nominativeList: insurance_policies.nominativeList?.split(",") ?? [],
     insuranceCompany: insuranceCompany.label,
     intermediary: intermediary ? intermediary.label : null,
   }));
