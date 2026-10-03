@@ -12,7 +12,9 @@ import {
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ChevronsUpDown, ClipboardList, Filter, RotateCcw } from "lucide-react";
 
-import type { MedicalRecordListItem } from "@/db/actions/medicalRecords";
+import type { listMedicalRecords } from "@/db/actions/medicalRecords";
+
+type MedicalRecordListItem = Awaited<ReturnType<typeof listMedicalRecords>>[number];
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -27,18 +29,13 @@ const columnHelper = createColumnHelper<typeof features, MedicalRecordListItem>(
 
 const columns = columnHelper.columns([
   columnHelper.accessor("reference", { header: "Reference", cell: ({ row, getValue }) => <Link href={`/assistance/records/details?id=${row.original.id}`} className="font-semibold text-teal-800 hover:underline">{formatReference(getValue())}</Link> }),
-  columnHelper.accessor("recordType", { header: "Type", cell: ({ getValue }) => formatRecordType(getValue()) }),
-  columnHelper.accessor("policyNumber", { header: "Policy number" }),
+  columnHelper.accessor("policy", { header: "Policy number" }),
   columnHelper.accessor("clientCompany", { header: "Client company" }),
   columnHelper.accessor("insuranceCompany", { header: "Insurance company" }),
-  columnHelper.accessor("intermediary", { header: "Intermediary" }),
-  columnHelper.accessor((record) => `${record.victimFirstName} ${record.victimLastName}`, { id: "victim", header: "Victim", cell: ({ getValue }) => <span className="text-slate-800">{getValue()}</span> }),
-  columnHelper.accessor("victimNationalId", { header: "National ID" }),
+  columnHelper.accessor("victimName", { header: "Victim", cell: ({ getValue }) => <span className="text-slate-800">{getValue()}</span> }),
   columnHelper.accessor("accidentDate", { header: "Accident date", sortFn: "datetime", cell: ({ getValue }) => formatDateTime(getValue()) }),
-  columnHelper.accessor("recordStatus", { header: "Status", cell: ({ getValue }) => <StatusBadge value={getValue()} /> }),
-  columnHelper.accessor("recordFate", { header: "Fate" }),
-  columnHelper.accessor("reportingDate", { header: "Declaration date", sortFn: "datetime", cell: ({ getValue }) => formatDateTime(getValue()) }),
-  columnHelper.accessor("managedBy", { header: "Managed by", sortFn: "text" }),
+  columnHelper.accessor("status", { header: "Status", cell: ({ getValue }) => <StatusBadge value={getValue()} /> }),
+  columnHelper.accessor("manager", { header: "Managed by", sortFn: "text" }),
 ]);
 
 type MedicalRecordsTableProps = { records: MedicalRecordListItem[] };
@@ -48,10 +45,7 @@ type Filters = {
   clientCompany: string;
   referenceNumber: string;
   victimName: string;
-  victimNationalId: string;
   recordStatus: string;
-  declarationFrom: string;
-  declarationTo: string;
   accidentFrom: string;
   accidentTo: string;
 };
@@ -61,10 +55,7 @@ const EMPTY_FILTERS: Filters = {
   clientCompany: "",
   referenceNumber: "",
   victimName: "",
-  victimNationalId: "",
   recordStatus: "",
-  declarationFrom: "",
-  declarationTo: "",
   accidentFrom: "",
   accidentTo: "",
 };
@@ -96,9 +87,7 @@ export function MedicalRecordsTable({ records }: MedicalRecordsTableProps) {
               <FilterInput label="Client company" value={filters.clientCompany} onChange={(value) => updateFilter("clientCompany", value)} />
               <FilterInput label="Reference number" value={filters.referenceNumber} onChange={(value) => updateFilter("referenceNumber", value)} />
               <FilterInput label="Victim full name" value={filters.victimName} onChange={(value) => updateFilter("victimName", value)} />
-              <FilterInput label="Victim national ID" value={filters.victimNationalId} onChange={(value) => updateFilter("victimNationalId", value)} />
-              <label className="block"><span className="mb-1 block text-[11px] font-semibold text-slate-500">Record status</span><select value={filters.recordStatus} onChange={(event) => updateFilter("recordStatus", event.target.value)} className={filterClass}><option value="">All statuses</option>{["PROG", "SETT", "CLOS", "ABAN", "BILL"].map((status) => <option key={status} value={status}>{formatRecordStatus(status)}</option>)}</select></label>
-              <DateRange label="Declaration date" from={filters.declarationFrom} to={filters.declarationTo} onFromChange={(value) => updateFilter("declarationFrom", value)} onToChange={(value) => updateFilter("declarationTo", value)} />
+              <label className="block"><span className="mb-1 block text-[11px] font-semibold text-slate-500">Record status</span><select value={filters.recordStatus} onChange={(event) => updateFilter("recordStatus", event.target.value)} className={filterClass}><option value="">All statuses</option>{["In Progress", "Settled", "Closed", "Abandoned", "Billed"].map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
               <DateRange label="Accident date" from={filters.accidentFrom} to={filters.accidentTo} onFromChange={(value) => updateFilter("accidentFrom", value)} onToChange={(value) => updateFilter("accidentTo", value)} />
             </div>
           </div>
@@ -119,7 +108,7 @@ function matchesFilters(record: MedicalRecordListItem, filters: Filters) {
     return timestamp >= fromTime && timestamp <= toTime;
   };
 
-  return textMatches(record.policyNumber, filters.policyNumber) && textMatches(record.clientCompany, filters.clientCompany) && textMatches(formatReference(record.reference), filters.referenceNumber) && textMatches(`${record.victimFirstName} ${record.victimLastName}`, filters.victimName) && textMatches(record.victimNationalId, filters.victimNationalId) && (!filters.recordStatus || record.recordStatus === filters.recordStatus) && inDateRange(record.reportingDate, filters.declarationFrom, filters.declarationTo) && inDateRange(record.accidentDate, filters.accidentFrom, filters.accidentTo);
+  return textMatches(record.policy, filters.policyNumber) && textMatches(record.clientCompany, filters.clientCompany) && textMatches(formatReference(record.reference), filters.referenceNumber) && textMatches(record.victimName, filters.victimName) && (!filters.recordStatus || record.status === filters.recordStatus) && inDateRange(record.accidentDate, filters.accidentFrom, filters.accidentTo);
 }
 
 function FilterInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label className="block"><span className="mb-1 block text-[11px] font-semibold text-slate-500">{label}</span><input value={value} onChange={(event) => onChange(event.target.value)} className={filterClass} placeholder="Any" /></label>; }
@@ -127,13 +116,11 @@ function FilterInput({ label, value, onChange }: { label: string; value: string;
 function DateRange({ label, from, to, onFromChange, onToChange }: { label: string; from: string; to: string; onFromChange: (value: string) => void; onToChange: (value: string) => void }) { return <div className="sm:col-span-2"><span className="mb-1 block text-[11px] font-semibold text-slate-500">{label} range</span><div className="grid grid-cols-2 gap-2"><input type="date" aria-label={`${label} from`} value={from} onChange={(event) => onFromChange(event.target.value)} className={filterClass} /><input type="date" aria-label={`${label} to`} value={to} onChange={(event) => onToChange(event.target.value)} className={filterClass} /></div></div>; }
 
 function formatDateTime(value: Date) { return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(value).replace(",", ""); }
-function formatReference(value: string) { return value.replaceAll("/", "-"); }
-function formatRecordType(value: string) { return ({ AT: "Workplace accident", MD: "Illness & pain", VF: "Policy verification", SS: "Special service", PR: "Occupational disease" })[value] ?? value; }
-function formatRecordStatus(value: string) { return ({ PROG: "In progress", SETT: "Settled", CLOS: "Closed", ABAN: "Abandoned", BILL: "Billed" })[value] ?? value; }
+function formatReference(value: number) { return String(value); }
 
 function StatusBadge({ value }: { value: string }) {
-  const colors: Record<string, string> = { PROG: "bg-amber-50 text-amber-700 ring-amber-600/20", SETT: "bg-emerald-50 text-emerald-700 ring-emerald-600/20", CLOS: "bg-slate-100 text-slate-700 ring-slate-500/20", ABAN: "bg-rose-50 text-rose-700 ring-rose-600/20", BILL: "bg-sky-50 text-sky-700 ring-sky-600/20" };
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${colors[value] ?? "bg-slate-100 text-slate-700 ring-slate-500/20"}`}>{formatRecordStatus(value)}</span>;
+  const colors: Record<string, string> = { "In Progress": "bg-amber-50 text-amber-700 ring-amber-600/20", Settled: "bg-emerald-50 text-emerald-700 ring-emerald-600/20", Closed: "bg-slate-100 text-slate-700 ring-slate-500/20", Abandoned: "bg-rose-50 text-rose-700 ring-rose-600/20", Billed: "bg-sky-50 text-sky-700 ring-sky-600/20" };
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${colors[value] ?? "bg-slate-100 text-slate-700 ring-slate-500/20"}`}>{value}</span>;
 }
 
 const filterClass = "h-9 w-full rounded-md border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-800 outline-none transition focus:border-teal-600 focus:bg-white focus:ring-2 focus:ring-teal-100";

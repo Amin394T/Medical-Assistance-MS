@@ -1,43 +1,82 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { updateMedicalRecordFromDetails } from "@/db/actions/medicalRecords";
-import type { getMedicalRecordDetails, UpdateMedicalRecordState } from "@/db/actions/medicalRecords";
+import { updateMedicalRecord } from "@/db/actions/medicalRecords";
+import type { getMedicalRecord } from "@/db/actions/medicalRecords";
+import type { SetMedicalRecord } from "@/db/schemas";
 
-type MedicalRecordDetails = NonNullable<Awaited<ReturnType<typeof getMedicalRecordDetails>>>;
-type PolicyOption = { id: number; policyNumber: string; clientCompanyLabel: string; insuranceCompanyLabel: string; intermediateLabel: string | null };
-type RegulatorOption = { id: number; label: string };
+type MedicalRecordDetails = NonNullable<Awaited<ReturnType<typeof getMedicalRecord>>>;
+type PolicyOption = { id: number; policyNumber: string; clientCompany: string; insuranceCompany: string; intermediary: string | null };
 
 type MedicalRecordEditFormProps = {
   record: MedicalRecordDetails;
   policies: PolicyOption[];
-  regulators: RegulatorOption[];
 };
 
-const initialState: UpdateMedicalRecordState = { error: "", success: "" };
-
-export function MedicalRecordEditForm({ record, policies, regulators }: MedicalRecordEditFormProps) {
+export function MedicalRecordEditForm({ record, policies }: MedicalRecordEditFormProps) {
+  const router = useRouter();
   const [policyId, setPolicyId] = useState(String(record.policyId));
-  const updateForRecord = updateMedicalRecordFromDetails.bind(null, record.id);
-  const [state, formAction, pending] = useActionState(updateForRecord, initialState);
+  const [pending, setPending] = useState(false);
+  const [notice, setNotice] = useState<{ tone: "error" | "success"; text: string } | null>(null);
   const selectedPolicy = policies.find((policy) => String(policy.id) === policyId);
 
   return (
-    <form action={formAction} className="space-y-5">
-      {state.error ? <Notice tone="error">{state.error}</Notice> : null}
-      {state.success ? <Notice tone="success">{state.success}</Notice> : null}
+    <form className="space-y-5" onSubmit={async (event) => {
+      event.preventDefault();
+      setPending(true);
+      setNotice(null);
+      const data = new FormData(event.currentTarget);
+      try {
+        const parseDate = (name: string) => {
+          const value = String(data.get(name) ?? "");
+          return value ? new Date(value) : null;
+        };
+        const values: SetMedicalRecord = {
+          type: String(data.get("type")) as SetMedicalRecord["type"],
+          policyId: Number(data.get("policyId")),
+          reportingDate: parseDate("reportingDate") ?? new Date(),
+          reporterFirstName: String(data.get("reporterFirstName") ?? ""),
+          reporterLastName: String(data.get("reporterLastName") ?? "") || null,
+          reporterPhone: String(data.get("reporterPhone") ?? ""),
+          accidentPlace: String(data.get("accidentPlace")) as SetMedicalRecord["accidentPlace"],
+          accidentDate: parseDate("accidentDate") ?? new Date(),
+          accidentCause: (String(data.get("accidentCause") ?? "") || null) as SetMedicalRecord["accidentCause"],
+          victimFirstName: String(data.get("victimFirstName") ?? ""),
+          victimLastName: String(data.get("victimLastName") ?? ""),
+          victimPhone: String(data.get("victimPhone") ?? "") || null,
+          victimNationalId: String(data.get("victimNationalId") ?? ""),
+          victimJob: String(data.get("victimJob") ?? "") || null,
+          accidentEvolution: String(data.get("accidentEvolution")) as SetMedicalRecord["accidentEvolution"],
+          delegationDate: parseDate("delegationDate"),
+          coverageIssued: data.get("coverageIssued") === "" ? null : data.get("coverageIssued") === "true",
+          coverageDate: parseDate("coverageDate"),
+          status: String(data.get("status")) as SetMedicalRecord["status"],
+          observation: String(data.get("observation") ?? "") || null,
+        };
+        const updated = await updateMedicalRecord(record.id, values);
+        if (!updated) throw new Error("Medical record not found.");
+        setNotice({ tone: "success", text: "Changes saved." });
+        router.refresh();
+      } catch (error) {
+        setNotice({ tone: "error", text: error instanceof Error ? error.message : "Unable to save changes." });
+      } finally {
+        setPending(false);
+      }
+    }}>
+      {notice ? <Notice tone={notice.tone}>{notice.text}</Notice> : null}
 
       <Section title="Record data">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <ReadOnly label="Reference" value={record.reference} />
-          <SelectField name="recordType" label="Record type" defaultValue={record.recordType} required options={[
+          <SelectField name="type" label="Record type" defaultValue={record.type} required options={[
             ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VF", "Policy verification"], ["SS", "Special service"], ["PR", "Occupational disease"],
           ]} />
-          <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Insurance policy *</span><select name="policyId" value={policyId} onChange={(event) => setPolicyId(event.target.value)} required className={inputClass}>{policies.map((policy) => <option key={policy.id} value={String(policy.id)}>{policy.policyNumber} · {policy.clientCompanyLabel}</option>)}</select></label>
-          <ReadOnly label="Client company" value={selectedPolicy?.clientCompanyLabel ?? null} />
-          <ReadOnly label="Insurance company" value={selectedPolicy?.insuranceCompanyLabel ?? null} />
-          <ReadOnly label="Intermediary" value={selectedPolicy?.intermediateLabel ?? null} />
+          <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Insurance policy *</span><select name="policyId" value={policyId} onChange={(event) => setPolicyId(event.target.value)} required className={inputClass}>{policies.map((policy) => <option key={policy.id} value={String(policy.id)}>{policy.policyNumber} · {policy.clientCompany}</option>)}</select></label>
+          <ReadOnly label="Client company" value={selectedPolicy?.clientCompany ?? null} />
+          <ReadOnly label="Insurance company" value={selectedPolicy?.insuranceCompany ?? null} />
+          <ReadOnly label="Intermediary" value={selectedPolicy?.intermediary ?? null} />
         </div>
       </Section>
 
@@ -77,20 +116,16 @@ export function MedicalRecordEditForm({ record, policies, regulators }: MedicalR
             ["", "Not specified"], ["true", "Yes"], ["false", "No"],
           ]} />
           <DateField name="coverageDate" label="Coverage date" value={record.coverageDate} />
-          <SelectField name="regulatorId" label="Regulator" defaultValue={record.regulatorId === null ? "" : String(record.regulatorId)} options={[
-            ["", "None"], ...regulators.map((regulator): [string, string] => [String(regulator.id), regulator.label]),
-          ]} />
         </div>
       </Section>
 
       <Section title="Status data">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <SelectField name="recordStatus" label="Record status" defaultValue={record.recordStatus} required options={[
+          <SelectField name="status" label="Record status" defaultValue={record.status} required options={[
             ["PROG", "In progress"], ["SETT", "Settled"], ["CLOS", "Closed"], ["ABAN", "Abandoned"], ["BILL", "Billed"],
           ]} />
-          <ReadOnly label="Record fate" value={record.recordFate} />
+          <ReadOnly label="Record fate" value={record.fate} />
           <ReadOnly label="Fate reason" value={record.fateReason} />
-          <ReadOnly label="Last action" value={formatDateTime(record.lastAction)} />
           <ReadOnly label="Managed by" value={record.managedBy} />
           <TextField name="observation" label="Observation" defaultValue={record.observation ?? ""} />
         </div>
@@ -131,10 +166,6 @@ function ReadOnly({ label, value }: { label: string; value: string | number | nu
 
 function Notice({ tone, children }: { tone: "error" | "success"; children: React.ReactNode }) {
   return <p role="status" className={`border-l-4 px-4 py-3 text-sm font-medium ${tone === "error" ? "border-rose-600 bg-rose-50 text-rose-800" : "border-emerald-600 bg-emerald-50 text-emerald-800"}`}>{children}</p>;
-}
-
-function formatDateTime(value: Date) {
-  return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(value);
 }
 
 function toLocalDateTime(value: Date) {

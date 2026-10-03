@@ -5,7 +5,7 @@ import { insurancePolicies } from "./insurancePolicies";
 export const medicalRecords = sqliteTable("medical_records", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   reference: integer("reference").notNull().unique(),
-  type: text("record_type", { enum: ["AT", "MD", "VF", "SS", "PR"] }).notNull().default("AT"),
+  type: text("type", { enum: ["AT", "MD", "VF", "SS", "PR"] }).notNull().default("AT"),
   policyId: integer("policy_id").notNull().references(() => insurancePolicies.id),
   reportingDate: integer("reporting_date", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
   reporterFirstName: text("reporter_first_name").notNull(),

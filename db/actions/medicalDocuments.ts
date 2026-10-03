@@ -19,6 +19,13 @@ export async function listRecordMedicalDocuments(recordId: number) {
   }));
 }
 
+export async function listDocumentTypes() {
+  const rows = await db
+    .selectDistinct({ type: medicalDocuments.type })
+    .from(medicalDocuments);
+  return rows.map(({ type }) => type);
+}
+
 export async function createMedicalDocument(input: NewMedicalDocument) {
   const [record] = await db
     .insert(medicalDocuments)
@@ -43,5 +50,3 @@ export async function deleteMedicalDocument(id: number) {
     .returning();
   return record ?? null;
 }
-
-// TODO: get distinct document types

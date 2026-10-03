@@ -2,7 +2,6 @@
 
 import { desc, eq, isNotNull, like } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
-import { revalidatePath } from "next/cache";
 
 import { db } from "../index";
 import { insurancePolicies, insuranceProviders, medicalRecords } from "../schemas";
@@ -11,6 +10,7 @@ import type { NewMedicalRecord, SetMedicalRecord, InsurancePolicy } from "../sch
 export async function listMedicalRecords() {
   const rows = await db
     .select({
+      id: medicalRecords.id,
       reference: medicalRecords.reference,
       policy: insurancePolicies.policyNumber,
       clientCompany: insurancePolicies.clientCompany,
@@ -79,15 +79,15 @@ export async function createMedicalRecord(input: NewMedicalRecord) {
     .limit(1);
   const nextReference: number = prevReference ? prevReference.reference + 1 : Number(referenceDate) * 100 + 1;
 
-  const fate = getPolicyValidityStatus(policy, input.accidentDate, `${input.victimFirstName} ${input.victimLastName}`);
+  const policyValidity = getPolicyValidityStatus(policy, input.accidentDate, `${input.victimFirstName} ${input.victimLastName}`);
 
   const [record] = await db
     .insert(medicalRecords)
     .values({
       ...input,
       reference: nextReference,
-      fate: fate ? "REJECTED" : "APPROVED",
-      fateReason: fate,
+      fate: policyValidity ? "REJECTED" : "APPROVED",
+      fateReason: policyValidity ?? null,
     })
     .returning();
   return record;
@@ -99,8 +99,6 @@ export async function updateMedicalRecord(id: number, input: SetMedicalRecord) {
     .set(input)
     .where(eq(medicalRecords.id, id))
     .returning();
-
-  revalidatePath("/assistance/records/details");
   return record ?? null;
 }
 
@@ -125,11 +123,14 @@ function getRecordStatusLabel(status: SetMedicalRecord["status"]) {
 }
 
 function getPolicyValidityStatus(policy: InsurancePolicy, accidentDate: Date, victimName: string) {
-  if (policy.terminated) return "Policy Terminated";
-  if (accidentDate < policy.effectiveDate) return "Policy Expired";
+  if (policy.terminated && policy.terminationDate && policy.terminationDate < accidentDate)
+    return "Policy Terminated";
+  if (accidentDate < policy.effectiveDate)
+    return "Policy Not Effective";
   if (policy.nominativeList && victimName) {
     const nominativeList = policy.nominativeList.split(",").map((name) => name.trim().toLowerCase());
-    if (!nominativeList.includes(victimName.trim().toLowerCase())) return "Victim Not Covered";
+    if (!nominativeList.includes(victimName.trim().toLowerCase()))
+      return "Victim Not Covered";
   }
   // TODO: add remaining checks
 
@@ -143,5 +144,4 @@ function getCompactDate(date: Date) {
   return `${year}${month}${day}`;
 }
 
-// TODO: revalidate record fate
-// TODO: get distinct victim jobs
+// TODO: revalidate record fate in separate action

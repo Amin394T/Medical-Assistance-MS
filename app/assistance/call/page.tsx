@@ -9,12 +9,12 @@ export default async function CallPage() {
 
 	return (
 		<MedicalRecordCallForm
-			policies={policies.map(({ id, policyNumber, clientCompanyLabel, insuranceCompanyLabel, intermediateLabel, terminated, effectiveDate, terminationDate }) => ({
+			policies={policies.map(({ id, policyNumber, clientCompany, insuranceCompany, intermediary, terminated, effectiveDate, terminationDate }) => ({
 				id,
 				policyNumber,
-				clientCompanyLabel,
-				insuranceCompanyLabel,
-				intermediaryLabel: intermediateLabel,
+				clientCompanyLabel: clientCompany,
+				insuranceCompanyLabel: insuranceCompany,
+				intermediaryLabel: intermediary,
 				terminated: terminated ?? false,
 				effectiveDate: effectiveDate.toISOString(),
 				terminationDate: terminationDate?.toISOString() ?? null,

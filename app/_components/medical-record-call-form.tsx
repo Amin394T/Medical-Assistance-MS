@@ -5,10 +5,9 @@
 
 import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { AlertCircle, ArrowLeft, CheckCircle2, Headset } from "lucide-react";
-import Link from "next/link";
+import { AlertCircle, CheckCircle2, Headset } from "lucide-react";
 
-import { createMedicalRecordFromCall } from "@/db/actions/medicalRecords";
+import { createMedicalRecord } from "@/db/actions/medicalRecords";
 
 type PolicyOption = {
   id: number;
@@ -28,10 +27,11 @@ type MedicalRecordCallFormProps = {
 type CallFormValues = {
   accidentDate: string;
   policyId: string;
-  recordType: "AT" | "MD" | "VF" | "SS" | "PR";
+  type: "AT" | "MD" | "VF" | "SS" | "PR";
   reporterFirstName: string;
   reporterLastName: string;
   reporterPhone: string;
+  managedBy: string;
   accidentPlace: "WS" | "RT" | "OF" | "CS";
   victimFirstName: string;
   victimLastName: string;
@@ -58,10 +58,11 @@ type FormRenderer = {
 const initialValues: CallFormValues = {
   accidentDate: new Date().toISOString().slice(0, 16),
   policyId: "",
-  recordType: "AT",
+  type: "AT",
   reporterFirstName: "",
   reporterLastName: "",
   reporterPhone: "",
+  managedBy: "",
   accidentPlace: "WS",
   victimFirstName: "",
   victimLastName: "",
@@ -81,11 +82,24 @@ export function MedicalRecordCallForm({ policies, displayReportingDate }: Medica
       setCreatedReference("");
 
       try {
-        const record = await createMedicalRecordFromCall({
-          ...value,
+        const record = await createMedicalRecord({
+          type: value.type,
           policyId: Number(value.policyId),
+          reportingDate: new Date(displayReportingDate),
+          reporterFirstName: value.reporterFirstName,
+          reporterLastName: value.reporterLastName || null,
+          reporterPhone: value.reporterPhone,
+          accidentPlace: value.accidentPlace,
+          accidentDate: new Date(value.accidentDate),
+          accidentCause: value.accidentCause || null,
+          victimFirstName: value.victimFirstName,
+          victimLastName: value.victimLastName,
+          victimNationalId: value.victimNationalId,
+          victimPhone: value.victimPhone || null,
+          victimJob: value.victimJob || null,
+          managedBy: value.managedBy.trim(),
         });
-        setCreatedReference(record.reference);
+        setCreatedReference(String(record.reference));
         form.reset();
       } catch (error) {
         setSubmitError(error instanceof Error ? error.message : "Unable to create the medical record.");
@@ -119,7 +133,7 @@ export function MedicalRecordCallForm({ policies, displayReportingDate }: Medica
         >
           <FormSection eyebrow="01 / Record data" title="Record data">
             <div className="grid gap-5 md:grid-cols-2">
-              <form.Field name="recordType" children={(field) => <SelectField field={field as unknown as RenderableField} label="Record type" required options={[{ value: "AT", label: "Workplace accident" }, { value: "MD", label: "Illness & pain" }, { value: "VF", label: "Policy verification" }, { value: "SS", label: "Special service" }, { value: "PR", label: "Occupational disease" }]} />} />
+              <form.Field name="type" children={(field) => <SelectField field={field as unknown as RenderableField} label="Record type" required options={[{ value: "AT", label: "Workplace accident" }, { value: "MD", label: "Illness & pain" }, { value: "VF", label: "Policy verification" }, { value: "SS", label: "Special service" }, { value: "PR", label: "Occupational disease" }]} />} />
               <form.Field key={createdReference} name="policyId" children={(field) => <PolicyPicker field={field as unknown as RenderableField} policies={policies} />} />
               <form.Subscribe selector={(state) => state.values.policyId} children={(policyId) => {
                 const selectedPolicy = getSelectedPolicy(policyId, policies);
@@ -138,6 +152,7 @@ export function MedicalRecordCallForm({ policies, displayReportingDate }: Medica
               <Field form={form as unknown as FormRenderer} name="reporterFirstName" label="First name" required />
               <Field form={form as unknown as FormRenderer} name="reporterLastName" label="Last name" />
               <Field form={form as unknown as FormRenderer} name="reporterPhone" label="Phone" required type="tel" />
+              <Field form={form as unknown as FormRenderer} name="managedBy" label="Managed by" required />
               <form.Field name="accidentPlace" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident place" required options={[{ value: "WS", label: "Workshop" }, { value: "RT", label: "Route" }, { value: "OF", label: "Office" }, { value: "CS", label: "Construction" }]} />} />
               <Field form={form as unknown as FormRenderer} name="accidentDate" label="Accident date" required type="datetime-local" />
             </div>

@@ -1,8 +1,7 @@
-import { getMedicalRecordDetails } from "@/db/actions/medicalRecords";
+import { getMedicalRecord } from "@/db/actions/medicalRecords";
 import { listInsurancePolicies } from "@/db/actions/insurancePolicies";
-import { listMedicalDocumentsForRecord } from "@/db/actions/medicalDocuments";
-import { listMedicalServicesForRecord } from "@/db/actions/medicalServices";
-import { listServiceProviders } from "@/db/actions/serviceProviders";
+import { listRecordMedicalDocuments } from "@/db/actions/medicalDocuments";
+import { listRecordMedicalServices } from "@/db/actions/medicalServices";
 import { MedicalRecordEditForm } from "@/app/_components/medical-record-edit-form";
 
 export const dynamic = "force-dynamic";
@@ -16,12 +15,11 @@ export default async function MedicalRecordDetailsPage({
 	const recordId = Number(id);
 	if (!Number.isInteger(recordId) || recordId < 1) return <Message message="Record not found." />;
 
-	const [record, services, documents, policies, providers] = await Promise.all([
-		getMedicalRecordDetails(recordId),
-		listMedicalServicesForRecord(recordId),
-		listMedicalDocumentsForRecord(recordId),
+	const [record, services, documents, policies] = await Promise.all([
+		getMedicalRecord(recordId),
+		listRecordMedicalServices(recordId),
+		listRecordMedicalDocuments(recordId),
 		listInsurancePolicies(),
-		listServiceProviders(),
 	]);
 	if (!record) return <Message message="Record not found." />;
 
@@ -35,14 +33,13 @@ export default async function MedicalRecordDetailsPage({
 
 				<MedicalRecordEditForm
 					record={record}
-					policies={policies.map(({ id, policyNumber, clientCompanyLabel, insuranceCompanyLabel, intermediateLabel }) => ({ id, policyNumber, clientCompanyLabel, insuranceCompanyLabel, intermediateLabel }))}
-					regulators={providers.filter(({ profile }) => profile === "REGULATOR").map(({ id, label }) => ({ id, label }))}
+					policies={policies.map(({ id, policyNumber, clientCompany, insuranceCompany, intermediary }) => ({ id, policyNumber, clientCompany, insuranceCompany, intermediary }))}
 				/>
 				<Section title="Medical services">
-					{services.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{["Service type", "Provider", "Mission date", "Mission place", "Observation"].map((label) => <th key={label} className="border-b border-slate-200 px-3 py-2 font-semibold text-slate-600">{label}</th>)}</tr></thead><tbody>{services.map((service) => <tr key={service.id}><td className="px-3 py-3">{service.serviceTypeLabel}</td><td className="px-3 py-3">{service.providerLabel}</td><td className="px-3 py-3">{dateTime(service.missionDate)}</td><td className="px-3 py-3">{service.missionPlace ?? "-"}</td><td className="px-3 py-3">{service.observation ?? "-"}</td></tr>)}</tbody></table></div> : <p className="text-sm text-slate-500">No services recorded.</p>}
+					{services.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{["Service type", "Provider", "Mission date", "Mission place", "Observation"].map((label) => <th key={label} className="border-b border-slate-200 px-3 py-2 font-semibold text-slate-600">{label}</th>)}</tr></thead><tbody>{services.map((service) => <tr key={service.id}><td className="px-3 py-3">{service.serviceType}</td><td className="px-3 py-3">{service.serviceProvider}</td><td className="px-3 py-3">{dateTime(service.missionDate)}</td><td className="px-3 py-3">{service.missionPlace ?? "-"}</td><td className="px-3 py-3">{service.observation ?? "-"}</td></tr>)}</tbody></table></div> : <p className="text-sm text-slate-500">No services recorded.</p>}
 				</Section>
 				<Section title="Medical documents">
-					{documents.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{["Type", "Service provider", "Signed", "Observation"].map((label) => <th key={label} className="border-b border-slate-200 px-3 py-2 font-semibold text-slate-600">{label}</th>)}</tr></thead><tbody>{documents.map((document) => <tr key={document.id}><td className="px-3 py-3">{document.type}</td><td className="px-3 py-3">{document.providerLabel}</td><td className="px-3 py-3">{document.signed ? "Yes" : "No"}</td><td className="px-3 py-3">{document.observation ?? "-"}</td></tr>)}</tbody></table></div> : <p className="text-sm text-slate-500">No documents recorded.</p>}
+					{documents.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{["Type", "Service provider", "Signed", "Observation"].map((label) => <th key={label} className="border-b border-slate-200 px-3 py-2 font-semibold text-slate-600">{label}</th>)}</tr></thead><tbody>{documents.map((document) => <tr key={document.id}><td className="px-3 py-3">{document.type}</td><td className="px-3 py-3">{document.serviceProvider}</td><td className="px-3 py-3">{document.signed ? "Yes" : "No"}</td><td className="px-3 py-3">{document.observation ?? "-"}</td></tr>)}</tbody></table></div> : <p className="text-sm text-slate-500">No documents recorded.</p>}
 				</Section>
 			</div>
 		</section>
@@ -59,8 +56,4 @@ function Message({ message }: { message: string }) {
 
 function dateTime(value: Date | null) {
 	return value ? new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(value) : null;
-}
-
-function recordStatus(value: string) {
-	return ({ PROG: "In progress", SETT: "Settled", CLOS: "Closed", ABAN: "Abandoned", BILL: "Billed" })[value] ?? value;
 }
