@@ -1,8 +1,11 @@
+import { ClipboardPen } from "lucide-react";
+
 import { getMedicalRecord } from "@/db/actions/medicalRecords";
 import { listInsurancePolicies } from "@/db/actions/insurancePolicies";
 import { listRecordMedicalDocuments } from "@/db/actions/medicalDocuments";
 import { listRecordMedicalServices } from "@/db/actions/medicalServices";
 import { MedicalRecordEditForm } from "@/app/_components/medical-record-edit-form";
+import { PageHeader } from "@/app/_components/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -26,10 +29,7 @@ export default async function MedicalRecordDetailsPage({
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
 			<div className="mx-auto max-w-6xl">
-				<header className="mb-8 border-b border-slate-200 pb-6">
-					<p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Medical record</p>
-					<h1 className="text-3xl font-bold tracking-tight text-slate-950">{record.reference}</h1>
-				</header>
+				<PageHeader section="Medical record" title={`${record.type}-${record.reference}`} icon={<ClipboardPen />} />
 
 				<MedicalRecordEditForm
 					record={record}

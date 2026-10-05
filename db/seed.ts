@@ -8,7 +8,11 @@ import {
   serviceProviders,
   serviceTypes,
 } from "./schemas";
-import type { NewMedicalRecord } from "./schemas";
+import type { MedicalRecord, NewMedicalRecord } from "./schemas";
+
+type SeedMedicalRecord = NewMedicalRecord & Pick<MedicalRecord,
+  "reference" | "accidentEvolution" | "delegationDate" | "coverageIssued" | "coverageDate" | "status" | "fate" | "fateReason" | "observation"
+>;
 
 const now = new Date();
 
@@ -19,8 +23,11 @@ function dateOffset(days: number, hour = 10) {
   return date;
 }
 
-function reference(recordType: NewMedicalRecord["recordType"], accidentDate: Date, sequence = 1) {
-  return `${recordType}${accidentDate.toISOString().slice(0, 10).replaceAll("-", "")}${String(sequence).padStart(2, "0")}`;
+function reference(accidentDate: Date, sequence = 1) {
+  const year = String(accidentDate.getFullYear()).slice(-2);
+  const month = String(accidentDate.getMonth() + 1).padStart(2, "0");
+  const day = String(accidentDate.getDate()).padStart(2, "0");
+  return Number(`${year}${month}${day}${String(sequence).padStart(2, "0")}`);
 }
 
 const seededCounts = db.transaction((tx) => {
@@ -43,11 +50,11 @@ const seededCounts = db.transaction((tx) => {
 
   const policyIds = new Map(
     tx.insert(insurancePolicies).values([
-      { policyNumber: "AM-2026-00418", clientCompany: "Maple Works Manufacturing", effectiveDate: dateOffset(420), insuranceCompanyId: insuranceProviderIds.get("Atlas Mutual Assurance")!, intermediateId: insuranceProviderIds.get("Cedar Lane Brokers")!, terminated: false, terminationDate: null, type: "REV", createdAt: dateOffset(420), updatedAt: now },
-      { policyNumber: "AM-2026-00972", clientCompany: "Brightline Construction", effectiveDate: dateOffset(260), insuranceCompanyId: insuranceProviderIds.get("Atlas Mutual Assurance")!, intermediateId: insuranceProviderIds.get("Harbor Insurance Agency")!, terminated: false, terminationDate: null, type: "FIX", createdAt: dateOffset(260), updatedAt: now },
-      { policyNumber: "NS-2024-00136", clientCompany: "Riverside Food Logistics", effectiveDate: dateOffset(700), insuranceCompanyId: insuranceProviderIds.get("Northstar Coverage")!, intermediateId: null, terminated: true, terminationDate: dateOffset(30), type: "REV", createdAt: dateOffset(700), updatedAt: dateOffset(30) },
-      { policyNumber: "NS-2026-01005", clientCompany: "Juniper Electrical Services", effectiveDate: dateOffset(-30), insuranceCompanyId: insuranceProviderIds.get("Northstar Coverage")!, intermediateId: insuranceProviderIds.get("Cedar Lane Brokers")!, terminated: false, terminationDate: null, type: "FIX", createdAt: now, updatedAt: now },
-      { policyNumber: "AM-2026-01550", clientCompany: "Stonebridge Distribution", effectiveDate: dateOffset(180), insuranceCompanyId: insuranceProviderIds.get("Atlas Mutual Assurance")!, intermediateId: null, terminated: false, terminationDate: null, type: "REV", createdAt: dateOffset(180), updatedAt: now },
+      { policyNumber: "AM-2026-00418", clientCompany: "Maple Works Manufacturing", effectiveDate: dateOffset(420), insuranceCompanyId: insuranceProviderIds.get("Atlas Mutual Assurance")!, intermediaryId: insuranceProviderIds.get("Cedar Lane Brokers")!, terminated: false, terminationDate: null, type: "REV", nominativeList: "Ethan Cole, Oliver Price", createdAt: dateOffset(420), updatedAt: now },
+      { policyNumber: "AM-2026-00972", clientCompany: "Brightline Construction", effectiveDate: dateOffset(260), insuranceCompanyId: insuranceProviderIds.get("Atlas Mutual Assurance")!, intermediaryId: insuranceProviderIds.get("Harbor Insurance Agency")!, terminated: false, terminationDate: null, type: "FIX", nominativeList: "Ava Turner, Leo Howard", createdAt: dateOffset(260), updatedAt: now },
+      { policyNumber: "NS-2024-00136", clientCompany: "Riverside Food Logistics", effectiveDate: dateOffset(700), insuranceCompanyId: insuranceProviderIds.get("Northstar Coverage")!, intermediaryId: null, terminated: true, terminationDate: dateOffset(30), type: "REV", nominativeList: "Lucas Perry, Isaac Green", createdAt: dateOffset(700), updatedAt: dateOffset(30) },
+      { policyNumber: "NS-2026-01005", clientCompany: "Juniper Electrical Services", effectiveDate: dateOffset(-30), insuranceCompanyId: insuranceProviderIds.get("Northstar Coverage")!, intermediaryId: insuranceProviderIds.get("Cedar Lane Brokers")!, terminated: false, terminationDate: null, type: "FIX", nominativeList: "Mila Ward", createdAt: now, updatedAt: now },
+      { policyNumber: "AM-2026-01550", clientCompany: "Stonebridge Distribution", effectiveDate: dateOffset(180), insuranceCompanyId: insuranceProviderIds.get("Atlas Mutual Assurance")!, intermediaryId: null, terminated: false, terminationDate: null, type: "REV", nominativeList: "Chloe Adams", createdAt: dateOffset(180), updatedAt: now },
     ]).returning().all().map(({ id, policyNumber }) => [policyNumber, id]),
   );
 
@@ -74,54 +81,54 @@ const seededCounts = db.transaction((tx) => {
     ]).returning().all().map(({ id, label }) => [label, id]),
   );
 
-  const recordSpecs: NewMedicalRecord[] = [
+  const recordSpecs: SeedMedicalRecord[] = [
     {
-      reference: reference("AT", dateOffset(1)), recordType: "AT", policyId: policyIds.get("AM-2026-00418")!, reportingDate: dateOffset(1, 9),
+      reference: reference(dateOffset(1, 8)), type: "AT", policyId: policyIds.get("AM-2026-00418")!, reportingDate: dateOffset(1, 9),
       reporterFirstName: "Leah", reporterLastName: "Morgan", reporterPhone: "+1 555 030 1001", accidentPlace: "WS", accidentDate: dateOffset(1, 8), accidentCause: "EQIP",
       victimFirstName: "Ethan", victimLastName: "Cole", victimPhone: "+1 555 030 2001", victimNationalId: "9001000001", victimJob: "Machine operator",
-      accidentEvolution: "INIT", delegationDate: null, coverageIssued: null, coverageDate: null, regulatorId: null, recordStatus: "PROG", lastAction: dateOffset(1, 9), managedBy: "Amin Hassan", observation: "Initial report received by phone.",
+      accidentEvolution: "INIT", delegationDate: null, coverageIssued: null, coverageDate: null, status: "PROG", fate: "APPROVED", fateReason: null, managedBy: "Amin Hassan", observation: "Initial report received by phone.",
     },
     {
-      reference: reference("AT", dateOffset(3)), recordType: "AT", policyId: policyIds.get("AM-2026-00972")!, reportingDate: dateOffset(3, 11),
+      reference: reference(dateOffset(3, 10)), type: "AT", policyId: policyIds.get("AM-2026-00972")!, reportingDate: dateOffset(3, 11),
       reporterFirstName: "Noah", reporterLastName: "Bennett", reporterPhone: "+1 555 030 1002", accidentPlace: "CS", accidentDate: dateOffset(3, 10), accidentCause: "FALL",
       victimFirstName: "Ava", victimLastName: "Turner", victimPhone: null, victimNationalId: "9001000002", victimJob: "Site supervisor",
-      accidentEvolution: "DELG", delegationDate: dateOffset(3, 12), coverageIssued: true, coverageDate: dateOffset(2, 0), regulatorId: serviceProviderIds.get("Regional Work Safety Office")!, recordStatus: "SETT", lastAction: dateOffset(2, 14), managedBy: "Nadia Karim", observation: "Case delegated for follow-up.",
+      accidentEvolution: "DELG", delegationDate: dateOffset(3, 12), coverageIssued: true, coverageDate: dateOffset(2, 0), status: "SETT", fate: "APPROVED", fateReason: null, managedBy: "Nadia Karim", observation: "Case delegated for follow-up.",
     },
     {
-      reference: reference("MD", dateOffset(6)), recordType: "MD", policyId: policyIds.get("NS-2024-00136")!, reportingDate: dateOffset(6, 8),
+      reference: reference(dateOffset(6, 7)), type: "MD", policyId: policyIds.get("NS-2024-00136")!, reportingDate: dateOffset(6, 8),
       reporterFirstName: "Rosa", reporterLastName: "Diaz", reporterPhone: "+1 555 030 1003", accidentPlace: "OF", accidentDate: dateOffset(6, 7), accidentCause: "FATG",
       victimFirstName: "Lucas", victimLastName: "Perry", victimPhone: "+1 555 030 2003", victimNationalId: "9001000003", victimJob: "Warehouse associate",
-      accidentEvolution: "INIT", delegationDate: null, coverageIssued: false, coverageDate: null, regulatorId: null, recordStatus: "PROG", lastAction: dateOffset(6, 9), managedBy: "Amin Hassan", observation: "Policy was terminated before the reported event.",
+      accidentEvolution: "INIT", delegationDate: null, coverageIssued: false, coverageDate: null, status: "PROG", fate: "REJECTED", fateReason: "Policy Terminated", managedBy: "Amin Hassan", observation: "Policy was terminated before the reported event.",
     },
     {
-      reference: reference("VF", dateOffset(2)), recordType: "VF", policyId: policyIds.get("AM-2026-00418")!, reportingDate: dateOffset(2, 13),
+      reference: reference(dateOffset(2, 12)), type: "VF", policyId: policyIds.get("AM-2026-00418")!, reportingDate: dateOffset(2, 13),
       reporterFirstName: "Grace", reporterLastName: "Kim", reporterPhone: "+1 555 030 1004", accidentPlace: "OF", accidentDate: dateOffset(2, 12), accidentCause: null,
       victimFirstName: "Oliver", victimLastName: "Price", victimPhone: null, victimNationalId: "9001000004", victimJob: null,
-      accidentEvolution: "INIT", delegationDate: null, coverageIssued: null, coverageDate: null, regulatorId: null, recordStatus: "CLOS", lastAction: dateOffset(1, 15), managedBy: "Nadia Karim", observation: "Policy validity confirmed with insurer.",
+      accidentEvolution: "INIT", delegationDate: null, coverageIssued: null, coverageDate: null, status: "CLOS", fate: "APPROVED", fateReason: null, managedBy: "Nadia Karim", observation: "Policy validity confirmed with insurer.",
     },
     {
-      reference: reference("SS", dateOffset(10)), recordType: "SS", policyId: policyIds.get("NS-2026-01005")!, reportingDate: dateOffset(10, 10),
+      reference: reference(dateOffset(10, 9)), type: "SS", policyId: policyIds.get("NS-2026-01005")!, reportingDate: dateOffset(10, 10),
       reporterFirstName: "Daniel", reporterLastName: "Foster", reporterPhone: "+1 555 030 1005", accidentPlace: "RT", accidentDate: dateOffset(10, 9), accidentCause: "OBJC",
       victimFirstName: "Mila", victimLastName: "Ward", victimPhone: "+1 555 030 2005", victimNationalId: "9001000005", victimJob: "Delivery driver",
-      accidentEvolution: "COMP", delegationDate: null, coverageIssued: true, coverageDate: dateOffset(9, 0), regulatorId: null, recordStatus: "BILL", lastAction: dateOffset(8, 16), managedBy: "Amin Hassan", observation: "Special service request awaiting documentation.",
+      accidentEvolution: "COMP", delegationDate: null, coverageIssued: true, coverageDate: dateOffset(9, 0), status: "BILL", fate: "APPROVED", fateReason: null, managedBy: "Amin Hassan", observation: "Special service request awaiting documentation.",
     },
     {
-      reference: reference("PR", dateOffset(60)), recordType: "PR", policyId: policyIds.get("NS-2024-00136")!, reportingDate: dateOffset(60, 9),
+      reference: reference(dateOffset(60, 8)), type: "PR", policyId: policyIds.get("NS-2024-00136")!, reportingDate: dateOffset(60, 9),
       reporterFirstName: "Hannah", reporterLastName: "Scott", reporterPhone: "+1 555 030 1006", accidentPlace: "WS", accidentDate: dateOffset(60, 8), accidentCause: "HAZD",
       victimFirstName: "Isaac", victimLastName: "Green", victimPhone: "+1 555 030 2006", victimNationalId: "9001000006", victimJob: "Maintenance technician",
-      accidentEvolution: "RELP", delegationDate: null, coverageIssued: true, coverageDate: dateOffset(59, 0), regulatorId: serviceProviderIds.get("Regional Work Safety Office")!, recordStatus: "PROG", lastAction: dateOffset(4, 11), managedBy: "Nadia Karim", observation: "Historical event predates policy termination.",
+      accidentEvolution: "RELP", delegationDate: null, coverageIssued: true, coverageDate: dateOffset(59, 0), status: "PROG", fate: "APPROVED", fateReason: null, managedBy: "Nadia Karim", observation: "Historical event predates policy termination.",
     },
     {
-      reference: reference("AT", dateOffset(20)), recordType: "AT", policyId: policyIds.get("AM-2026-01550")!, reportingDate: dateOffset(20, 14),
+      reference: reference(dateOffset(20, 13)), type: "AT", policyId: policyIds.get("AM-2026-01550")!, reportingDate: dateOffset(20, 14),
       reporterFirstName: "Mason", reporterLastName: "Bell", reporterPhone: "+1 555 030 1007", accidentPlace: "WS", accidentDate: dateOffset(20, 13), accidentCause: "VIOL",
       victimFirstName: "Chloe", victimLastName: "Adams", victimPhone: null, victimNationalId: "9001000007", victimJob: "Inventory clerk",
-      accidentEvolution: "DEAT", delegationDate: null, coverageIssued: false, coverageDate: null, regulatorId: null, recordStatus: "ABAN", lastAction: dateOffset(14, 10), managedBy: "Amin Hassan", observation: "Record abandoned after caller follow-up.",
+      accidentEvolution: "INIT", delegationDate: null, coverageIssued: false, coverageDate: null, status: "ABAN", fate: "APPROVED", fateReason: null, managedBy: "Amin Hassan", observation: "Record abandoned after caller follow-up.",
     },
     {
-      reference: reference("VF", dateOffset(4)), recordType: "VF", policyId: policyIds.get("AM-2026-00972")!, reportingDate: dateOffset(4, 10),
+      reference: reference(dateOffset(4, 9)), type: "VF", policyId: policyIds.get("AM-2026-00972")!, reportingDate: dateOffset(4, 10),
       reporterFirstName: "Sofia", reporterLastName: null, reporterPhone: "+1 555 030 1008", accidentPlace: "OF", accidentDate: dateOffset(4, 9), accidentCause: null,
       victimFirstName: "Leo", victimLastName: "Howard", victimPhone: null, victimNationalId: "9001000008", victimJob: null,
-      accidentEvolution: "INIT", delegationDate: null, coverageIssued: null, coverageDate: null, regulatorId: null, recordStatus: "PROG", lastAction: dateOffset(4, 11), managedBy: "Nadia Karim", observation: null,
+      accidentEvolution: "INIT", delegationDate: null, coverageIssued: null, coverageDate: null, status: "PROG", fate: "APPROVED", fateReason: null, managedBy: "Nadia Karim", observation: null,
     },
   ];
 

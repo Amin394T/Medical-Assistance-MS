@@ -1,17 +1,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Building2,
-  ClipboardList,
-  Headset,
-  LogOut,
-  Ambulance,
-  ShieldHalf,
-  Triangle,
-  Activity,
-  User,
-} from "lucide-react";
+import { Building2, ClipboardList, Headset, LogOut, Ambulance, ShieldHalf, Triangle, Activity, User, } from "lucide-react";
 
 
 const navigation = [
@@ -72,8 +62,7 @@ export function Sidebar() {
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-slate-200 shadow-md bg-white">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5">        
-        <Image src="/logo-icon.png" alt="Medical Assistance Logo" width={30} height={30} />
-
+        <Image src="/logo-icon.png" alt="Medical Assistance" width={30} height={30} />
         <div className="text-lg font-semibold text-teal-800"> Medical Assistance </div>
       </div>
 
@@ -110,9 +99,7 @@ export function Sidebar() {
             <User className="text-gray-400" />
           </div>
 
-          <div className="min-w-0 flex-1 truncate text-md font-medium text-gray-700">
-              Amin Hassan
-          </div>
+          <div className="min-w-0 flex-1 truncate text-md font-medium text-gray-700"> User Name </div>
 
           <button type="button" title="Logout" className="rounded-md p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700">
             <LogOut className="h-4 w-4" />

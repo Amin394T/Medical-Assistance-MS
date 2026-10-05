@@ -1,6 +1,4 @@
 ## REMINDER
-- transform some enumerations into tables (service profiles, accident causes, ...),
-- verify authentication in server actions,
 - reference number should use dash as separator and sequence should have 2 digits only
 - add server side pagination to records list
 - update record reference when date or type change
@@ -18,6 +16,8 @@
 - AI assistant,
 - geo-localisation of service providers and client companies
     + nearest ambulances are sent + to nearest hospital
+- data archiving
+- user actions audit
 
 
 ## NEEDS
@@ -32,3 +32,4 @@
 - all causes/scenarios of policy invalidity
 - are brokers and agents just informational
 - can policy and record type be updated
+- get document types

@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { AlertCircle, CheckCircle2, Headset } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 import { createMedicalRecord } from "@/db/actions/medicalRecords";
 
@@ -108,18 +108,7 @@ export function MedicalRecordCallForm({ policies, displayReportingDate }: Medica
   });
 
   return (
-    <section className="min-h-full bg-[#f7f8fa] px-6 py-8 lg:px-10">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-8 flex items-start justify-between gap-4 border-b border-slate-200 pb-6">
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Assistance</p>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-950">Emergency Call</h1>
-          </div>
-          <div className="hidden rounded-xl bg-teal-50 p-3 text-teal-700 sm:block">
-            <Headset className="h-6 w-6" aria-hidden="true" />
-          </div>
-        </div>
-
+    <>
         {createdReference ? <Notice icon={<CheckCircle2 className="h-5 w-5" />} tone="success">Record {createdReference} was created successfully.</Notice> : null}
         {submitError ? <Notice icon={<AlertCircle className="h-5 w-5" />} tone="error">{submitError}</Notice> : null}
 
@@ -173,8 +162,7 @@ export function MedicalRecordCallForm({ policies, displayReportingDate }: Medica
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]} children={([canSubmit, isSubmitting]) => <button type="submit" disabled={!canSubmit || isSubmitting} className="rounded-lg bg-teal-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300">{isSubmitting ? "Creating record..." : "Create medical record"}</button>} />
           </div>
         </form>
-      </div>
-    </section>
+    </>
   );
 }
 

@@ -1,7 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Activity, Ambulance, Building2, Search, ShieldHalf } from "lucide-react";
+import {
+  createColumnHelper,
+  createSortedRowModel,
+  rowSortingFeature,
+  tableFeatures,
+  useTable,
+} from "@tanstack/react-table";
+import { ArrowDown, ArrowUp, ChevronsUpDown, Search } from "lucide-react";
 
 type EntityValue = string | number | boolean | Date | null;
 type EntityRow = Record<string, EntityValue>;
@@ -14,36 +21,47 @@ export type EntityColumn = {
 
 type EntityListTableProps = {
   title: string;
-  section?: string;
-  icon: "building" | "shield" | "ambulance" | "activity";
   rows: EntityRow[];
   columns: EntityColumn[];
 };
 
-const icons = { building: Building2, shield: ShieldHalf, ambulance: Ambulance, activity: Activity } as const;
+const features = tableFeatures({
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: {
+    entity: (rowA, rowB, columnId) => compareValues(rowA.getValue(columnId), rowB.getValue(columnId)),
+  },
+});
 
-export function EntityListTable({ title, section, icon, rows, columns }: EntityListTableProps) {
-  const Icon = icons[icon];
+const columnHelper = createColumnHelper<typeof features, EntityRow>();
+
+export function EntityListTable({ title, rows, columns }: EntityListTableProps) {
   const [query, setQuery] = useState("");
+  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
   const normalizedQuery = query.trim().toLowerCase();
   const filteredRows = useMemo(
     () => rows.filter((row) => !normalizedQuery || columns.some((column) => formatValue(row[column.key], column.format).toLowerCase().includes(normalizedQuery))),
     [columns, normalizedQuery, rows],
   );
+  const tableColumns = useMemo(
+    () => columnHelper.columns(columns.map((column) => columnHelper.accessor((row) => row[column.key], {
+      id: column.key,
+      header: column.label,
+      sortFn: "entity",
+      cell: ({ getValue }) => formatValue(getValue(), column.format),
+    }))),
+    [columns],
+  );
+  const table = useTable({
+    features,
+    columns: tableColumns,
+    data: filteredRows,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getRowId: (row, index) => String(row.id ?? index),
+  });
 
   return (
-    <section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
-      <div className="mx-auto max-w-375">
-        <header className="mb-8 flex flex-col gap-5 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">{section}</p>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-950">{title}</h1>
-          </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
-            <Icon className="h-6 w-6" aria-hidden="true" />
-          </div>
-        </header>
-
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <label className="relative block w-full sm:max-w-sm">
@@ -56,16 +74,22 @@ export function EntityListTable({ title, section, icon, rows, columns }: EntityL
           <div className="overflow-x-auto">
             <table className="w-full min-w-max border-collapse text-left text-sm">
               <thead className="bg-slate-50 border-y border-slate-200 text-xs uppercase tracking-wide text-slate-500">
-                <tr>{columns.map((column) => <th key={column.key} scope="col" className="whitespace-nowrap px-5 py-3 font-semibold">{column.label}</th>)}</tr>
+                {table.getHeaderGroups().map((headerGroup) => <tr key={headerGroup.id}>{headerGroup.headers.map((header) => {
+                  const sorted = header.column.getIsSorted();
+                  return <th key={header.id} scope="col" aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "none"} className="whitespace-nowrap px-5 py-3 font-semibold">
+                    <button type="button" onClick={header.column.getToggleSortingHandler()} className="inline-flex items-center gap-2 rounded focus:outline-none focus:ring-2 focus:ring-teal-600">
+                      <table.FlexRender header={header} />
+                      {sorted === "asc" ? <ArrowUp className="h-3.5 w-3.5" aria-label="Sorted ascending" /> : sorted === "desc" ? <ArrowDown className="h-3.5 w-3.5" aria-label="Sorted descending" /> : <ChevronsUpDown className="h-3.5 w-3.5 text-slate-300" aria-hidden="true" />}
+                    </button>
+                  </th>;
+                })}</tr>)}
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredRows.length === 0 ? <tr><td colSpan={columns.length} className="px-5 py-16 text-center text-sm text-slate-500">No {title.toLowerCase()} match your search.</td></tr> : filteredRows.map((row, index) => <tr key={String(row.id ?? index)} className="transition-colors hover:bg-teal-50/40">{columns.map((column) => <td key={column.key} className="max-w-xs whitespace-nowrap px-5 py-4 text-slate-700">{formatValue(row[column.key], column.format)}</td>)}</tr>)}
+                {table.getRowModel().rows.length === 0 ? <tr><td colSpan={columns.length} className="px-5 py-16 text-center text-sm text-slate-500">No {title.toLowerCase()} match your search.</td></tr> : table.getRowModel().rows.map((row) => <tr key={row.id} className="transition-colors hover:bg-teal-50/40">{row.getAllCells().map((cell) => <td key={cell.id} className="max-w-xs whitespace-nowrap px-5 py-4 text-slate-700"><table.FlexRender cell={cell} /></td>)}</tr>)}
               </tbody>
             </table>
           </div>
         </div>
-      </div>
-    </section>
   );
 }
 
@@ -93,4 +117,13 @@ function formatDate(value: EntityValue) {
 function formatLabel(value: EntityValue) {
   if (value === null) return "-";
   return String(value).replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function compareValues(left: EntityValue, right: EntityValue) {
+  if (left === null) return right === null ? 0 : 1;
+  if (right === null) return -1;
+  if (left instanceof Date && right instanceof Date) return left.getTime() - right.getTime();
+  if (typeof left === "number" && typeof right === "number") return left - right;
+  if (typeof left === "boolean" && typeof right === "boolean") return Number(left) - Number(right);
+  return String(left).localeCompare(String(right));
 }

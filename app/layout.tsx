@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Medical Assistance MS",
-  description: "medical assistance management system for insurance brokers",
+  description: "medical assistance management system for insurance intermediaries",
 };
 
 

@@ -2,7 +2,7 @@
 - workplace accident declaration:
     1. medical record is created:
         + emergency phone call received from victim's company,
-        + caller provides a valid insurance policy or already has one registered,
+        + caller provides a valid insurance policy,
         + initial data about the accident, reporter, victim are recorded,
     2. medical intervention is sent:
         + service providers (ambulances, doctors...) are called and directed to the accident place,
@@ -23,11 +23,11 @@
 - policy verification (TO COMPLETE):
     + ?
 
-- delta files handling:
+- delta files loading:
     + insurance company periodically sends latest client policies spreadsheet,
     + file is uploaded to system, policies are added or their status is updated,
 
-- data report sending:
+- activity report sending:
     + insurance company requests a report by email,
     + report is generated and sent by email,
     
@@ -35,6 +35,9 @@
     + ?
 
 - insurance records delegation (TO COMPLETE):
+    + ?
+
+- billing and refund (TO DISCUSS):
     + ?
 
 
@@ -50,21 +53,6 @@
 - service management:
     + healthcare providers: editable list of medical service providers, row filter,
     + medical services: editable list of medical services, row filter,
-
-
-## TECHNICAL STAKES
-- deployed on-premise,
-- open-source technologies only, free to use and host,
-- data volume is relatively small, few thousands of medical records per year,
-- remaining data are short referencial lists (service providers, insurance providers, ...),
-- archiving of records and documents,
-- delegate heavy work to the server, keep the minimum on users machines,
-- target platform is desktop, accessible from LAN,
-- document printing is essential,
-- concurrency is not a big concern, only few users,
-- data migration from spreadsheets to DB expected,
-- standard authentication with no user types or permissions,
-- for professional users
 
 
 ## DATA STRUCTURE

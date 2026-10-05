@@ -10,7 +10,7 @@ import {
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, ClipboardList, Filter, RotateCcw } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, Filter, RotateCcw } from "lucide-react";
 
 import type { listMedicalRecords } from "@/db/actions/medicalRecords";
 
@@ -68,16 +68,6 @@ export function MedicalRecordsTable({ records }: MedicalRecordsTableProps) {
   const updateFilter = (key: keyof Filters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
 
   return (
-    <section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
-      <div className="mx-auto max-w-375">
-        <header className="mb-8 flex flex-col gap-5 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Assistance</p>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-950">Medical Records</h1>
-          </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-teal-50 text-teal-700"><ClipboardList className="h-6 w-6" aria-hidden="true" /></div>
-        </header>
-
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 px-5 py-5">
             <div className="mb-4 flex items-center justify-between gap-4"><div><h2 className="font-semibold text-slate-900">Record list</h2><p className="mt-1 text-xs text-slate-500">{filteredRecords.length} records shown</p></div><button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"><RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />Reset filters</button></div>
@@ -94,8 +84,6 @@ export function MedicalRecordsTable({ records }: MedicalRecordsTableProps) {
 
           <div className="overflow-x-auto"><table className="w-full min-w-312.5 border-collapse text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">{table.getHeaderGroups().map((headerGroup) => <tr key={headerGroup.id}>{headerGroup.headers.map((header) => { const sorted = header.column.getIsSorted(); return <th key={header.id} scope="col" className="whitespace-nowrap px-5 py-3 font-semibold">{header.isPlaceholder ? null : <button type="button" onClick={header.column.getToggleSortingHandler()} className="inline-flex items-center gap-2 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"><table.FlexRender header={header} />{sorted === "asc" ? <ArrowUp className="h-3.5 w-3.5" aria-label="Sorted ascending" /> : sorted === "desc" ? <ArrowDown className="h-3.5 w-3.5" aria-label="Sorted descending" /> : <ChevronsUpDown className="h-3.5 w-3.5 text-slate-300" aria-label="Not sorted" />}</button>}</th>; })}</tr>)}</thead><tbody className="divide-y divide-slate-100">{table.getRowModel().rows.length === 0 ? <tr><td colSpan={columns.length} className="px-5 py-16 text-center text-sm text-slate-500">No medical records match these filters.</td></tr> : table.getRowModel().rows.map((row) => <tr key={row.id} className="transition-colors hover:bg-teal-50/40">{row.getAllCells().map((cell) => <td key={cell.id} className="whitespace-nowrap px-5 py-4"><table.FlexRender cell={cell} /></td>)}</tr>)}</tbody></table></div>
         </div>
-      </div>
-    </section>
   );
 }
 
