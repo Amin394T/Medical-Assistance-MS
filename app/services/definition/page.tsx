@@ -1,4 +1,4 @@
-import { listServiceTypes } from "@/db/actions/serviceTypes";
+import { createServiceType, deleteServiceType, listServiceTypes, updateServiceType } from "@/db/actions/serviceTypes";
 import { ReferencialDataGrid } from "@/app/_components/referential-data-grid";
 import { PageHeader } from "@/app/_components/page-header";
 import { Activity } from "lucide-react";
@@ -13,9 +13,9 @@ export default async function ServiceTypesPage() {
 			<div className="mx-auto max-w-375">
 				<PageHeader section="Services" title="Medical Services" icon={<Activity className="h-6 w-6" />} />
 				<ReferencialDataGrid title="Medical Services" rows={serviceTypes} columns={[
-		{ key: "label", label: "Label" },
-		{ key: "targetProfile", label: "Target Profile" },
-				]} />
+					{ key: "label", label: "Label", required: true },
+					{ key: "targetProfile", label: "Target Profile", required: true },
+				]} onCreate={createServiceType} onUpdate={updateServiceType} onDelete={deleteServiceType} />
 			</div>
 		</section>
 	);

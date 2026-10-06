@@ -1,9 +1,10 @@
 ## REMINDER
 - reference number should use dash as separator and sequence should have 2 digits only
 - add server side pagination to records list
-- update record reference when date or type change
 - show policy status near policy number and color-code it
 - add input field validation
+- make error messages appear as popup notification
+- disallow deletion for some entities and editing for some fields
 
 
 ## IMPROVEMENTS
