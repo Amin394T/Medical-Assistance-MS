@@ -1,13 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  createColumnHelper,
-  createSortedRowModel,
-  rowSortingFeature,
-  tableFeatures,
-  useTable,
-} from "@tanstack/react-table";
+import { createColumnHelper, createSortedRowModel, rowSortingFeature, tableFeatures, useTable } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ChevronsUpDown, Search } from "lucide-react";
 
 type EntityValue = string | number | boolean | Date | null;
@@ -19,7 +13,7 @@ export type EntityColumn = {
   format?: "date" | "label" | "policyType" | "insuranceProviderType";
 };
 
-type EntityListTableProps = {
+type ReferencialDataGridProps = {
   title: string;
   rows: EntityRow[];
   columns: EntityColumn[];
@@ -35,7 +29,7 @@ const features = tableFeatures({
 
 const columnHelper = createColumnHelper<typeof features, EntityRow>();
 
-export function EntityListTable({ title, rows, columns }: EntityListTableProps) {
+export function ReferencialDataGrid({ title, rows, columns }: ReferencialDataGridProps) {
   const [query, setQuery] = useState("");
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
   const normalizedQuery = query.trim().toLowerCase();
@@ -63,13 +57,13 @@ export function EntityListTable({ title, rows, columns }: EntityListTableProps) 
 
   return (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <label className="relative block w-full sm:max-w-sm">
+          
+            <label className="relative block w-full sm:max-w-sm px-5 py-5">
               <span className="sr-only">Search {title}</span>
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+              <Search className="pointer-events-none absolute left-8 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all fields" className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100" />
             </label>
-          </div>
+          
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-max border-collapse text-left text-sm">
@@ -79,7 +73,7 @@ export function EntityListTable({ title, rows, columns }: EntityListTableProps) 
                   return <th key={header.id} scope="col" aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "none"} className="whitespace-nowrap px-5 py-3 font-semibold">
                     <button type="button" onClick={header.column.getToggleSortingHandler()} className="inline-flex items-center gap-2 rounded focus:outline-none focus:ring-2 focus:ring-teal-600">
                       <table.FlexRender header={header} />
-                      {sorted === "asc" ? <ArrowUp className="h-3.5 w-3.5" aria-label="Sorted ascending" /> : sorted === "desc" ? <ArrowDown className="h-3.5 w-3.5" aria-label="Sorted descending" /> : <ChevronsUpDown className="h-3.5 w-3.5 text-slate-300" aria-hidden="true" />}
+                      {sorted === "asc" ? <ArrowUp className="h-3.5 w-3.5" aria-label="Sorted ascending" /> : sorted === "desc" ? <ArrowDown className="h-3.5 w-3.5" aria-label="Sorted descending" /> : <ChevronsUpDown className="h-3.5 w-3.5 text-slate-300" />}
                     </button>
                   </th>;
                 })}</tr>)}
