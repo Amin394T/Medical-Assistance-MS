@@ -14,7 +14,7 @@ export default async function ServiceTypesPage() {
 				<PageHeader section="Services" title="Medical Services" icon={<Activity className="h-6 w-6" />} />
 				<ReferencialDataGrid title="Medical Services" rows={serviceTypes} columns={[
 		{ key: "label", label: "Label" },
-		{ key: "targetProfile", label: "Target profile" },
+		{ key: "targetProfile", label: "Target Profile" },
 				]} />
 			</div>
 		</section>

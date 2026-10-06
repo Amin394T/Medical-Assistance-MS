@@ -70,23 +70,23 @@ export function MedicalRecordEditForm({ record, policies }: MedicalRecordEditFor
       <Section title="Record data">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <ReadOnly label="Reference" value={record.reference} />
-          <SelectField name="type" label="Record type" defaultValue={record.type} required options={[
+          <SelectField name="type" label="Record Type" defaultValue={record.type} required options={[
             ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VF", "Policy verification"], ["SS", "Special service"], ["PR", "Occupational disease"],
           ]} />
-          <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Insurance policy *</span><select name="policyId" value={policyId} onChange={(event) => setPolicyId(event.target.value)} required className={inputClass}>{policies.map((policy) => <option key={policy.id} value={String(policy.id)}>{policy.policyNumber} · {policy.clientCompany}</option>)}</select></label>
-          <ReadOnly label="Client company" value={selectedPolicy?.clientCompany ?? null} />
-          <ReadOnly label="Insurance company" value={selectedPolicy?.insuranceCompany ?? null} />
+          <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Insurance Policy *</span><select name="policyId" value={policyId} onChange={(event) => setPolicyId(event.target.value)} required className={inputClass}>{policies.map((policy) => <option key={policy.id} value={String(policy.id)}>{policy.policyNumber} · {policy.clientCompany}</option>)}</select></label>
+          <ReadOnly label="Client Company" value={selectedPolicy?.clientCompany ?? null} />
+          <ReadOnly label="Insurance Company" value={selectedPolicy?.insuranceCompany ?? null} />
           <ReadOnly label="Intermediary" value={selectedPolicy?.intermediary ?? null} />
         </div>
       </Section>
 
       <Section title="Report data">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <DateTimeField name="reportingDate" label="Reporting date" value={record.reportingDate} required />
-          <TextField name="reporterFirstName" label="Reporter first name" defaultValue={record.reporterFirstName} required />
-          <TextField name="reporterLastName" label="Reporter last name" defaultValue={record.reporterLastName ?? ""} />
-          <TextField name="reporterPhone" label="Reporter phone" defaultValue={record.reporterPhone} required type="tel" />
-          <SelectField name="accidentPlace" label="Accident place" defaultValue={record.accidentPlace} required options={[
+          <DateTimeField name="reportingDate" label="Reporting Date" value={record.reportingDate} required />
+          <TextField name="reporterFirstName" label="Reporter First Name" defaultValue={record.reporterFirstName} required />
+          <TextField name="reporterLastName" label="Reporter Last Name" defaultValue={record.reporterLastName ?? ""} />
+          <TextField name="reporterPhone" label="Reporter Phone" defaultValue={record.reporterPhone} required type="tel" />
+          <SelectField name="accidentPlace" label="Accident Place" defaultValue={record.accidentPlace} required options={[
             ["WS", "Workshop"], ["RT", "Route"], ["OF", "Office"], ["CS", "Construction"],
           ]} />
         </div>
@@ -94,46 +94,46 @@ export function MedicalRecordEditForm({ record, policies }: MedicalRecordEditFor
 
       <Section title="Victim data">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <DateTimeField name="accidentDate" label="Accident date" value={record.accidentDate} required />
-          <SelectField name="accidentCause" label="Accident cause" defaultValue={record.accidentCause ?? ""} options={[
+          <DateTimeField name="accidentDate" label="Accident Date" value={record.accidentDate} required />
+          <SelectField name="accidentCause" label="Accident Cause" defaultValue={record.accidentCause ?? ""} options={[
             ["", "Not specified"], ["FALL", "Falling or slipping"], ["EQIP", "Machine or equipment"], ["FATG", "Overexertion and fatigue"], ["HAZD", "Hazardous substance"], ["VIOL", "Workplace violence"], ["OBJC", "Moving objects"],
           ]} />
-          <TextField name="victimFirstName" label="Victim first name" defaultValue={record.victimFirstName} required />
-          <TextField name="victimLastName" label="Victim last name" defaultValue={record.victimLastName} required />
-          <TextField name="victimPhone" label="Victim phone" defaultValue={record.victimPhone ?? ""} type="tel" />
-          <TextField name="victimNationalId" label="Victim national ID" defaultValue={record.victimNationalId} required />
-          <TextField name="victimJob" label="Victim job" defaultValue={record.victimJob ?? ""} />
+          <TextField name="victimFirstName" label="Victim First Name" defaultValue={record.victimFirstName} required />
+          <TextField name="victimLastName" label="Victim Last Name" defaultValue={record.victimLastName} required />
+          <TextField name="victimPhone" label="Victim Phone" defaultValue={record.victimPhone ?? ""} type="tel" />
+          <TextField name="victimNationalId" label="Victim National ID" defaultValue={record.victimNationalId} required />
+          <TextField name="victimJob" label="Victim Job" defaultValue={record.victimJob ?? ""} />
         </div>
       </Section>
 
       <Section title="Evolution data">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <SelectField name="accidentEvolution" label="Accident evolution" defaultValue={record.accidentEvolution} required options={[
+          <SelectField name="accidentEvolution" label="Accident Evolution" defaultValue={record.accidentEvolution} required options={[
             ["INIT", "Initial"], ["DELG", "Delegation"], ["RELP", "Relapse"], ["DEAT", "Death"], ["COMP", "Complement"],
           ]} />
-          <DateTimeField name="delegationDate" label="Delegation date" value={record.delegationDate} />
-          <SelectField name="coverageIssued" label="Coverage issued" defaultValue={record.coverageIssued === null ? "" : String(record.coverageIssued)} options={[
+          <DateTimeField name="delegationDate" label="Delegation Date" value={record.delegationDate} />
+          <SelectField name="coverageIssued" label="Coverage Issued" defaultValue={record.coverageIssued === null ? "" : String(record.coverageIssued)} options={[
             ["", "Not specified"], ["true", "Yes"], ["false", "No"],
           ]} />
-          <DateField name="coverageDate" label="Coverage date" value={record.coverageDate} />
+          <DateField name="coverageDate" label="Coverage Date" value={record.coverageDate} />
         </div>
       </Section>
 
       <Section title="Status data">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <SelectField name="status" label="Record status" defaultValue={record.status} required options={[
+          <SelectField name="status" label="Record Status" defaultValue={record.status} required options={[
             ["PROG", "In progress"], ["SETT", "Settled"], ["CLOS", "Closed"], ["ABAN", "Abandoned"], ["BILL", "Billed"],
           ]} />
-          <ReadOnly label="Record fate" value={record.fate} />
-          <ReadOnly label="Fate reason" value={record.fateReason} />
-          <ReadOnly label="Managed by" value={record.managedBy} />
+          <ReadOnly label="Record Fate" value={record.fate} />
+          <ReadOnly label="Fate Reason" value={record.fateReason} />
+          <ReadOnly label="Managed By" value={record.managedBy} />
           <TextField name="observation" label="Observation" defaultValue={record.observation ?? ""} />
         </div>
       </Section>
 
       <div className="flex justify-end border-t border-slate-200 pt-5">
         <button type="submit" disabled={pending} className="rounded-lg bg-teal-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-teal-800 disabled:cursor-wait disabled:bg-slate-400">
-          {pending ? "Saving..." : "Save changes"}
+          {pending ? "Saving..." : "Save Changes"}
         </button>
       </div>
     </form>

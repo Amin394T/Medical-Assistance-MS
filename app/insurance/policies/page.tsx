@@ -13,13 +13,13 @@ export default async function InsurancePoliciesPage() {
 			<div className="mx-auto max-w-375">
 				<PageHeader section="Insurance" title="Client Policies" icon={<ShieldHalf className="h-6 w-6" />} />
 				<ReferencialDataGrid title="Client Policies" rows={policies.map((policy) => ({ ...policy, nominativeList: policy.nominativeList.join(", ") }))} columns={[
-		{ key: "policyNumber", label: "Policy number" },
-		{ key: "clientCompany", label: "Client company" },
-		{ key: "effectiveDate", label: "Effective date", format: "date" },
-		{ key: "insuranceCompany", label: "Insurance company" },
+		{ key: "policyNumber", label: "Policy Number" },
+		{ key: "clientCompany", label: "Client Company" },
+		{ key: "effectiveDate", label: "Effective Date", format: "date" },
+		{ key: "insuranceCompany", label: "Insurance Company" },
 		{ key: "intermediary", label: "Intermediary" },
 		{ key: "terminated", label: "Terminated" },
-		{ key: "terminationDate", label: "Termination date", format: "date" },
+		{ key: "terminationDate", label: "Termination Date", format: "date" },
 		{ key: "type", label: "Type", format: "policyType" },
 				]} />
 			</div>

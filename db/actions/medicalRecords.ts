@@ -12,6 +12,7 @@ export async function listMedicalRecords() {
     .select({
       id: medicalRecords.id,
       reference: medicalRecords.reference,
+      type: medicalRecords.type,
       policy: insurancePolicies.policyNumber,
       clientCompany: insurancePolicies.clientCompany,
       insuranceCompany: insuranceProviders.label,

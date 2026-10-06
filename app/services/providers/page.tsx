@@ -15,9 +15,9 @@ export default async function ServiceProvidersPage() {
 				<PageHeader section="Services" title="Healthcare Providers" icon={<Ambulance />} />
 				<ReferencialDataGrid title="Healthcare Providers" rows={providers} columns={[
 					{ key: "label", label: "Label" },
-					{ key: "corporateName", label: "Corporate name" },
+					{ key: "corporateName", label: "Corporate Name" },
 					{ key: "profile", label: "Profile", format: "label" },
-					{ key: "contactName", label: "Contact name" },
+					{ key: "contactName", label: "Contact Name" },
 					{ key: "phone", label: "Phone" },
 					{ key: "email", label: "Email" },
 				]} />

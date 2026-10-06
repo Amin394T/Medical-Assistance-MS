@@ -14,7 +14,7 @@ export default async function InsuranceProvidersPage() {
 				<PageHeader section="Insurance" title="Insurance Providers" icon={<Building2 className="h-6 w-6" />} />
 				<ReferencialDataGrid title="Insurance Providers" rows={providers} columns={[
 		{ key: "label", label: "Label" },
-		{ key: "corporateName", label: "Corporate name" },
+		{ key: "corporateName", label: "Corporate Name" },
 		{ key: "corporateId", label: "Corporate ID" },
 		{ key: "type", label: "Type", format: "insuranceProviderType" },
 		{ key: "phone", label: "Phone" },

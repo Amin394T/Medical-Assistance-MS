@@ -120,46 +120,46 @@ export function MedicalRecordCallForm({ policies, displayReportingDate }: Medica
             void form.handleSubmit();
           }}
         >
-          <FormSection eyebrow="01 / Record data" title="Record data">
+          <FormSection eyebrow="01 / Record Data" title="Record Data">
             <div className="grid gap-5 md:grid-cols-2">
-              <form.Field name="type" children={(field) => <SelectField field={field as unknown as RenderableField} label="Record type" required options={[{ value: "AT", label: "Workplace accident" }, { value: "MD", label: "Illness & pain" }, { value: "VF", label: "Policy verification" }, { value: "SS", label: "Special service" }, { value: "PR", label: "Occupational disease" }]} />} />
+              <form.Field name="type" children={(field) => <SelectField field={field as unknown as RenderableField} label="Type" required options={[{ value: "AT", label: "Workplace accident" }, { value: "MD", label: "Illness & pain" }, { value: "VF", label: "Policy verification" }, { value: "SS", label: "Special service" }, { value: "PR", label: "Occupational disease" }]} />} />
               <form.Field key={createdReference} name="policyId" children={(field) => <PolicyPicker field={field as unknown as RenderableField} policies={policies} />} />
               <form.Subscribe selector={(state) => state.values.policyId} children={(policyId) => {
                 const selectedPolicy = getSelectedPolicy(policyId, policies);
                 return <>
-                  <ReadOnlyField label="Client company" value={selectedPolicy?.clientCompanyLabel ?? "Select an insurance policy"} />
-                  <ReadOnlyField label="Insurance company" value={selectedPolicy?.insuranceCompanyLabel ?? "Select an insurance policy"} />
+                  <ReadOnlyField label="Client Company" value={selectedPolicy?.clientCompanyLabel ?? "Select an insurance policy"} />
+                  <ReadOnlyField label="Insurance Company" value={selectedPolicy?.insuranceCompanyLabel ?? "Select an insurance policy"} />
                   <ReadOnlyField label="Intermediary" value={selectedPolicy?.intermediaryLabel ?? "-"} />
                 </>;
               }} />
             </div>
           </FormSection>
 
-          <FormSection eyebrow="02 / Report data" title="Report data">
+          <FormSection eyebrow="02 / Report Data" title="Report Data">
             <div className="grid gap-5 md:grid-cols-3">
-              <ReadOnlyField label="Reporting date" value={formatDateTime(displayReportingDate)} />
-              <Field form={form as unknown as FormRenderer} name="reporterFirstName" label="First name" required />
-              <Field form={form as unknown as FormRenderer} name="reporterLastName" label="Last name" />
+              <ReadOnlyField label="Reporting Date" value={formatDateTime(displayReportingDate)} />
+              <Field form={form as unknown as FormRenderer} name="reporterFirstName" label="First Name" required />
+              <Field form={form as unknown as FormRenderer} name="reporterLastName" label="Last Name" />
               <Field form={form as unknown as FormRenderer} name="reporterPhone" label="Phone" required type="tel" />
-              <Field form={form as unknown as FormRenderer} name="managedBy" label="Managed by" required />
-              <form.Field name="accidentPlace" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident place" required options={[{ value: "WS", label: "Workshop" }, { value: "RT", label: "Route" }, { value: "OF", label: "Office" }, { value: "CS", label: "Construction" }]} />} />
-              <Field form={form as unknown as FormRenderer} name="accidentDate" label="Accident date" required type="datetime-local" />
+              <Field form={form as unknown as FormRenderer} name="managedBy" label="Managed By" required />
+              <form.Field name="accidentPlace" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Place" required options={[{ value: "WS", label: "Workshop" }, { value: "RT", label: "Route" }, { value: "OF", label: "Office" }, { value: "CS", label: "Construction" }]} />} />
+              <Field form={form as unknown as FormRenderer} name="accidentDate" label="Accident Date" required type="datetime-local" />
             </div>
           </FormSection>
 
-          <FormSection eyebrow="03 / Victim data" title="Victim data">
+          <FormSection eyebrow="03 / Victim Data" title="Victim Data">
             <div className="grid gap-5 md:grid-cols-2">
-              <Field form={form as unknown as FormRenderer} name="victimFirstName" label="First name" required />
-              <Field form={form as unknown as FormRenderer} name="victimLastName" label="Last name" required />
+              <Field form={form as unknown as FormRenderer} name="victimFirstName" label="First Name" required />
+              <Field form={form as unknown as FormRenderer} name="victimLastName" label="Last Name" required />
               <Field form={form as unknown as FormRenderer} name="victimNationalId" label="National ID" required />
               <Field form={form as unknown as FormRenderer} name="victimPhone" label="Phone" type="tel" />
               <Field form={form as unknown as FormRenderer} name="victimJob" label="Job" />
-              <form.Field name="accidentCause" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident cause" options={[{ value: "FALL", label: "Falling or slipping" }, { value: "EQIP", label: "Machine or equipment" }, { value: "FATG", label: "Overexertion and fatigue" }, { value: "HAZD", label: "Hazardous substance" }, { value: "VIOL", label: "Workplace violence" }, { value: "OBJC", label: "Moving objects" }]} placeholder="Select a cause" />} />
+              <form.Field name="accidentCause" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Cause" options={[{ value: "FALL", label: "Falling or slipping" }, { value: "EQIP", label: "Machine or equipment" }, { value: "FATG", label: "Overexertion and fatigue" }, { value: "HAZD", label: "Hazardous substance" }, { value: "VIOL", label: "Workplace violence" }, { value: "OBJC", label: "Moving objects" }]} placeholder="Select a cause" />} />
             </div>
           </FormSection>
 
           <div className="flex justify-end border-t border-slate-200 pt-6">
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]} children={([canSubmit, isSubmitting]) => <button type="submit" disabled={!canSubmit || isSubmitting} className="rounded-lg bg-teal-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300">{isSubmitting ? "Creating record..." : "Create medical record"}</button>} />
+            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]} children={([canSubmit, isSubmitting]) => <button type="submit" disabled={!canSubmit || isSubmitting} className="rounded-lg bg-teal-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300">{isSubmitting ? "Creating Record..." : "Create Medical Record"}</button>} />
           </div>
         </form>
     </>
@@ -179,7 +179,7 @@ function PolicyPicker({ field, policies }: { field: RenderableField; policies: P
   const [query, setQuery] = useState(selectedPolicy ? `${selectedPolicy.policyNumber} ${selectedPolicy.clientCompanyLabel}` : "");
   const matches = policies.filter((policy) => `${policy.policyNumber} ${policy.clientCompanyLabel}`.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8);
 
-  return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Insurance policy / client<span className="ml-1 text-teal-700">*</span></span><input value={query} onBlur={field.handleBlur} onChange={(event) => { setQuery(event.target.value); field.handleChange(""); }} className={inputClass} placeholder="Search policy number or client" role="combobox" aria-expanded={Boolean(query.trim())} aria-controls="policy-picker-options" aria-autocomplete="list" />{query.trim() ? <div id="policy-picker-options" role="listbox" className="mt-1 max-h-56 overflow-y-auto border border-slate-200 bg-white shadow-lg">{matches.length ? matches.map((policy) => <button key={policy.id} type="button" role="option" aria-selected={String(policy.id) === String(field.state.value)} onMouseDown={(event) => event.preventDefault()} onClick={() => { field.handleChange(String(policy.id)); setQuery(`${policy.policyNumber} ${policy.clientCompanyLabel}`); }} className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm hover:bg-teal-50"><span className="block font-semibold text-slate-900">{policy.policyNumber}</span><span className="block text-xs text-slate-500">{policy.clientCompanyLabel}{policy.terminated ? " · Terminated" : ""}</span></button>) : <p className="px-3 py-2 text-sm text-slate-500">No matching policies.</p>}</div> : null}{field.state.meta.errors[0] ? <span className="mt-1 block text-xs text-rose-600">{String(field.state.meta.errors[0])}</span> : null}</label>;
+  return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Insurance Policy<span className="ml-1 text-teal-700">*</span></span><input value={query} onBlur={field.handleBlur} onChange={(event) => { setQuery(event.target.value); field.handleChange(""); }} className={inputClass} placeholder="Search policy number or client" role="combobox" aria-expanded={Boolean(query.trim())} aria-controls="policy-picker-options" aria-autocomplete="list" />{query.trim() ? <div id="policy-picker-options" role="listbox" className="mt-1 max-h-56 overflow-y-auto border border-slate-200 bg-white shadow-lg">{matches.length ? matches.map((policy) => <button key={policy.id} type="button" role="option" aria-selected={String(policy.id) === String(field.state.value)} onMouseDown={(event) => event.preventDefault()} onClick={() => { field.handleChange(String(policy.id)); setQuery(`${policy.policyNumber} ${policy.clientCompanyLabel}`); }} className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm hover:bg-teal-50"><span className="block font-semibold text-slate-900">{policy.policyNumber}</span><span className="block text-xs text-slate-500">{policy.clientCompanyLabel}{policy.terminated ? " · Terminated" : ""}</span></button>) : <p className="px-3 py-2 text-sm text-slate-500">No matching policies.</p>}</div> : null}{field.state.meta.errors[0] ? <span className="mt-1 block text-xs text-rose-600">{String(field.state.meta.errors[0])}</span> : null}</label>;
 }
 
 function getSelectedPolicy(policyId: string, policies: PolicyOption[]) {
