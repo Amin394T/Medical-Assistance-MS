@@ -10,7 +10,7 @@ import {
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, Filter, RotateCcw } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, RotateCcw } from "lucide-react";
 
 import type { listMedicalRecords } from "@/db/actions/medicalRecords";
 
@@ -76,7 +76,7 @@ export function MedicalRecordsTable({ records }: MedicalRecordsTableProps) {
               <FilterInput label="Victim full name" value={filters.victimName} onChange={(value) => updateFilter("victimName", value)} />
               <label className="block"><span className="mb-1 block text-[11px] font-semibold text-slate-500">Record status</span><select value={filters.recordStatus} onChange={(event) => updateFilter("recordStatus", event.target.value)} className={filterClass}><option value="">All statuses</option>{["In Progress", "Settled", "Closed", "Abandoned", "Billed"].map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
               <DateRange label="Accident date" from={filters.accidentFrom} to={filters.accidentTo} onFromChange={(value) => updateFilter("accidentFrom", value)} onToChange={(value) => updateFilter("accidentTo", value)} />
-              <div className="mt-5 flex justify-end"><button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"><RotateCcw className="h-3.5 w-3.5"/>Reset filters</button></div>
+              <div className="mt-5 flex justify-end"><button type="button" onClick={() => { setFilters(EMPTY_FILTERS); setSorting([{ id: "accidentDate", desc: true }]); }} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"><RotateCcw className="h-3.5 w-3.5"/>Reset filters</button></div>
             </div>
 
           <div className="overflow-x-auto">

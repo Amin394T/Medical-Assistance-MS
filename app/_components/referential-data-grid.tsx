@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { createColumnHelper, createSortedRowModel, rowSortingFeature, tableFeatures, useTable } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, RotateCcw, Search } from "lucide-react";
 
 type EntityValue = string | number | boolean | Date | null;
 type EntityRow = Record<string, EntityValue>;
@@ -57,13 +57,14 @@ export function ReferencialDataGrid({ title, rows, columns }: ReferencialDataGri
 
   return (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          
-            <label className="relative block w-full sm:max-w-sm px-5 py-5">
-              <span className="sr-only">Search {title}</span>
-              <Search className="pointer-events-none absolute left-8 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all fields" className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100" />
-            </label>
-          
+            <div className="flex items-center justify-between gap-4 px-5 py-5">
+              <label className="relative block w-full sm:max-w-sm">
+                <span className="sr-only">Search {title}</span>
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all fields" className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100" />
+              </label>
+              <button type="button" onClick={() => { setQuery(""); setSorting([]); }} className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"><RotateCcw className="h-3.5 w-3.5" />Reset Grid</button>
+            </div>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-max border-collapse text-left text-sm">
