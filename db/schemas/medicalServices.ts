@@ -14,5 +14,6 @@ export const medicalServices = sqliteTable("medical_services", {
   observation: text("observation"),
 });
 
-export type MedicalService = typeof medicalServices.$inferSelect;
-export type NewMedicalService = typeof medicalServices.$inferInsert;
+export type MedicalService = Omit<typeof medicalServices.$inferSelect, "medicalRecordId">;
+export type NewMedicalService = Omit<typeof medicalServices.$inferInsert, "medicalRecordId">;
+  

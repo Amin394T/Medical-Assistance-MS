@@ -12,5 +12,5 @@ export const medicalDocuments = sqliteTable("medical_documents", {
   signed: integer("signed", { mode: "boolean" }).default(false),
 });
 
-export type MedicalDocument = typeof medicalDocuments.$inferSelect;
-export type NewMedicalDocument = typeof medicalDocuments.$inferInsert;
+export type MedicalDocument = Omit<typeof medicalDocuments.$inferSelect, "medicalRecordId">;
+export type NewMedicalDocument = Omit<typeof medicalDocuments.$inferInsert, "medicalRecordId">;

@@ -22,11 +22,11 @@ export type EntityColumn = {
   nullable?: boolean;
 };
 
-type ReferencialDataGridProps<Row extends EntityRow> = {
+type ReferencialDataGridProps<Row extends EntityRow, CreateValues extends object> = {
   title: string;
   rows: Row[];
   columns: EntityColumn[];
-  onCreate: (values: Omit<Row, "id">) => Promise<unknown>;
+  onCreate: (values: CreateValues) => Promise<unknown>;
   onUpdate: (id: number, values: Row) => Promise<unknown>;
   onDelete: (id: number) => Promise<unknown>;
 };
@@ -41,7 +41,7 @@ const features = tableFeatures({
 
 const columnHelper = createColumnHelper<typeof features, EntityRow>();
 
-export function ReferencialDataGrid<Row extends EntityRow>({ title, rows, columns, onCreate, onUpdate, onDelete }: ReferencialDataGridProps<Row>) {
+export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends object = Omit<Row, "id">>({ title, rows, columns, onCreate, onUpdate, onDelete }: ReferencialDataGridProps<Row, CreateValues>) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
@@ -80,7 +80,7 @@ export function ReferencialDataGrid<Row extends EntityRow>({ title, rows, column
     setErrors((current) => ({ ...current, [key]: "" }));
     try {
       validateDraft(newDraft, columns);
-      const result = await onCreate(parseDraft(newDraft, columns) as Omit<Row, "id">);
+      const result = await onCreate(parseDraft(newDraft, columns) as CreateValues);
       if (result == null) throw new Error("The new row could not be created.");
       setNewDraft(null);
       router.refresh();

@@ -26,10 +26,10 @@ export async function listDocumentTypes() {
   return rows.map(({ type }) => type);
 }
 
-export async function createMedicalDocument(input: NewMedicalDocument) {
+export async function createMedicalDocument(recordId: number, input: NewMedicalDocument) {
   const [record] = await db
     .insert(medicalDocuments)
-    .values(input)
+    .values({ ...input, medicalRecordId: recordId })
     .returning();
   return record;
 }

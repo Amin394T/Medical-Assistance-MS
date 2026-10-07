@@ -21,11 +21,11 @@ export async function listRecordMedicalServices(recordId: number) {
   }));
 }
 
-export async function createMedicalService(input: NewMedicalService) {
+export async function createMedicalService(recordId: number, input: NewMedicalService) {
   await validateService(input.serviceProviderId, input.serviceTypeId);
   const [record] = await db
     .insert(medicalServices)
-    .values(input)
+    .values({ ...input, medicalRecordId: recordId })
     .returning();
   return record;
 }
