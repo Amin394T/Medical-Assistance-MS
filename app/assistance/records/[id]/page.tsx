@@ -10,11 +10,11 @@ import { PageHeader } from "@/app/_components/page-header";
 export const dynamic = "force-dynamic";
 
 export default async function MedicalRecordDetailsPage({
-	searchParams,
+	params,
 }: {
-	searchParams: Promise<{ id?: string }>;
+	params: Promise<{ id: string }>;
 }) {
-	const { id } = await searchParams;
+	const { id } = await params;
 	const recordId = Number(id);
 	if (!Number.isInteger(recordId) || recordId < 1) return <Message message="Record not found." />;
 
@@ -24,19 +24,33 @@ export default async function MedicalRecordDetailsPage({
 		listRecordMedicalDocuments(recordId),
 		listInsurancePolicies(),
 	]);
-	if (!record) return <Message message="Record not found." />;
+	if (!record) return <Message message="Record Not Found." />;
+
+	const reference = `${record.type}-${String(record.reference).slice(0, -2)}-${String(record.reference).slice(-2)}`;
 
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
 			<div className="mx-auto max-w-6xl">
-				<PageHeader section="Medical record" title={`${record.type}-${record.reference}`} icon={<ClipboardPen />} />
+				<PageHeader section="Medical record" title={reference} icon={<ClipboardPen />} />
 
 				<MedicalRecordEditForm
 					record={record}
 					policies={policies.map(({ id, policyNumber, clientCompany, insuranceCompany, intermediary }) => ({ id, policyNumber, clientCompany, insuranceCompany, intermediary }))}
 				/>
 				<Section title="Medical services">
-					{services.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{["Service Type", "Provider", "Mission Date", "Mission Place", "Observation"].map((label) => <th key={label} className="border-b border-slate-200 px-3 py-2 font-semibold text-slate-600">{label}</th>)}</tr></thead><tbody>{services.map((service) => <tr key={service.id}><td className="px-3 py-3">{service.serviceType}</td><td className="px-3 py-3">{service.serviceProvider}</td><td className="px-3 py-3">{dateTime(service.missionDate)}</td><td className="px-3 py-3">{service.missionPlace ?? "-"}</td><td className="px-3 py-3">{service.observation ?? "-"}</td></tr>)}</tbody></table></div> : <p className="text-sm text-slate-500">No services recorded.</p>}
+					{services.length ? <div className="overflow-x-auto">
+						<table className="w-full text-left text-sm">
+							<thead>
+								<tr>{["Service Type", "Provider", "Mission Date", "Mission Place", "Observation"].map((label) => <th key={label} className="border-b border-slate-200 px-3 py-2 font-semibold text-slate-600">{label}</th>)}</tr>
+							</thead>
+							<tbody>{services.map((service) => <tr key={service.id}>
+								<td className="px-3 py-3">{service.serviceType}</td><td className="px-3 py-3">{service.serviceProvider}</td>
+								<td className="px-3 py-3">{dateTime(service.missionDate)}</td>
+								<td className="px-3 py-3">{service.missionPlace ?? "-"}</td>
+								<td className="px-3 py-3">{service.observation ?? "-"}</td>
+							</tr>)}</tbody>
+						</table>
+					</div> : <p className="text-sm text-slate-500">No services recorded.</p>}
 				</Section>
 				<Section title="Medical documents">
 					{documents.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{["Type", "Service Provider", "Signed", "Observation"].map((label) => <th key={label} className="border-b border-slate-200 px-3 py-2 font-semibold text-slate-600">{label}</th>)}</tr></thead><tbody>{documents.map((document) => <tr key={document.id}><td className="px-3 py-3">{document.type}</td><td className="px-3 py-3">{document.serviceProvider}</td><td className="px-3 py-3">{document.signed ? "Yes" : "No"}</td><td className="px-3 py-3">{document.observation ?? "-"}</td></tr>)}</tbody></table></div> : <p className="text-sm text-slate-500">No documents recorded.</p>}

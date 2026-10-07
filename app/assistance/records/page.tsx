@@ -1,7 +1,8 @@
+import { ClipboardList } from "lucide-react";
+
 import { listMedicalRecords } from "@/db/actions/medicalRecords";
 import { MedicalRecordsTable } from "@/app/_components/medical-records-table";
 import { PageHeader } from "@/app/_components/page-header";
-import { ClipboardList } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 

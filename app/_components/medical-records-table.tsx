@@ -28,7 +28,7 @@ const features = tableFeatures({
 const columnHelper = createColumnHelper<typeof features, MedicalRecordListItem>();
 
 const columns = columnHelper.columns([
-  columnHelper.accessor("reference", { header: "Reference", cell: ({ row, getValue }) => <Link href={`/assistance/records/details?id=${row.original.id}`} className="font-semibold text-teal-800 hover:underline">{row.original.type}-{formatReference(getValue())}</Link> }),
+  columnHelper.accessor("reference", { header: "Reference", cell: ({ row, getValue }) => <Link href={`/assistance/records/${row.original.id}`} className="font-semibold text-teal-800 hover:underline">{row.original.type}-{formatReference(getValue())}</Link> }),
   columnHelper.accessor("policy", { header: "Policy Number" }),
   columnHelper.accessor("clientCompany", { header: "Client Company" }),
   columnHelper.accessor("insuranceCompany", { header: "Insurance Company" }),
@@ -106,7 +106,7 @@ function FilterInput({ label, value, onChange }: { label: string; value: string;
 function DateRange({ label, from, to, onFromChange, onToChange }: { label: string; from: string; to: string; onFromChange: (value: string) => void; onToChange: (value: string) => void }) { return <div className="sm:col-span-2"><span className="mb-1 block text-[11px] font-semibold text-slate-500">{label} Range</span><div className="grid grid-cols-2 gap-2"><input type="date" value={from} onChange={(event) => onFromChange(event.target.value)} className={filterClass} /><input type="date" value={to} onChange={(event) => onToChange(event.target.value)} className={filterClass} /></div></div>; }
 
 function formatDateTime(value: Date) { return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(value).replace(",", ""); }
-function formatReference(value: number) { return String(value); }
+function formatReference(value: number) { return String(value).slice(0, -2) + "-" + String(value).slice(-2); }
 
 function StatusBadge({ value }: { value: string }) {
   const colors: Record<string, string> = { "In Progress": "bg-amber-50 text-amber-700 ring-amber-600/20", Settled: "bg-emerald-50 text-emerald-700 ring-emerald-600/20", Closed: "bg-slate-100 text-slate-700 ring-slate-500/20", Abandoned: "bg-rose-50 text-rose-700 ring-rose-600/20", Billed: "bg-sky-50 text-sky-700 ring-sky-600/20" };
