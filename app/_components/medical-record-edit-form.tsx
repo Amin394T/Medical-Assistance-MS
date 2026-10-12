@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 import { updateMedicalRecord } from "@/db/actions/medicalRecords";
 import type { getMedicalRecord } from "@/db/actions/medicalRecords";
 import type { SetMedicalRecord } from "@/db/schemas";
 
 type MedicalRecordDetails = NonNullable<Awaited<ReturnType<typeof getMedicalRecord>>>;
-type PolicyOption = { id: number; policyNumber: string; clientCompany: string; insuranceCompany: string; intermediary: string | null };
+type PolicyOption = { id: number; policyNumber: string; clientCompany: string; insuranceCompany: string; intermediary: string | null; terminated: boolean };
 
 type MedicalRecordEditFormProps = {
   record: MedicalRecordDetails;
@@ -19,17 +20,20 @@ type MedicalRecordEditFormProps = {
 export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordEditFormProps) {
   const router = useRouter();
   const [policyId, setPolicyId] = useState(String(record.policyId));
+  const [policyQuery, setPolicyQuery] = useState(policies.find((policy) => policy.id === record.policyId)?.policyNumber ?? "");
+  const [isPolicyListOpen, setIsPolicyListOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState<{ tone: "error" | "success"; text: string } | null>(null);
   const selectedPolicy = policies.find((policy) => String(policy.id) === policyId);
 
   return (
-    <form className="space-y-5" onSubmit={async (event) => {
+    <form className="mb-6 space-y-6" onSubmit={async (event) => {
       event.preventDefault();
       setPending(true);
       setNotice(null);
       const data = new FormData(event.currentTarget);
       try {
+        if (!policyId) throw new Error("Select an insurance policy.");
         const parseDate = (name: string) => {
           const value = String(data.get(name) ?? "");
           return value ? new Date(value) : null;
@@ -69,17 +73,16 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
     }}>
       {notice ? <Notice tone={notice.tone}>{notice.text}</Notice> : null}
 
-      <Section title="Client data">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <ReadOnly label="Reference" value={formatReference(record.reference)} />
-          <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Insurance Policy *</span><select name="policyId" value={policyId} onChange={(event) => setPolicyId(event.target.value)} required className={inputClass}>{policies.map((policy) => <option key={policy.id} value={String(policy.id)}>{policy.policyNumber} · {policy.clientCompany}</option>)}</select></label>
+      <Section title="01 / Client Data">
+        <div className="grid gap-5 md:grid-cols-2">
+          <label className="relative block"><span className="mb-2 block text-sm font-semibold text-slate-700">Insurance Policy<span className="ml-1 text-teal-700">*</span></span><input value={policyQuery} onFocus={() => setIsPolicyListOpen(true)} onClick={() => setIsPolicyListOpen(true)} onChange={(event) => { setPolicyQuery(event.target.value); setPolicyId(""); setIsPolicyListOpen(true); }} className={inputClass} placeholder="Search policy number or client" role="combobox" aria-expanded={isPolicyListOpen} aria-controls="edit-policy-picker-options" aria-autocomplete="list" /><input type="hidden" name="policyId" value={policyId} />{isPolicyListOpen ? <div id="edit-policy-picker-options" role="listbox" className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto border border-slate-200 bg-white shadow-lg">{policies.filter((policy) => `${policy.policyNumber} ${policy.clientCompany}`.toLowerCase().includes(policyQuery.trim().toLowerCase())).slice(0, 8).map((policy) => <button key={policy.id} type="button" role="option" aria-selected={String(policy.id) === policyId} onMouseDown={(event) => event.preventDefault()} onClick={() => { setPolicyId(String(policy.id)); setPolicyQuery(policy.policyNumber); setIsPolicyListOpen(false); }} className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm hover:bg-teal-50"><span className="block font-semibold text-slate-900">{policy.policyNumber}</span><span className="block text-xs text-slate-500">{policy.clientCompany}{policy.terminated ? " · Terminated" : ""}</span></button>)}</div> : null}</label>
           <ReadOnly label="Client Company" value={selectedPolicy?.clientCompany ?? null} />
           <ReadOnly label="Insurance Provider" value={formatInsuranceProvider(selectedPolicy?.insuranceCompany, selectedPolicy?.intermediary)} />
         </div>
       </Section>
 
-      <Section title="Reporter data">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <Section title="02 / Reporter Data">
+        <div className="grid gap-5 md:grid-cols-2">
           <DateTimeField name="reportingDate" label="Reporting Date" value={record.reportingDate} required />
           <TextField name="reporterFirstName" label="Reporter First Name" defaultValue={record.reporterFirstName} required />
           <TextField name="reporterLastName" label="Reporter Last Name" defaultValue={record.reporterLastName ?? ""} />
@@ -87,8 +90,8 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
         </div>
       </Section>
 
-      <Section title="Accident data">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <Section title="03 / Accident Data">
+        <div className="grid gap-5 md:grid-cols-2">
           <DateTimeField name="accidentDate" label="Accident Date" value={record.accidentDate} required />
           <SelectField name="type" label="Accident Type" defaultValue={record.type} required options={[
             ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VF", "Policy verification"], ["SS", "Special service"], ["PR", "Occupational disease"],
@@ -102,8 +105,8 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
         </div>
       </Section>
 
-      <Section title="Victim data">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <Section title="04 / Victim Data">
+        <div className="grid gap-5 md:grid-cols-2">
           <TextField name="victimFirstName" label="Victim First Name" defaultValue={record.victimFirstName} required />
           <TextField name="victimLastName" label="Victim Last Name" defaultValue={record.victimLastName} required />
           <TextField name="victimPhone" label="Victim Phone" defaultValue={record.victimPhone ?? ""} type="tel" />
@@ -112,16 +115,16 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
         </div>
       </Section>
 
-      <Section title="Status data">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <Section title="05 / Status Data">
+        <div className="grid gap-5 md:grid-cols-2">
           <SelectField name="status" label="Record Status" defaultValue={record.status} required options={[
             ["PROG", "In progress"], ["SETT", "Settled"], ["CLOS", "Closed"], ["ABAN", "Abandoned"], ["BILL", "Billed"],
           ]} />
-          <ReadOnly label="Record Fate" value={record.fate} />
-          <ReadOnly label="Fate Reason" value={record.fateReason} />
           <SelectField name="evolution" label="Evolution" defaultValue={record.evolution} required options={[
             ["INIT", "Initial"], ["RELP", "Relapse"], ["DEAT", "Death"], ["COMP", "Complement"],
           ]} />
+          <ReadOnly label="Record Fate" value={record.fate} />
+          <ReadOnly label="Fate Reason" value={record.fateReason} />
           <CheckboxField name="delegation" label="Delegation" checked={record.delegation ?? false} />
           <DateTimeField name="delegationDate" label="Delegation Date" value={record.delegationDate} />
           <CheckboxField name="coverage" label="Coverage" checked={record.coverage ?? false} />
@@ -129,8 +132,8 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
         </div>
       </Section>
 
-      <Section title="Audit data">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <Section title="06 / Audit Data">
+        <div className="grid gap-5 md:grid-cols-2">
           <ReadOnly label="Managed By" value={record.managedBy} />
           <TextField name="observation" label="Observation" defaultValue={record.observation ?? ""} />
           <ReadOnly label="Created At" value={formatDateTime(record.createdAt)} />
@@ -138,8 +141,8 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
         </div>
       </Section>
 
-      <div className="flex justify-end border-t border-slate-200 pt-5">
-        <button type="submit" disabled={pending} className="rounded-lg bg-teal-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-teal-800 disabled:cursor-wait disabled:bg-slate-400">
+      <div className="flex justify-end border-t border-slate-200 pt-6 mb-12">
+        <button type="submit" disabled={pending} className="rounded-lg bg-teal-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300">
           {pending ? "Saving..." : "Save Changes"}
         </button>
       </div>
@@ -148,16 +151,16 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return <section className="border-y border-slate-200 bg-white px-5 py-5"><h2 className="mb-4 text-base font-bold text-slate-900">{title}</h2>{children}</section>;
+  return <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><div className="mb-6 border-b border-slate-100 pb-4"><h2 className="text-lg font-bold text-teal-800">{title}</h2></div>{children}</section>;
 }
 
 function TextField({ name, label, defaultValue, required, type = "text", options }: { name: string; label: string; defaultValue: string; required?: boolean; type?: string; options?: string[] }) {
   const listId = options?.length ? `${name}-options` : undefined;
-  return <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}{required ? " *" : ""}</span><input name={name} type={type} list={listId} defaultValue={defaultValue} required={required} className={inputClass} />{listId ? <datalist id={listId}>{options?.map((option) => <option key={option} value={option} />)}</datalist> : null}</label>;
+  return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">{label}{required ? <span className="ml-1 text-teal-700">*</span> : null}</span><input name={name} type={type} list={listId} defaultValue={defaultValue} required={required} className={inputClass} />{listId ? <datalist id={listId}>{options?.map((option) => <option key={option} value={option} />)}</datalist> : null}</label>;
 }
 
 function SelectField({ name, label, defaultValue, options, required }: { name: string; label: string; defaultValue: string; options: [string, string][]; required?: boolean }) {
-  return <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}{required ? " *" : ""}</span><select name={name} defaultValue={defaultValue} required={required} className={inputClass}>{options.map(([value, text]) => <option key={value || "empty"} value={value}>{text}</option>)}</select></label>;
+  return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">{label}{required ? <span className="ml-1 text-teal-700">*</span> : null}</span><select name={name} defaultValue={defaultValue} required={required} className={inputClass}>{options.map(([value, text]) => <option key={value || "empty"} value={value}>{text}</option>)}</select></label>;
 }
 
 function DateTimeField({ name, label, value, required }: { name: string; label: string; value: Date | null; required?: boolean }) {
@@ -169,11 +172,11 @@ function DateField({ name, label, value }: { name: string; label: string; value:
 }
 
 function CheckboxField({ name, label, checked }: { name: string; label: string; checked: boolean }) {
-  return <label className="flex min-h-10 items-center gap-2 text-sm font-semibold text-slate-700"><input name={name} type="checkbox" defaultChecked={checked} className="h-4 w-4 accent-teal-700" />{label}</label>;
+  return <label className="flex min-h-11 items-center gap-2 text-sm font-semibold text-slate-700"><input name={name} type="checkbox" defaultChecked={checked} className="h-4 w-4 accent-teal-700" />{label}</label>;
 }
 
 function ReadOnly({ label, value }: { label: string; value: string | number | null }) {
-  return <div><span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}</span><div className="flex min-h-10 items-center rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-700">{value ?? "-"}</div></div>;
+  return <div><span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span><div className="flex h-11 items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-600">{value ?? "-"}</div></div>;
 }
 
 function formatInsuranceProvider(insuranceCompany: string | undefined, intermediary: string | null | undefined) {
@@ -181,17 +184,13 @@ function formatInsuranceProvider(insuranceCompany: string | undefined, intermedi
   return intermediary ? `${insuranceCompany} (${intermediary})` : insuranceCompany;
 }
 
-function formatReference(reference: number) {
-  const value = String(reference);
-  return `${value.slice(0, -2)}-${value.slice(-2)}`;
-}
-
 function formatDateTime(value: Date) {
   return new Intl.DateTimeFormat("en-GB", { dateStyle: "short", timeStyle: "medium" }).format(value);
 }
 
 function Notice({ tone, children }: { tone: "error" | "success"; children: React.ReactNode }) {
-  return <p role="status" className={`border-l-4 px-4 py-3 text-sm font-medium ${tone === "error" ? "border-rose-600 bg-rose-50 text-rose-800" : "border-emerald-600 bg-emerald-50 text-emerald-800"}`}>{children}</p>;
+  const Icon = tone === "success" ? CheckCircle2 : AlertCircle;
+  return <div role="status" className={`mb-6 flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold ${tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-rose-200 bg-rose-50 text-rose-800"}`}><Icon className="h-5 w-5" /><span>{children}</span></div>;
 }
 
 function toLocalDateTime(value: Date) {
@@ -202,4 +201,4 @@ function toLocalDate(value: Date) {
   return toLocalDateTime(value).slice(0, 10);
 }
 
-const inputClass = "h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100";
+const inputClass = "h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:bg-white focus:ring-2 focus:ring-teal-100";

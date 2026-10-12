@@ -5,6 +5,7 @@
 - make error messages appear as popup notification
 - disallow deletion for policies and insurance providers
 - disable editing for read-only fields
+    + merrecord details: policy
 
 
 ## IMPROVEMENTS

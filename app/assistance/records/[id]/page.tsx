@@ -30,7 +30,7 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 	if (!record) return <Message message="Record Not Found." />;
 
 	const referenceValue = String(record.reference);
-	const reference = `${referenceValue.slice(0, -2)}-${referenceValue.slice(-2)}`;
+	const reference = `${record.type}-${referenceValue.slice(0, -2)}-${referenceValue.slice(-2)}`;
 
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
@@ -39,10 +39,10 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 
 				<MedicalRecordEditForm
 					record={record}
-					policies={policies.map(({ id, policyNumber, clientCompany, insuranceCompany, intermediary }) => ({ id, policyNumber, clientCompany, insuranceCompany, intermediary }))}
+					policies={policies.map(({ id, policyNumber, clientCompany, insuranceCompany, intermediary, terminated }) => ({ id, policyNumber, clientCompany, insuranceCompany, intermediary, terminated: terminated ?? false }))}
 					jobs={jobs.filter((job): job is string => job !== null)}
 				/>
-				<Section title="Medical services">
+				<Section title="Medical Services">
 					<ReferencialDataGrid
 						title="Medical Services"
 						rows={services.map(({ id, medicalRecordId, serviceProviderId, serviceTypeId, missionDate, missionPlace, observation }) => ({ id, medicalRecordId, serviceProviderId, serviceTypeId, missionDate, missionPlace, observation }))}
@@ -58,7 +58,7 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 						onDelete={deleteMedicalService}
 					/>
 				</Section>
-				<Section title="Medical documents">
+				<Section title="Medical Documents">
 					<ReferencialDataGrid
 						title="Medical Documents"
 						rows={documents.map(({ id, medicalRecordId, type, serviceProviderId, observation, signed }) => ({ id, medicalRecordId, type, serviceProviderId, observation, signed }))}
@@ -82,7 +82,7 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
-	return <section className="mb-5 border-y border-slate-200 bg-white px-5 py-5"><h2 className="mb-4 text-base font-bold text-slate-900">{title}</h2>{children}</section>;
+  return <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm mb-6"><div className="mb-6 border-b border-slate-100 pb-4"><h2 className="text-xl font-bold text-teal-800">{title}</h2></div>{children}</section>;
 }
 
 function Message({ message }: { message: string }) {
