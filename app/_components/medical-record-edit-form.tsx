@@ -13,9 +13,10 @@ type PolicyOption = { id: number; policyNumber: string; clientCompany: string; i
 type MedicalRecordEditFormProps = {
   record: MedicalRecordDetails;
   policies: PolicyOption[];
+  jobs: string[];
 };
 
-export function MedicalRecordEditForm({ record, policies }: MedicalRecordEditFormProps) {
+export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordEditFormProps) {
   const router = useRouter();
   const [policyId, setPolicyId] = useState(String(record.policyId));
   const [pending, setPending] = useState(false);
@@ -107,7 +108,7 @@ export function MedicalRecordEditForm({ record, policies }: MedicalRecordEditFor
           <TextField name="victimLastName" label="Victim Last Name" defaultValue={record.victimLastName} required />
           <TextField name="victimPhone" label="Victim Phone" defaultValue={record.victimPhone ?? ""} type="tel" />
           <TextField name="victimNationalId" label="Victim National ID" defaultValue={record.victimNationalId} required />
-          <TextField name="victimJob" label="Victim Job" defaultValue={record.victimJob ?? ""} />
+          <TextField name="victimJob" label="Victim Job" defaultValue={record.victimJob ?? ""} options={jobs} />
         </div>
       </Section>
 
@@ -150,8 +151,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return <section className="border-y border-slate-200 bg-white px-5 py-5"><h2 className="mb-4 text-base font-bold text-slate-900">{title}</h2>{children}</section>;
 }
 
-function TextField({ name, label, defaultValue, required, type = "text" }: { name: string; label: string; defaultValue: string; required?: boolean; type?: string }) {
-  return <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}{required ? " *" : ""}</span><input name={name} type={type} defaultValue={defaultValue} required={required} className={inputClass} /></label>;
+function TextField({ name, label, defaultValue, required, type = "text", options }: { name: string; label: string; defaultValue: string; required?: boolean; type?: string; options?: string[] }) {
+  const listId = options?.length ? `${name}-options` : undefined;
+  return <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}{required ? " *" : ""}</span><input name={name} type={type} list={listId} defaultValue={defaultValue} required={required} className={inputClass} />{listId ? <datalist id={listId}>{options?.map((option) => <option key={option} value={option} />)}</datalist> : null}</label>;
 }
 
 function SelectField({ name, label, defaultValue, options, required }: { name: string; label: string; defaultValue: string; options: [string, string][]; required?: boolean }) {

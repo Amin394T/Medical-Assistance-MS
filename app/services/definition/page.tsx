@@ -1,4 +1,4 @@
-import { createServiceType, deleteServiceType, listServiceTypes, updateServiceType } from "@/db/actions/serviceTypes";
+import { createServiceType, deleteServiceType, listProfiles, listServiceTypes, updateServiceType } from "@/db/actions/serviceTypes";
 import { ReferencialDataGrid } from "@/app/_components/referential-data-grid";
 import { PageHeader } from "@/app/_components/page-header";
 import { Activity } from "lucide-react";
@@ -6,7 +6,7 @@ import { Activity } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function ServiceTypesPage() {
-	const serviceTypes = await listServiceTypes();
+	const [serviceTypes, profiles] = await Promise.all([listServiceTypes(), listProfiles()]);
 
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
@@ -14,7 +14,7 @@ export default async function ServiceTypesPage() {
 				<PageHeader section="Services" title="Medical Services" icon={<Activity className="h-6 w-6" />} />
 				<ReferencialDataGrid title="Medical Services" rows={serviceTypes} columns={[
 					{ key: "label", label: "Label", required: true },
-					{ key: "targetProfile", label: "Target Profile", required: true },
+					{ key: "targetProfile", label: "Target Profile", editor: "combo-box", options: profiles.filter((profile): profile is string => profile !== null).map((profile) => ({ value: profile, label: profile })), required: true },
 				]} onCreate={createServiceType} onUpdate={updateServiceType} onDelete={deleteServiceType} />
 			</div>
 		</section>

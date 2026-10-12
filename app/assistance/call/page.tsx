@@ -1,4 +1,5 @@
 import { listInsurancePolicies } from "@/db/actions/insurancePolicies";
+import { listJobs } from "@/db/actions/medicalRecords";
 import { MedicalRecordCallForm } from "@/app/_components/medical-record-call-form";
 import { PageHeader } from "@/app/_components/page-header";
 import { Headset } from "lucide-react";
@@ -6,7 +7,7 @@ import { Headset } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function CallPage() {
-	const policies = await listInsurancePolicies();
+	const [policies, jobs] = await Promise.all([listInsurancePolicies(), listJobs()]);
 	const now = new Date();
 
 	return (
@@ -24,6 +25,7 @@ export default async function CallPage() {
 				effectiveDate: effectiveDate.toISOString(),
 				terminationDate: terminationDate?.toISOString() ?? null,
 			}))}
+			jobs={jobs.filter((job): job is string => job !== null)}
 			displayReportingDate={now.toISOString()}
 				/>
 			</div>

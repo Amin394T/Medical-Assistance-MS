@@ -1,8 +1,8 @@
 import { ClipboardPen } from "lucide-react";
 
-import { getMedicalRecord } from "@/db/actions/medicalRecords";
+import { getMedicalRecord, listJobs } from "@/db/actions/medicalRecords";
 import { listInsurancePolicies } from "@/db/actions/insurancePolicies";
-import { createMedicalDocument, deleteMedicalDocument, listRecordMedicalDocuments, updateMedicalDocument } from "@/db/actions/medicalDocuments";
+import { createMedicalDocument, deleteMedicalDocument, listDocumentTypes, listRecordMedicalDocuments, updateMedicalDocument } from "@/db/actions/medicalDocuments";
 import { createMedicalService, deleteMedicalService, listRecordMedicalServices, updateMedicalService } from "@/db/actions/medicalServices";
 import { listServiceProviders } from "@/db/actions/serviceProviders";
 import { listServiceTypes } from "@/db/actions/serviceTypes";
@@ -17,13 +17,15 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 	const recordId = Number(id);
 	if (!Number.isInteger(recordId) || recordId < 1) return <Message message="Record not found." />;
 
-	const [record, services, documents, policies, providers, serviceTypes] = await Promise.all([
+	const [record, services, documents, policies, providers, serviceTypes, jobs, documentTypes] = await Promise.all([
 		getMedicalRecord(recordId),
 		listRecordMedicalServices(recordId),
 		listRecordMedicalDocuments(recordId),
 		listInsurancePolicies(),
 		listServiceProviders(),
 		listServiceTypes(),
+		listJobs(),
+		listDocumentTypes(),
 	]);
 	if (!record) return <Message message="Record Not Found." />;
 
@@ -38,6 +40,7 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 				<MedicalRecordEditForm
 					record={record}
 					policies={policies.map(({ id, policyNumber, clientCompany, insuranceCompany, intermediary }) => ({ id, policyNumber, clientCompany, insuranceCompany, intermediary }))}
+					jobs={jobs.filter((job): job is string => job !== null)}
 				/>
 				<Section title="Medical services">
 					<ReferencialDataGrid
@@ -60,7 +63,7 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 						title="Medical Documents"
 						rows={documents.map(({ id, medicalRecordId, type, serviceProviderId, observation, signed }) => ({ id, medicalRecordId, type, serviceProviderId, observation, signed }))}
 						columns={[
-							{ key: "type", label: "Type", required: true },
+							{ key: "type", label: "Type", editor: "combo-box", options: documentTypes.map((type) => ({ value: type, label: type })), required: true },
 							{ key: "serviceProviderId", label: "Service Provider", editor: "select", nullable: true, options: [
 								{ value: null, label: "None" },
 								...providers.map(({ id, label }) => ({ value: id, label })),

@@ -11,7 +11,7 @@ import {
 import type { MedicalRecord, NewMedicalRecord } from "./schemas";
 
 type SeedMedicalRecord = NewMedicalRecord & Pick<MedicalRecord,
-  "reference" | "accidentEvolution" | "delegationDate" | "coverageIssued" | "coverageDate" | "status" | "fate" | "fateReason" | "observation"
+  "reference" | "evolution" | "delegation" | "delegationDate" | "coverage" | "coverageDate" | "status" | "fate" | "fateReason" | "observation"
 >;
 
 const now = new Date();
@@ -86,49 +86,49 @@ const seededCounts = db.transaction((tx) => {
       reference: reference(dateOffset(1, 8)), type: "AT", policyId: policyIds.get("AM-2026-00418")!, reportingDate: dateOffset(1, 9),
       reporterFirstName: "Leah", reporterLastName: "Morgan", reporterPhone: "+1 555 030 1001", accidentPlace: "WS", accidentDate: dateOffset(1, 8), accidentCause: "EQIP",
       victimFirstName: "Ethan", victimLastName: "Cole", victimPhone: "+1 555 030 2001", victimNationalId: "9001000001", victimJob: "Machine operator",
-      accidentEvolution: "INIT", delegationDate: null, coverageIssued: null, coverageDate: null, status: "PROG", fate: "APPROVED", fateReason: null, managedBy: "Amin Hassan", observation: "Initial report received by phone.",
+      evolution: "INIT", delegation: null, delegationDate: null, coverage: null, coverageDate: null, status: "PROG", fate: "APPROVED", fateReason: null, managedBy: "Amin Hassan", observation: "Initial report received by phone.",
     },
     {
       reference: reference(dateOffset(3, 10)), type: "AT", policyId: policyIds.get("AM-2026-00972")!, reportingDate: dateOffset(3, 11),
       reporterFirstName: "Noah", reporterLastName: "Bennett", reporterPhone: "+1 555 030 1002", accidentPlace: "CS", accidentDate: dateOffset(3, 10), accidentCause: "FALL",
       victimFirstName: "Ava", victimLastName: "Turner", victimPhone: null, victimNationalId: "9001000002", victimJob: "Site supervisor",
-      accidentEvolution: "DELG", delegationDate: dateOffset(3, 12), coverageIssued: true, coverageDate: dateOffset(2, 0), status: "SETT", fate: "APPROVED", fateReason: null, managedBy: "Nadia Karim", observation: "Case delegated for follow-up.",
+      evolution: "DEAT", delegation: null, delegationDate: dateOffset(3, 12), coverage: true, coverageDate: dateOffset(2, 0), status: "SETT", fate: "APPROVED", fateReason: null, managedBy: "Nadia Karim", observation: "Case delegated for follow-up.",
     },
     {
       reference: reference(dateOffset(6, 7)), type: "MD", policyId: policyIds.get("NS-2024-00136")!, reportingDate: dateOffset(6, 8),
       reporterFirstName: "Rosa", reporterLastName: "Diaz", reporterPhone: "+1 555 030 1003", accidentPlace: "OF", accidentDate: dateOffset(6, 7), accidentCause: "FATG",
       victimFirstName: "Lucas", victimLastName: "Perry", victimPhone: "+1 555 030 2003", victimNationalId: "9001000003", victimJob: "Warehouse associate",
-      accidentEvolution: "INIT", delegationDate: null, coverageIssued: false, coverageDate: null, status: "PROG", fate: "REJECTED", fateReason: "Policy Terminated", managedBy: "Amin Hassan", observation: "Policy was terminated before the reported event.",
+      evolution: "INIT", delegation: null, delegationDate: null, coverage: false, coverageDate: null, status: "PROG", fate: "REJECTED", fateReason: "Policy Terminated", managedBy: "Amin Hassan", observation: "Policy was terminated before the reported event.",
     },
     {
       reference: reference(dateOffset(2, 12)), type: "VF", policyId: policyIds.get("AM-2026-00418")!, reportingDate: dateOffset(2, 13),
       reporterFirstName: "Grace", reporterLastName: "Kim", reporterPhone: "+1 555 030 1004", accidentPlace: "OF", accidentDate: dateOffset(2, 12), accidentCause: null,
       victimFirstName: "Oliver", victimLastName: "Price", victimPhone: null, victimNationalId: "9001000004", victimJob: null,
-      accidentEvolution: "INIT", delegationDate: null, coverageIssued: null, coverageDate: null, status: "CLOS", fate: "APPROVED", fateReason: null, managedBy: "Nadia Karim", observation: "Policy validity confirmed with insurer.",
+      evolution: "INIT", delegation: null, delegationDate: null, coverage: null, coverageDate: null, status: "CLOS", fate: "APPROVED", fateReason: null, managedBy: "Nadia Karim", observation: "Policy validity confirmed with insurer.",
     },
     {
       reference: reference(dateOffset(10, 9)), type: "SS", policyId: policyIds.get("NS-2026-01005")!, reportingDate: dateOffset(10, 10),
       reporterFirstName: "Daniel", reporterLastName: "Foster", reporterPhone: "+1 555 030 1005", accidentPlace: "RT", accidentDate: dateOffset(10, 9), accidentCause: "OBJC",
       victimFirstName: "Mila", victimLastName: "Ward", victimPhone: "+1 555 030 2005", victimNationalId: "9001000005", victimJob: "Delivery driver",
-      accidentEvolution: "COMP", delegationDate: null, coverageIssued: true, coverageDate: dateOffset(9, 0), status: "BILL", fate: "APPROVED", fateReason: null, managedBy: "Amin Hassan", observation: "Special service request awaiting documentation.",
+      evolution: "COMP", delegation: null, delegationDate: null, coverage: true, coverageDate: dateOffset(9, 0), status: "BILL", fate: "APPROVED", fateReason: null, managedBy: "Amin Hassan", observation: "Special service request awaiting documentation.",
     },
     {
       reference: reference(dateOffset(60, 8)), type: "PR", policyId: policyIds.get("NS-2024-00136")!, reportingDate: dateOffset(60, 9),
       reporterFirstName: "Hannah", reporterLastName: "Scott", reporterPhone: "+1 555 030 1006", accidentPlace: "WS", accidentDate: dateOffset(60, 8), accidentCause: "HAZD",
       victimFirstName: "Isaac", victimLastName: "Green", victimPhone: "+1 555 030 2006", victimNationalId: "9001000006", victimJob: "Maintenance technician",
-      accidentEvolution: "RELP", delegationDate: null, coverageIssued: true, coverageDate: dateOffset(59, 0), status: "PROG", fate: "APPROVED", fateReason: null, managedBy: "Nadia Karim", observation: "Historical event predates policy termination.",
+      evolution: "RELP", delegation: null, delegationDate: null, coverage: true, coverageDate: dateOffset(59, 0), status: "PROG", fate: "APPROVED", fateReason: null, managedBy: "Nadia Karim", observation: "Historical event predates policy termination.",
     },
     {
       reference: reference(dateOffset(20, 13)), type: "AT", policyId: policyIds.get("AM-2026-01550")!, reportingDate: dateOffset(20, 14),
       reporterFirstName: "Mason", reporterLastName: "Bell", reporterPhone: "+1 555 030 1007", accidentPlace: "WS", accidentDate: dateOffset(20, 13), accidentCause: "VIOL",
       victimFirstName: "Chloe", victimLastName: "Adams", victimPhone: null, victimNationalId: "9001000007", victimJob: "Inventory clerk",
-      accidentEvolution: "INIT", delegationDate: null, coverageIssued: false, coverageDate: null, status: "ABAN", fate: "APPROVED", fateReason: null, managedBy: "Amin Hassan", observation: "Record abandoned after caller follow-up.",
+      evolution: "INIT", delegation: null, delegationDate: null, coverage: false, coverageDate: null, status: "ABAN", fate: "APPROVED", fateReason: null, managedBy: "Amin Hassan", observation: "Record abandoned after caller follow-up.",
     },
     {
       reference: reference(dateOffset(4, 9)), type: "VF", policyId: policyIds.get("AM-2026-00972")!, reportingDate: dateOffset(4, 10),
       reporterFirstName: "Sofia", reporterLastName: null, reporterPhone: "+1 555 030 1008", accidentPlace: "OF", accidentDate: dateOffset(4, 9), accidentCause: null,
       victimFirstName: "Leo", victimLastName: "Howard", victimPhone: null, victimNationalId: "9001000008", victimJob: null,
-      accidentEvolution: "INIT", delegationDate: null, coverageIssued: null, coverageDate: null, status: "PROG", fate: "APPROVED", fateReason: null, managedBy: "Nadia Karim", observation: null,
+      evolution: "INIT", delegation: null, delegationDate: null, coverage: null, coverageDate: null, status: "PROG", fate: "APPROVED", fateReason: null, managedBy: "Nadia Karim", observation: null,
     },
   ];
 

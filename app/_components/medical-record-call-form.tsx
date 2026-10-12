@@ -21,6 +21,7 @@ type PolicyOption = {
 };
 type MedicalRecordCallFormProps = {
   policies: PolicyOption[];
+  jobs: string[];
   displayReportingDate: string;
 };
 
@@ -70,7 +71,7 @@ const initialValues: CallFormValues = {
   accidentCause: "",
 };
 
-export function MedicalRecordCallForm({ policies, displayReportingDate }: MedicalRecordCallFormProps) {
+export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: MedicalRecordCallFormProps) {
   const [submitError, setSubmitError] = useState("");
   const [createdReference, setCreatedReference] = useState("");
   const form = useForm({
@@ -155,7 +156,7 @@ export function MedicalRecordCallForm({ policies, displayReportingDate }: Medica
               <Field form={form as unknown as FormRenderer} name="victimLastName" label="Victim Last Name" required />
               <Field form={form as unknown as FormRenderer} name="victimNationalId" label="National ID" required />
               <Field form={form as unknown as FormRenderer} name="victimPhone" label="Phone" type="tel" />
-              <Field form={form as unknown as FormRenderer} name="victimJob" label="Job" />
+              <Field form={form as unknown as FormRenderer} name="victimJob" label="Victim Job" options={jobs} />
             </div>
           </FormSection>
 
@@ -167,8 +168,9 @@ export function MedicalRecordCallForm({ policies, displayReportingDate }: Medica
   );
 }
 
-function Field({ form, name, label, required, type = "text" }: { form: FormRenderer; name: keyof CallFormValues; label: string; required?: boolean; type?: string }) {
-  return <form.Field name={name} validators={{ onBlur: ({ value }) => required && !String(value).trim() ? `${label} is required` : undefined }} children={(field) => <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">{label}{required ? <span className="ml-1 text-teal-700">*</span> : null}</span><input type={type} value={String(field.state.value)} onBlur={field.handleBlur} onChange={(event) => field.handleChange(event.target.value)} className={inputClass} />{field.state.meta.errors[0] ? <span className="mt-1 block text-xs text-rose-600">{String(field.state.meta.errors[0])}</span> : null}</label>} />;
+function Field({ form, name, label, required, type = "text", options }: { form: FormRenderer; name: keyof CallFormValues; label: string; required?: boolean; type?: string; options?: string[] }) {
+  const listId = options?.length ? `${name}-options` : undefined;
+  return <form.Field name={name} validators={{ onBlur: ({ value }) => required && !String(value).trim() ? `${label} is required` : undefined }} children={(field) => <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">{label}{required ? <span className="ml-1 text-teal-700">*</span> : null}</span><input type={type} list={listId} value={String(field.state.value)} onBlur={field.handleBlur} onChange={(event) => field.handleChange(event.target.value)} className={inputClass} />{listId ? <datalist id={listId}>{options?.map((option) => <option key={option} value={option} />)}</datalist> : null}{field.state.meta.errors[0] ? <span className="mt-1 block text-xs text-rose-600">{String(field.state.meta.errors[0])}</span> : null}</label>} />;
 }
 
 function SelectField({ field, label, options, required, placeholder }: { field: RenderableField; label: string; options: { value: string; label: string }[]; required?: boolean; placeholder?: string }) {
@@ -178,9 +180,10 @@ function SelectField({ field, label, options, required, placeholder }: { field: 
 function PolicyPicker({ field, policies }: { field: RenderableField; policies: PolicyOption[] }) {
   const selectedPolicy = policies.find((policy) => String(policy.id) === String(field.state.value));
   const [query, setQuery] = useState(selectedPolicy ? `${selectedPolicy.policyNumber} ${selectedPolicy.clientCompanyLabel}` : "");
+  const [isOpen, setIsOpen] = useState(false);
   const matches = policies.filter((policy) => `${policy.policyNumber} ${policy.clientCompanyLabel}`.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8);
 
-  return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Insurance Policy<span className="ml-1 text-teal-700">*</span></span><input value={query} onBlur={field.handleBlur} onChange={(event) => { setQuery(event.target.value); field.handleChange(""); }} className={inputClass} placeholder="Search policy number or client" role="combobox" aria-expanded={Boolean(query.trim())} aria-controls="policy-picker-options" aria-autocomplete="list" />{query.trim() ? <div id="policy-picker-options" role="listbox" className="mt-1 max-h-56 overflow-y-auto border border-slate-200 bg-white shadow-lg">{matches.length ? matches.map((policy) => <button key={policy.id} type="button" role="option" aria-selected={String(policy.id) === String(field.state.value)} onMouseDown={(event) => event.preventDefault()} onClick={() => { field.handleChange(String(policy.id)); setQuery(`${policy.policyNumber} ${policy.clientCompanyLabel}`); }} className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm hover:bg-teal-50"><span className="block font-semibold text-slate-900">{policy.policyNumber}</span><span className="block text-xs text-slate-500">{policy.clientCompanyLabel}{policy.terminated ? " · Terminated" : ""}</span></button>) : <p className="px-3 py-2 text-sm text-slate-500">No matching policies.</p>}</div> : null}{field.state.meta.errors[0] ? <span className="mt-1 block text-xs text-rose-600">{String(field.state.meta.errors[0])}</span> : null}</label>;
+  return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Insurance Policy<span className="ml-1 text-teal-700">*</span></span><input value={query} onBlur={field.handleBlur} onFocus={() => setIsOpen(true)} onClick={() => setIsOpen(true)} onChange={(event) => { setQuery(event.target.value); setIsOpen(true); field.handleChange(""); }} className={inputClass} placeholder="Search policy number or client" role="combobox" aria-expanded={isOpen && Boolean(query.trim())} aria-controls="policy-picker-options" aria-autocomplete="list" />{isOpen && query.trim() ? <div id="policy-picker-options" role="listbox" className="mt-1 max-h-56 overflow-y-auto border border-slate-200 bg-white shadow-lg">{matches.length ? matches.map((policy) => <button key={policy.id} type="button" role="option" aria-selected={String(policy.id) === String(field.state.value)} onMouseDown={(event) => event.preventDefault()} onClick={() => { field.handleChange(String(policy.id)); setQuery(`${policy.policyNumber} ${policy.clientCompanyLabel}`); setIsOpen(false); }} className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm hover:bg-teal-50"><span className="block font-semibold text-slate-900">{policy.policyNumber}</span><span className="block text-xs text-slate-500">{policy.clientCompanyLabel}{policy.terminated ? " · Terminated" : ""}</span></button>) : <p className="px-3 py-2 text-sm text-slate-500">No matching policies.</p>}</div> : null}{field.state.meta.errors[0] ? <span className="mt-1 block text-xs text-rose-600">{String(field.state.meta.errors[0])}</span> : null}</label>;
 }
 
 function getSelectedPolicy(policyId: string, policies: PolicyOption[]) {

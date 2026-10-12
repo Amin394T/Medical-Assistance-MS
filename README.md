@@ -62,26 +62,22 @@
     + insurance policy: required, selectable (list searchable by policy and client name),
     + client company: read-only, inferred (from selected insurance policy), UI-only,
     + insurance provider: read-only, inferred (from selected insurance policy, insurance company + intermediary between brackets if available), UI-only,
-    
     // reporter data
     + reporting date: required, date-time, defaults to "NOW",
     + reporter first name: required,
     + reporter last name: optional,
     + reporter phone: required,
-
     // accident data
     + accident date: required, date-time, defaults to "NOW",
     + accident type: list (workplace accident - AT, illness & pain - MD, policy verification - VF, special service - SS, occupational disease - PR), defaults to "AT",
     + accident cause: optional, list (falling or slipping - FALL, machine or equipment - EQIP, overexertion and fatigue - FATG, hazardous substance - HAZD, workplace violence - VIOL, moving objects - OBJC),
     + accident place: required, list (workshop - WS, route - RT, office - OF, construction - CS),
-
     // victim data:
     + victim first name: required,
     + victim last name: required,
     + victim phone: optional,
     + victim national ID: required,
     + victim job: optional, combo-box,
-
     // status data
     + status: list (in progress - PROG, settled - SETT, closed - CLOS, abandoned - ABAN, billed - BILL), defaults to "PROG",
     + fate: read-only, inferred (from policy validity, either "APPROVED" if valid, else "REJECTED"),
@@ -91,7 +87,6 @@
     + delegation date: optional, date-time,
     + coverage: boolean,
     + coverage date: optional, date,
-
     // audit data
     + managed by: read-only, defaults to "USER",
     + observation: optional,

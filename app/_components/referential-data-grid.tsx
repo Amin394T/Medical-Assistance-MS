@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createColumnHelper, createSortedRowModel, rowSortingFeature, tableFeatures, useTable } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ChevronsUpDown, RotateCcw, Save, Search, SquarePen, SquarePlus, Trash2, X } from "lucide-react";
@@ -10,7 +10,7 @@ type EntityRow = Record<string, EntityValue> & { id: number };
 type DraftValue = string | boolean;
 type DraftRow = Record<string, DraftValue>;
 type SelectOption = { value: string | number | null; label: string };
-type EditorType = "text" | "date" | "number" | "checkbox" | "select";
+type EditorType = "text" | "date" | "number" | "checkbox" | "select" | "combo-box";
 
 export type EntityColumn = {
   key: string;
@@ -200,9 +200,11 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
 }
 
 function GridEditor({ column, value, disabled, onChange }: { column: EntityColumn; value: DraftValue | undefined; disabled?: boolean; onChange: (value: DraftValue) => void }) {
+  const listId = useId();
   const commonClass = "h-9 w-full min-w-32 rounded-md border border-slate-200 bg-white px-2.5 text-sm text-slate-800 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 disabled:bg-slate-100";
   if (column.editor === "checkbox") return <input type="checkbox" aria-label={column.label} checked={value === true} disabled={disabled} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 accent-teal-700 disabled:opacity-50" />;
   if (column.editor === "select") return <select aria-label={column.label} value={String(value ?? "")} required={column.required} disabled={disabled} onChange={(event) => onChange(event.target.value)} className={commonClass}>{column.options?.map((option) => <option key={String(option.value)} value={option.value ?? ""}>{option.label}</option>)}</select>;
+  if (column.editor === "combo-box") return <><input type="text" aria-label={column.label} list={listId} value={String(value ?? "")} required={column.required} disabled={disabled} onChange={(event) => onChange(event.target.value)} className={commonClass} /><datalist id={listId}>{column.options?.map((option) => <option key={String(option.value)} value={option.value ?? ""}>{option.label}</option>)}</datalist></>;
   return <input type={column.editor === "date" ? "date" : column.editor === "number" ? "number" : "text"} aria-label={column.label} value={String(value ?? "")} required={column.required} disabled={disabled} onChange={(event) => onChange(event.target.value)} className={commonClass} />;
 }
 
