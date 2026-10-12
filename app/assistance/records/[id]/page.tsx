@@ -27,7 +27,8 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 	]);
 	if (!record) return <Message message="Record Not Found." />;
 
-	const reference = `${record.type}-${String(record.reference).slice(0, -2)}-${String(record.reference).slice(-2)}`;
+	const referenceValue = String(record.reference);
+	const reference = `${referenceValue.slice(0, -2)}-${referenceValue.slice(-2)}`;
 
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">

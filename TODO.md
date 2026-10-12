@@ -1,10 +1,10 @@
 ## REMINDER
-- reference number should use dash as separator and sequence should have 2 digits only
-- add server side pagination to records list
-- show policy status near policy number and color-code it
-- add input field validation
+- server-side pagination for records list
+- server-side input validation
+- user authentication
 - make error messages appear as popup notification
-- disallow deletion for some entities and editing for some fields
+- disallow deletion for policies and insurance providers
+- disable editing for read-only fields
 
 
 ## IMPROVEMENTS
@@ -13,24 +13,24 @@
     + save phone log in database,
     + record calls option,
     + infer caller during record creation,
-- e-mailing documents from the application,
+- e-mailing documents from the application:
+    + outgoing e-mails to selected clients,
+    + incoming from insurance companies,
 - AI assistant,
-- geo-localisation of service providers and client companies
-    + nearest ambulances are sent + to nearest hospital
+- location matching between service providers and accident place
 - data archiving
 - user actions audit
 
 
 ## NEEDS
-- current data model, required for migration
-- how are subsequent services known? through phone calls?
+- current data model, required for migration.
+- how will data migration from cuurrent server happen?
 - what is the current printing solution? can it be re-used?
-- how to process delta files (when to add, update, remove)?
-- how will data migration happen?
-- get full list of medical services, and service profiles,
-- how do you decide which service provider to send
-- how are policy beneficiaries stored
-- all causes/scenarios of policy invalidity
-- are brokers and agents just informational
-- can policy and record type be updated
-- get document types
+- how are subsequent services known? through phone calls?
+- how do you decide which service provider to send? location heuristics?
+- delta files structures (both).
+- can a client exist in the list but have no corresponding policy?
+- all causes/scenarios of policy invalidity.
+- are brokers and agents just informational?
+- can record policy and type be updated?
+- all document types.

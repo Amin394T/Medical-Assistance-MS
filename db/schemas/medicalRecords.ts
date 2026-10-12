@@ -19,13 +19,14 @@ export const medicalRecords = sqliteTable("medical_records", {
   victimPhone: text("victim_phone"),
   victimNationalId: text("victim_national_id").notNull(),
   victimJob: text("victim_job"),
-  accidentEvolution: text("accident_evolution", { enum: ["INIT", "DELG", "RELP", "DEAT", "COMP"] }).notNull().default("INIT"),
-  delegationDate: integer("delegation_date", { mode: "timestamp" }),
-  coverageIssued: integer("coverage_issued", { mode: "boolean" }).default(false),
-  coverageDate: integer("coverage_date", { mode: "timestamp" }),
   status: text("status", { enum: ["PROG", "SETT", "CLOS", "ABAN", "BILL"] }).notNull().default("PROG"),
   fate: text("fate", { enum: ["APPROVED", "REJECTED"] }),
   fateReason: text("fate_reason"),
+  evolution: text("evolution", { enum: ["INIT", "RELP", "DEAT", "COMP"] }).notNull().default("INIT"),
+  delegation: integer("delegation", { mode: "boolean" }).default(false),
+  delegationDate: integer("delegation_date", { mode: "timestamp" }),
+  coverage: integer("coverage", { mode: "boolean" }).default(false),
+  coverageDate: integer("coverage_date", { mode: "timestamp" }),
   managedBy: text("managed_by").notNull(),
   observation: text("observation"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
@@ -67,10 +68,11 @@ export type SetMedicalRecord = {
   victimNationalId: string;
   victimPhone: string | null;
   victimJob: string | null;
-  accidentEvolution: "INIT" | "DELG" | "RELP" | "DEAT" | "COMP";
+  delegation: boolean | null;
   delegationDate: Date | null;
-  coverageIssued: boolean | null;
+  coverage: boolean | null;
   coverageDate: Date | null;
   status: "PROG" | "SETT" | "CLOS" | "ABAN" | "BILL";
+  evolution: "INIT" | "RELP" | "DEAT" | "COMP";
   observation: string | null;
 };

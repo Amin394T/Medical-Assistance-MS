@@ -48,9 +48,10 @@ export function MedicalRecordEditForm({ record, policies }: MedicalRecordEditFor
           victimPhone: String(data.get("victimPhone") ?? "") || null,
           victimNationalId: String(data.get("victimNationalId") ?? ""),
           victimJob: String(data.get("victimJob") ?? "") || null,
-          accidentEvolution: String(data.get("accidentEvolution")) as SetMedicalRecord["accidentEvolution"],
+          evolution: String(data.get("evolution")) as SetMedicalRecord["evolution"],
+          delegation: data.get("delegation") === "on",
           delegationDate: parseDate("delegationDate"),
-          coverageIssued: data.get("coverageIssued") === "" ? null : data.get("coverageIssued") === "true",
+          coverage: data.get("coverage") === "on",
           coverageDate: parseDate("coverageDate"),
           status: String(data.get("status")) as SetMedicalRecord["status"],
           observation: String(data.get("observation") ?? "") || null,
@@ -67,25 +68,33 @@ export function MedicalRecordEditForm({ record, policies }: MedicalRecordEditFor
     }}>
       {notice ? <Notice tone={notice.tone}>{notice.text}</Notice> : null}
 
-      <Section title="Record data">
+      <Section title="Client data">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <ReadOnly label="Reference" value={record.reference} />
-          <SelectField name="type" label="Record Type" defaultValue={record.type} required options={[
-            ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VF", "Policy verification"], ["SS", "Special service"], ["PR", "Occupational disease"],
-          ]} />
+          <ReadOnly label="Reference" value={formatReference(record.reference)} />
           <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Insurance Policy *</span><select name="policyId" value={policyId} onChange={(event) => setPolicyId(event.target.value)} required className={inputClass}>{policies.map((policy) => <option key={policy.id} value={String(policy.id)}>{policy.policyNumber} · {policy.clientCompany}</option>)}</select></label>
           <ReadOnly label="Client Company" value={selectedPolicy?.clientCompany ?? null} />
-          <ReadOnly label="Insurance Company" value={selectedPolicy?.insuranceCompany ?? null} />
-          <ReadOnly label="Intermediary" value={selectedPolicy?.intermediary ?? null} />
+          <ReadOnly label="Insurance Provider" value={formatInsuranceProvider(selectedPolicy?.insuranceCompany, selectedPolicy?.intermediary)} />
         </div>
       </Section>
 
-      <Section title="Report data">
+      <Section title="Reporter data">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <DateTimeField name="reportingDate" label="Reporting Date" value={record.reportingDate} required />
           <TextField name="reporterFirstName" label="Reporter First Name" defaultValue={record.reporterFirstName} required />
           <TextField name="reporterLastName" label="Reporter Last Name" defaultValue={record.reporterLastName ?? ""} />
           <TextField name="reporterPhone" label="Reporter Phone" defaultValue={record.reporterPhone} required type="tel" />
+        </div>
+      </Section>
+
+      <Section title="Accident data">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <DateTimeField name="accidentDate" label="Accident Date" value={record.accidentDate} required />
+          <SelectField name="type" label="Accident Type" defaultValue={record.type} required options={[
+            ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VF", "Policy verification"], ["SS", "Special service"], ["PR", "Occupational disease"],
+          ]} />
+          <SelectField name="accidentCause" label="Accident Cause" defaultValue={record.accidentCause ?? ""} options={[
+            ["", "Not specified"], ["FALL", "Falling or slipping"], ["EQIP", "Machine or equipment"], ["FATG", "Overexertion and fatigue"], ["HAZD", "Hazardous substance"], ["VIOL", "Workplace violence"], ["OBJC", "Moving objects"],
+          ]} />
           <SelectField name="accidentPlace" label="Accident Place" defaultValue={record.accidentPlace} required options={[
             ["WS", "Workshop"], ["RT", "Route"], ["OF", "Office"], ["CS", "Construction"],
           ]} />
@@ -94,28 +103,11 @@ export function MedicalRecordEditForm({ record, policies }: MedicalRecordEditFor
 
       <Section title="Victim data">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <DateTimeField name="accidentDate" label="Accident Date" value={record.accidentDate} required />
-          <SelectField name="accidentCause" label="Accident Cause" defaultValue={record.accidentCause ?? ""} options={[
-            ["", "Not specified"], ["FALL", "Falling or slipping"], ["EQIP", "Machine or equipment"], ["FATG", "Overexertion and fatigue"], ["HAZD", "Hazardous substance"], ["VIOL", "Workplace violence"], ["OBJC", "Moving objects"],
-          ]} />
           <TextField name="victimFirstName" label="Victim First Name" defaultValue={record.victimFirstName} required />
           <TextField name="victimLastName" label="Victim Last Name" defaultValue={record.victimLastName} required />
           <TextField name="victimPhone" label="Victim Phone" defaultValue={record.victimPhone ?? ""} type="tel" />
           <TextField name="victimNationalId" label="Victim National ID" defaultValue={record.victimNationalId} required />
           <TextField name="victimJob" label="Victim Job" defaultValue={record.victimJob ?? ""} />
-        </div>
-      </Section>
-
-      <Section title="Evolution data">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <SelectField name="accidentEvolution" label="Accident Evolution" defaultValue={record.accidentEvolution} required options={[
-            ["INIT", "Initial"], ["DELG", "Delegation"], ["RELP", "Relapse"], ["DEAT", "Death"], ["COMP", "Complement"],
-          ]} />
-          <DateTimeField name="delegationDate" label="Delegation Date" value={record.delegationDate} />
-          <SelectField name="coverageIssued" label="Coverage Issued" defaultValue={record.coverageIssued === null ? "" : String(record.coverageIssued)} options={[
-            ["", "Not specified"], ["true", "Yes"], ["false", "No"],
-          ]} />
-          <DateField name="coverageDate" label="Coverage Date" value={record.coverageDate} />
         </div>
       </Section>
 
@@ -126,8 +118,22 @@ export function MedicalRecordEditForm({ record, policies }: MedicalRecordEditFor
           ]} />
           <ReadOnly label="Record Fate" value={record.fate} />
           <ReadOnly label="Fate Reason" value={record.fateReason} />
+          <SelectField name="evolution" label="Evolution" defaultValue={record.evolution} required options={[
+            ["INIT", "Initial"], ["RELP", "Relapse"], ["DEAT", "Death"], ["COMP", "Complement"],
+          ]} />
+          <CheckboxField name="delegation" label="Delegation" checked={record.delegation ?? false} />
+          <DateTimeField name="delegationDate" label="Delegation Date" value={record.delegationDate} />
+          <CheckboxField name="coverage" label="Coverage" checked={record.coverage ?? false} />
+          <DateField name="coverageDate" label="Coverage Date" value={record.coverageDate} />
+        </div>
+      </Section>
+
+      <Section title="Audit data">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <ReadOnly label="Managed By" value={record.managedBy} />
           <TextField name="observation" label="Observation" defaultValue={record.observation ?? ""} />
+          <ReadOnly label="Created At" value={formatDateTime(record.createdAt)} />
+          <ReadOnly label="Updated At" value={formatDateTime(record.updatedAt)} />
         </div>
       </Section>
 
@@ -160,8 +166,26 @@ function DateField({ name, label, value }: { name: string; label: string; value:
   return <TextField name={name} label={label} type="date" defaultValue={value ? toLocalDate(value) : ""} />;
 }
 
+function CheckboxField({ name, label, checked }: { name: string; label: string; checked: boolean }) {
+  return <label className="flex min-h-10 items-center gap-2 text-sm font-semibold text-slate-700"><input name={name} type="checkbox" defaultChecked={checked} className="h-4 w-4 accent-teal-700" />{label}</label>;
+}
+
 function ReadOnly({ label, value }: { label: string; value: string | number | null }) {
   return <div><span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}</span><div className="flex min-h-10 items-center rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-700">{value ?? "-"}</div></div>;
+}
+
+function formatInsuranceProvider(insuranceCompany: string | undefined, intermediary: string | null | undefined) {
+  if (!insuranceCompany) return null;
+  return intermediary ? `${insuranceCompany} (${intermediary})` : insuranceCompany;
+}
+
+function formatReference(reference: number) {
+  const value = String(reference);
+  return `${value.slice(0, -2)}-${value.slice(-2)}`;
+}
+
+function formatDateTime(value: Date) {
+  return new Intl.DateTimeFormat("en-GB", { dateStyle: "short", timeStyle: "medium" }).format(value);
 }
 
 function Notice({ tone, children }: { tone: "error" | "success"; children: React.ReactNode }) {
