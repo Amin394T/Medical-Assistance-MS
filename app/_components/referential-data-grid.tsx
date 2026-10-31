@@ -15,11 +15,14 @@ type EditorType = "text" | "date" | "number" | "checkbox" | "select" | "combo-bo
 export type EntityColumn = {
   key: string;
   label: string;
-  format?: "date" | "label" | "policyType" | "insuranceProviderType";
+  format?: "date" | "datetime" | "label" | "policyType" | "insuranceProviderType";
   editor?: EditorType;
   options?: SelectOption[];
+  optionsBy?: { dependencyKey: string; values: Record<string, SelectOption[]> };
+  defaultFieldByOption?: { fieldKey: string; values: Record<string, number> };
   required?: boolean;
   nullable?: boolean;
+  readOnly?: boolean;
 };
 
 type ReferencialDataGridProps<Row extends EntityRow, CreateValues extends object> = {
@@ -52,7 +55,8 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
   const [newDraft, setNewDraft] = useState<DraftRow | null>(null);
   const normalizedQuery = query.trim().toLowerCase();
   const filteredRows = useMemo(
-    () => rows.filter((row) => !normalizedQuery || columns.some((column) => formatValue(row[column.key], column).toLowerCase().includes(normalizedQuery))),
+    () => rows.filter((row) => !normalizedQuery || columns.some((column) =>
+      formatValue(row[column.key], { ...column, options: resolveOptions(column, row) }).toLowerCase().includes(normalizedQuery))),
     [columns, normalizedQuery, rows],
   );
   const tableColumns = useMemo(
@@ -60,7 +64,7 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
       id: column.key,
       header: column.label,
       sortFn: "entity",
-      cell: ({ getValue }) => formatValue(getValue(), column),
+      cell: ({ getValue, row }) => formatValue(getValue(), { ...column, options: resolveOptions(column, row.original) }),
     }))),
     [columns],
   );
@@ -162,7 +166,7 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
                 </div>
                 {errors.new ? <p role="alert" className="mt-2 max-w-48 whitespace-normal text-xs text-rose-700">{errors.new}</p> : null}
               </td>
-              {columns.map((column) => <td key={column.key} className="max-w-xs px-3 py-3"><GridEditor column={column} value={newDraft[column.key]} onChange={(value) => setNewDraft((current) => current ? { ...current, [column.key]: value } : current)} /></td>)}
+              {columns.map((column) => <td key={column.key} className="max-w-xs px-3 py-3">{column.readOnly ? <span className="text-xs text-slate-400">Set automatically</span> : <GridEditor column={{ ...column, options: resolveOptions(column, newDraft) }} value={newDraft[column.key]} onChange={(value) => setNewDraft((current) => current ? updateDraft(current, column, value, columns, true) : current)} />}</td>)}
             </tr> : null}
             {table.getRowModel().rows.length === 0 && !newDraft ? <tr><td colSpan={columns.length + 1} className="px-5 py-16 text-center text-sm text-slate-500">No {title.toLowerCase()} match your search.</td></tr> : table.getRowModel().rows.map((row) => {
               const original = row.original as Row;
@@ -187,7 +191,10 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
                 {row.getAllCells().map((cell, index) => {
                   const column = columns[index];
                   return <td key={cell.id} className={`max-w-xs whitespace-nowrap px-5 py-4 ${markedForDeletion ? "bg-rose-50 text-rose-800 line-through" : "text-slate-700"}`}>
-                    {draft ? <GridEditor column={column} value={draft[column.key]} disabled={markedForDeletion || saving[key]} onChange={(value) => setDrafts((current) => ({ ...current, [key]: { ...current[key], [column.key]: value } }))} /> : <table.FlexRender cell={cell} />}
+                    {draft ? column.readOnly
+                      ? formatValue(original[column.key], { ...column, options: resolveOptions(column, original) })
+                      : <GridEditor column={{ ...column, options: resolveOptions(column, draft) }} value={draft[column.key]} disabled={markedForDeletion || saving[key]} onChange={(value) => setDrafts((current) => ({ ...current, [key]: updateDraft(current[key], column, value, columns, false) }))} />
+                      : <table.FlexRender cell={cell} />}
                   </td>;
                 })}
               </tr>;
@@ -209,31 +216,39 @@ function GridEditor({ column, value, disabled, onChange }: { column: EntityColum
 }
 
 function createDraft(columns: EntityColumn[], row?: EntityRow): DraftRow {
-  return Object.fromEntries(columns.map((column) => {
+  const draft = Object.fromEntries(columns.map((column) => {
     const value = row?.[column.key];
     if (row && column.key in row && value === null) return [column.key, ""];
     if (value instanceof Date) return [column.key, toDateInputValue(value)];
     if (value !== undefined && value !== null) return [column.key, typeof value === "boolean" ? value : String(value)];
     if (column.editor === "checkbox") return [column.key, false];
-    if (column.editor === "select") {
-      const defaultOption = column.options?.[0];
-      return [column.key, defaultOption ? String(defaultOption.value ?? "") : ""];
-    }
+    if (column.editor === "select" && column.options?.length) return [column.key, String(column.options[0]?.value ?? "")];
     return [column.key, ""];
   }));
+  for (const column of columns) {
+    if (column.editor === "select" && !draft[column.key]) {
+      const option = resolveOptions(column, { ...row, ...draft })[0];
+      if (option) draft[column.key] = String(option.value ?? "");
+    }
+    if (!row && column.defaultFieldByOption) {
+      const defaultValue = column.defaultFieldByOption.values[String(draft[column.key] ?? "")];
+      if (defaultValue !== undefined) draft[column.defaultFieldByOption.fieldKey] = String(defaultValue);
+    }
+  }
+  return draft;
 }
 
 function validateDraft(draft: DraftRow, columns: EntityColumn[]) {
-  const missing = columns.find((column) => column.required && !String(draft[column.key] ?? "").trim());
+  const missing = columns.find((column) => !column.readOnly && column.required && !String(draft[column.key] ?? "").trim());
   if (missing) throw new Error(`${missing.label} is required.`);
 }
 
 function parseDraft(draft: DraftRow, columns: EntityColumn[]): Record<string, EntityValue> {
-  return Object.fromEntries(columns.map((column) => {
+  return Object.fromEntries(columns.filter((column) => !column.readOnly).map((column) => {
     const value = draft[column.key];
     if (column.editor === "checkbox") return [column.key, value === true];
     if (column.editor === "select") {
-      const option = column.options?.find((item) => String(item.value ?? "") === String(value ?? ""));
+      const option = resolveOptions(column, draft).find((item) => String(item.value ?? "") === String(value ?? ""));
       if (option?.value == null) return [column.key, null];
       return [column.key, option?.value ?? value ?? ""];
     }
@@ -249,12 +264,39 @@ function formatValue(value: EntityValue, column: EntityColumn) {
   if (column.options) return column.options.find((option) => option.value === value)?.label ?? (value === null ? "-" : String(value));
   if (value === null) return "-";
   if (column.format === "date") return formatDate(value);
+  if (column.format === "datetime") return formatDateTime(value);
   if (column.format === "label") return formatLabel(value);
   if (column.format === "policyType") return ({ REV: "Revisable", FIX: "Fixed-rate" }[String(value)] ?? String(value));
   if (column.format === "insuranceProviderType") return ({ CMP: "Company", AGT: "Agent", BRK: "Broker" }[String(value)] ?? String(value));
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (value instanceof Date) return formatDateTime(value);
   return String(value);
+}
+
+function resolveOptions(column: EntityColumn, values?: Record<string, unknown>) {
+  if (!column.optionsBy) return column.options ?? [];
+  return column.optionsBy.values[String(values?.[column.optionsBy.dependencyKey] ?? "")] ?? [];
+}
+
+function updateDraft(draft: DraftRow, column: EntityColumn, value: DraftValue, columns: EntityColumn[], isNew: boolean): DraftRow {
+  const updated = { ...draft, [column.key]: value };
+  for (const dependent of columns) {
+    if (dependent.optionsBy?.dependencyKey === column.key) {
+      const options = resolveOptions(dependent, updated);
+      if (!options.some((option) => String(option.value ?? "") === String(updated[dependent.key] ?? ""))) {
+        updated[dependent.key] = String(options[0]?.value ?? "");
+        if (isNew && dependent.defaultFieldByOption) {
+          const defaultValue = dependent.defaultFieldByOption.values[String(updated[dependent.key])];
+          if (defaultValue !== undefined) updated[dependent.defaultFieldByOption.fieldKey] = String(defaultValue);
+        }
+      }
+    }
+    if (isNew && dependent.defaultFieldByOption && dependent.key === column.key) {
+      const defaultValue = dependent.defaultFieldByOption.values[String(value)];
+      if (defaultValue !== undefined) updated[dependent.defaultFieldByOption.fieldKey] = String(defaultValue);
+    }
+  }
+  return updated;
 }
 
 function formatDateTime(value: EntityValue) {

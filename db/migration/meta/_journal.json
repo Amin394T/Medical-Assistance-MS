@@ -36,6 +36,34 @@
       "when": 1791756403321,
       "tag": "0004_last_bruce_banner",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1793312208622,
+      "tag": "0005_perpetual_microbe",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793315379209,
+      "tag": "0006_readme_alignment",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1793315494904,
+      "tag": "0007_provider_reporter_alignment",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793317298209,
+      "tag": "0008_optional_fields_alignment",
+      "breakpoints": true
     }
   ]
 }

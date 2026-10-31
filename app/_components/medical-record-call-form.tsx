@@ -15,9 +15,6 @@ type PolicyOption = {
   clientCompanyLabel: string;
   insuranceCompanyLabel: string;
   intermediaryLabel: string | null;
-  terminated: boolean;
-  effectiveDate: string;
-  terminationDate: string | null;
 };
 type MedicalRecordCallFormProps = {
   policies: PolicyOption[];
@@ -28,9 +25,8 @@ type MedicalRecordCallFormProps = {
 type CallFormValues = {
   accidentDate: string;
   policyId: string;
-  type: "AT" | "MD" | "VF" | "SS" | "PR";
-  reporterFirstName: string;
-  reporterLastName: string;
+  type: "AT" | "MD" | "VF" | "SS" | "PR" | "AV";
+  reporterName: string;
   reporterPhone: string;
   accidentPlace: "WS" | "RT" | "OF" | "CS";
   victimFirstName: string;
@@ -59,8 +55,7 @@ const initialValues: CallFormValues = {
   accidentDate: new Date().toISOString().slice(0, 16),
   policyId: "",
   type: "AT",
-  reporterFirstName: "",
-  reporterLastName: "",
+  reporterName: "",
   reporterPhone: "",
   accidentPlace: "WS",
   victimFirstName: "",
@@ -85,14 +80,13 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
           type: value.type,
           policyId: Number(value.policyId),
           reportingDate: new Date(displayReportingDate),
-          reporterFirstName: value.reporterFirstName,
-          reporterLastName: value.reporterLastName || null,
+          reporterName: value.reporterName || null,
           reporterPhone: value.reporterPhone,
           accidentPlace: value.accidentPlace,
           accidentDate: new Date(value.accidentDate),
           accidentCause: value.accidentCause || null,
           victimFirstName: value.victimFirstName,
-          victimLastName: value.victimLastName,
+          victimLastName: value.victimLastName || null,
           victimNationalId: value.victimNationalId,
           victimPhone: value.victimPhone || null,
           victimJob: value.victimJob || null,
@@ -120,7 +114,7 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
           }}
         >
           <FormSection title="01 / Client Data">
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-5 md:grid-cols-3">
               <form.Field key={createdReference} name="policyId" children={(field) => <PolicyPicker field={field as unknown as RenderableField} policies={policies} />} />
               <form.Subscribe selector={(state) => state.values.policyId} children={(policyId) => {
                 const selectedPolicy = getSelectedPolicy(policyId, policies);
@@ -129,31 +123,25 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
                   <ReadOnlyField label="Insurance Provider" value={formatInsuranceProvider(selectedPolicy?.insuranceCompanyLabel, selectedPolicy?.intermediaryLabel)} />
                 </>;
               }} />
-            </div>
-          </FormSection>
-
-          <FormSection title="02 / Reporter Data">
-            <div className="grid gap-5 md:grid-cols-2">
               <ReadOnlyField label="Reporting Date" value={formatDateTime(displayReportingDate)} />
+              <Field form={form as unknown as FormRenderer} name="reporterName" label="Reporter Name" />
               <Field form={form as unknown as FormRenderer} name="reporterPhone" label="Reporter Phone" required type="tel" />
-              <Field form={form as unknown as FormRenderer} name="reporterFirstName" label="Reporter First Name" required />
-              <Field form={form as unknown as FormRenderer} name="reporterLastName" label="Reporter Last Name" />
             </div>
           </FormSection>
 
-          <FormSection title="03 / Accident Data">
-            <div className="grid gap-5 md:grid-cols-2">
+          <FormSection title="02 / Accident Data">
+            <div className="grid gap-5 md:grid-cols-3">
               <Field form={form as unknown as FormRenderer} name="accidentDate" label="Accident Date" required type="datetime-local" />
-              <form.Field name="type" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Type" required options={[{ value: "AT", label: "Workplace accident" }, { value: "MD", label: "Illness & pain" }, { value: "VF", label: "Policy verification" }, { value: "SS", label: "Special service" }, { value: "PR", label: "Occupational disease" }]} />} />
+              <form.Field name="type" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Type" required options={[{ value: "AT", label: "Workplace accident" }, { value: "MD", label: "Illness & pain" }, { value: "VF", label: "Policy verification" }, { value: "SS", label: "Special service" }, { value: "PR", label: "Occupational disease" }, { value: "AV", label: "Lawyer procedure" }]} />} />
               <form.Field name="accidentCause" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Cause" options={[{ value: "FALL", label: "Falling or slipping" }, { value: "EQIP", label: "Machine or equipment" }, { value: "FATG", label: "Overexertion and fatigue" }, { value: "HAZD", label: "Hazardous substance" }, { value: "VIOL", label: "Workplace violence" }, { value: "OBJC", label: "Moving objects" }]} placeholder="Select a cause" />} />
               <form.Field name="accidentPlace" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Place" required options={[{ value: "WS", label: "Workshop" }, { value: "RT", label: "Route" }, { value: "OF", label: "Office" }, { value: "CS", label: "Construction" }]} />} />
             </div>
           </FormSection>
 
-          <FormSection title="04 / Victim Data">
-            <div className="grid gap-5 md:grid-cols-2">
+          <FormSection title="03 / Victim Data">
+            <div className="grid gap-5 md:grid-cols-3">
               <Field form={form as unknown as FormRenderer} name="victimFirstName" label="Victim First Name" required />
-              <Field form={form as unknown as FormRenderer} name="victimLastName" label="Victim Last Name" required />
+              <Field form={form as unknown as FormRenderer} name="victimLastName" label="Victim Last Name" />
               <Field form={form as unknown as FormRenderer} name="victimNationalId" label="National ID" required />
               <Field form={form as unknown as FormRenderer} name="victimPhone" label="Phone" type="tel" />
               <Field form={form as unknown as FormRenderer} name="victimJob" label="Victim Job" options={jobs} />
@@ -183,8 +171,7 @@ function PolicyPicker({ field, policies }: { field: RenderableField; policies: P
   const [isOpen, setIsOpen] = useState(false);
   const matches = policies.filter((policy) => `${policy.policyNumber} ${policy.clientCompanyLabel}`.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8);
 
-  return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Insurance Policy<span className="ml-1 text-teal-700">*</span></span><input value={query} onBlur={field.handleBlur} onFocus={() => setIsOpen(true)} onClick={() => setIsOpen(true)} onChange={(event) => { setQuery(event.target.value); setIsOpen(true); field.handleChange(""); }} className={inputClass} placeholder="Search policy number or client" role="combobox" aria-expanded={isOpen && Boolean(query.trim())} aria-controls="policy-picker-options" aria-autocomplete="list" />{isOpen && query.trim() ? <div id="policy-picker-options" role="listbox" className="mt-1 max-h-56 overflow-y-auto border border-slate-200 bg-white shadow-lg">{matches.length ? matches.map((policy) => <button key={policy.id} type="button" role="option" aria-selected={String(policy.id) === String(field.state.value)} onMouseDown={(event) => event.preventDefault()} onClick={() => { field.handleChange(String(policy.id)); setQuery(policy.policyNumber); setIsOpen(false); }} className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm hover:bg-teal-50"><span className="block font-semibold text-slate-900">{policy.policyNumber}</span><span className="block text-xs text-slate-500">{policy.clientCompanyLabel}{policy.terminated ? " · Terminated" : ""}</span></button>) : <p className="px-3 py-2 text-sm text-slate-500">No matching policies.</p>}</div> : null}{field.state.meta.errors[0] ? <span className="mt-1 block text-xs text-rose-600">{String(field.state.meta.errors[0])}</span> : null}</label>;
-}
+  return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Insurance Policy<span className="ml-1 text-teal-700">*</span></span><input value={query} onBlur={field.handleBlur} onFocus={() => setIsOpen(true)} onClick={() => setIsOpen(true)} onChange={(event) => { setQuery(event.target.value); setIsOpen(true); field.handleChange(""); }} className={inputClass} placeholder="Search policy number or client" role="combobox" aria-expanded={isOpen && Boolean(query.trim())} aria-controls="policy-picker-options" aria-autocomplete="list" />{isOpen && query.trim() ? <div id="policy-picker-options" role="listbox" className="mt-1 max-h-56 overflow-y-auto border border-slate-200 bg-white shadow-lg">{matches.length ? matches.map((policy) => <button key={policy.id} type="button" role="option" aria-selected={String(policy.id) === String(field.state.value)} onMouseDown={(event) => event.preventDefault()} onClick={() => { field.handleChange(String(policy.id)); setQuery(policy.policyNumber); setIsOpen(false); }} className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm hover:bg-teal-50"><span className="block font-semibold text-slate-900">{policy.policyNumber}</span>  <span className="block text-xs text-slate-500">{policy.clientCompanyLabel}</span></button>) : <p className="px-3 py-2 text-sm text-slate-500">No matching policies.</p>}</div> : null}{field.state.meta.errors[0] ? <span className="mt-1 block text-xs text-rose-600">{String(field.state.meta.errors[0])}</span> : null}</label>;}
 
 function getSelectedPolicy(policyId: string, policies: PolicyOption[]) {
   return policies.find((policy) => policy.id === Number(policyId));

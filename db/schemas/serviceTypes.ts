@@ -1,8 +1,9 @@
-import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, real, text } from "drizzle-orm/sqlite-core";
 
 export const serviceTypes = sqliteTable("service_types", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   label: text("label").notNull(),
+  defaultFee: real("default_fee").notNull().default(0),
   targetProfile: text("target_profile").notNull(),
 });
 

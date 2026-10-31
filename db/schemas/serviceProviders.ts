@@ -8,6 +8,8 @@ export const serviceProviders = sqliteTable("service_providers", {
   contactName: text("contact_name"),
   phone: text("phone").notNull(),
   email: text("email"),
+  bank: text("bank"),
+  bankAccount: text("bank_account"),
 });
 
 export type ServiceProvider = typeof serviceProviders.$inferSelect;

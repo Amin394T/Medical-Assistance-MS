@@ -5,74 +5,65 @@ import { insurancePolicies } from "./insurancePolicies";
 export const medicalRecords = sqliteTable("medical_records", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   reference: integer("reference").notNull().unique(),
-  type: text("type", { enum: ["AT", "MD", "VF", "SS", "PR"] }).notNull().default("AT"),
   policyId: integer("policy_id").notNull().references(() => insurancePolicies.id),
-  reportingDate: integer("reporting_date", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-  reporterFirstName: text("reporter_first_name").notNull(),
-  reporterLastName: text("reporter_last_name"),
+  reportingDate: integer("reporting_date", { mode: "timestamp" }).notNull(),
+  reporterName: text("reporter_name"),
   reporterPhone: text("reporter_phone").notNull(),
-  accidentPlace: text("accident_place", { enum: ["WS", "RT", "OF", "CS"] }).notNull(),
-  accidentDate: integer("accident_date", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-  accidentCause: text("accident_cause", { enum: ["FALL", "EQIP", "FATG", "HAZD", "VIOL", "OBJC"] }),
+  accidentDate: integer("accident_date", { mode: "timestamp" }).notNull(),
+  accidentType: text("accident_type", { enum: ["AT", "MD", "VF", "SS", "PR", "AV"] }).notNull(),
+  accidentPlace: text("accident_place", { enum: ["WS", "RT", "OF", "CT"] }).notNull(),
+  accidentCause: text("accident_cause", { enum: ["FALL", "EQIP", "FATG", "HAZD", "VIOL", "OBJC"] }).notNull(),
+  accidentEvolution: text("accident_evolution", { enum: ["INIT", "RELP", "DEAT", "COMP"] }).notNull(),
   victimFirstName: text("victim_first_name").notNull(),
-  victimLastName: text("victim_last_name").notNull(),
+  victimLastName: text("victim_last_name"),
   victimPhone: text("victim_phone"),
   victimNationalId: text("victim_national_id").notNull(),
   victimJob: text("victim_job"),
-  status: text("status", { enum: ["PROG", "SETT", "CLOS", "ABAN", "BILL"] }).notNull().default("PROG"),
-  fate: text("fate", { enum: ["APPROVED", "REJECTED"] }),
-  fateReason: text("fate_reason"),
-  evolution: text("evolution", { enum: ["INIT", "RELP", "DEAT", "COMP"] }).notNull().default("INIT"),
-  delegation: integer("delegation", { mode: "boolean" }).default(false),
+  status: text("status", { enum: ["PRG", "RJC", "CLS", "ABN"] }).notNull(),
   delegationDate: integer("delegation_date", { mode: "timestamp" }),
-  coverage: integer("coverage", { mode: "boolean" }).default(false),
-  coverageDate: integer("coverage_date", { mode: "timestamp" }),
-  managedBy: text("managed_by").notNull(),
+  regulatoryDoctor: text("regulatory_doctor"),
+  manager: text("manager").notNull(),
   observation: text("observation"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()).$onUpdateFn(() => new Date()),
+  lastUpdated: integer("last_updated", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()).$onUpdateFn(() => new Date()),
+  lastUpdater: text("last_updater").notNull(),
 });
 
-export type MedicalRecord = Omit<typeof medicalRecords.$inferSelect, "createdAt" | "updatedAt">;
+export type MedicalRecord = typeof medicalRecords.$inferSelect;
 
 export type NewMedicalRecord = {
-  type: "AT" | "MD" | "VF" | "SS" | "PR";
   policyId: number;
   reportingDate: Date;
-  reporterFirstName: string;
-  reporterLastName: string | null;
+  reporterName: string | null;
   reporterPhone: string;
-  accidentPlace: "WS" | "RT" | "OF" | "CS";
   accidentDate: Date;
+  accidentType: "AT" | "MD" | "VF" | "SS" | "PR" | "AV";
+  accidentPlace: "WS" | "RT" | "OF" | "CT";
   accidentCause: "FALL" | "EQIP" | "FATG" | "HAZD" | "VIOL" | "OBJC" | null;
+  accidentEvolution: "INIT" | "RELP" | "DEAT" | "COMP";
   victimFirstName: string;
-  victimLastName: string;
-  victimNationalId: string;
+  victimLastName: string | null;
   victimPhone: string | null;
+  victimNationalId: string;
   victimJob: string | null;
-  managedBy: string;
 };
 
 export type SetMedicalRecord = {
-  type: "AT" | "MD" | "VF" | "SS" | "PR";
   policyId: number;
   reportingDate: Date;
-  reporterFirstName: string;
-  reporterLastName: string | null;
+  reporterName: string | null;
   reporterPhone: string;
-  accidentPlace: "WS" | "RT" | "OF" | "CS";
   accidentDate: Date;
+  accidentType: "AT" | "MD" | "VF" | "SS" | "PR" | "AV";
+  accidentPlace: "WS" | "RT" | "OF" | "CT";
   accidentCause: "FALL" | "EQIP" | "FATG" | "HAZD" | "VIOL" | "OBJC" | null;
+  accidentEvolution: "INIT" | "RELP" | "DEAT" | "COMP";
   victimFirstName: string;
-  victimLastName: string;
-  victimNationalId: string;
+  victimLastName: string | null;
   victimPhone: string | null;
+  victimNationalId: string;
   victimJob: string | null;
-  delegation: boolean | null;
+  status: "PRG" | "RJC" | "CLS" | "ABN";
   delegationDate: Date | null;
-  coverage: boolean | null;
-  coverageDate: Date | null;
-  status: "PROG" | "SETT" | "CLOS" | "ABAN" | "BILL";
-  evolution: "INIT" | "RELP" | "DEAT" | "COMP";
+  regulatoryDoctor: string | null;
   observation: string | null;
 };

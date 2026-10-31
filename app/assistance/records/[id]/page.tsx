@@ -2,10 +2,11 @@ import { ClipboardPen } from "lucide-react";
 
 import { getMedicalRecord, listJobs } from "@/db/actions/medicalRecords";
 import { listInsurancePolicies } from "@/db/actions/insurancePolicies";
-import { createMedicalDocument, deleteMedicalDocument, listDocumentTypes, listRecordMedicalDocuments, updateMedicalDocument } from "@/db/actions/medicalDocuments";
+import { createMedicalCertificate, deleteMedicalCertificate, listRecordMedicalCertificates, updateMedicalCertificate } from "@/db/actions/medicalCertificates";
 import { createMedicalService, deleteMedicalService, listRecordMedicalServices, updateMedicalService } from "@/db/actions/medicalServices";
 import { listServiceProviders } from "@/db/actions/serviceProviders";
 import { listServiceTypes } from "@/db/actions/serviceTypes";
+import { listInvoices } from "@/db/actions/invoices";
 import { MedicalRecordEditForm } from "@/app/_components/medical-record-edit-form";
 import { PageHeader } from "@/app/_components/page-header";
 import { ReferencialDataGrid } from "@/app/_components/referential-data-grid";
@@ -17,20 +18,29 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 	const recordId = Number(id);
 	if (!Number.isInteger(recordId) || recordId < 1) return <Message message="Record not found." />;
 
-	const [record, services, documents, policies, providers, serviceTypes, jobs, documentTypes] = await Promise.all([
+	const [record, services, certificates, policies, providers, serviceTypes, jobs, invoices] = await Promise.all([
 		getMedicalRecord(recordId),
 		listRecordMedicalServices(recordId),
-		listRecordMedicalDocuments(recordId),
+		listRecordMedicalCertificates(recordId),
 		listInsurancePolicies(),
 		listServiceProviders(),
 		listServiceTypes(),
 		listJobs(),
-		listDocumentTypes(),
+		listInvoices(),
 	]);
 	if (!record) return <Message message="Record Not Found." />;
 
 	const referenceValue = String(record.reference);
 	const reference = `${record.type}-${referenceValue.slice(0, -2)}-${referenceValue.slice(-2)}`;
+	const serviceTypesByProvider = Object.fromEntries(providers.map((provider) => [
+		String(provider.id),
+		serviceTypes.filter(({ targetProfile }) => targetProfile === provider.profile).map(({ id, label }) => ({ value: id, label })),
+	]));
+	const defaultFees = Object.fromEntries(serviceTypes.map(({ id, defaultFee }) => [String(id), defaultFee]));
+	const invoiceOptions = [
+		{ value: null, label: "None" },
+		...invoices.map(({ id, date, insuranceProvider }) => ({ value: id, label: `${date.toLocaleDateString()} - ${insuranceProvider}` })),
+	];
 
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
@@ -39,18 +49,26 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 
 				<MedicalRecordEditForm
 					record={record}
-					policies={policies.map(({ id, policyNumber, clientCompany, insuranceCompany, intermediary, terminated }) => ({ id, policyNumber, clientCompany, insuranceCompany, intermediary, terminated: terminated ?? false }))}
+					policies={policies.map(({ id, policyNumber, clientCompany, insuranceCompany, intermediary }) => ({ id, policyNumber, clientCompany, insuranceCompany, intermediary }))}
 					jobs={jobs.filter((job): job is string => job !== null)}
 				/>
 				<Section title="Medical Services">
 					<ReferencialDataGrid
 						title="Medical Services"
-						rows={services.map(({ id, medicalRecordId, serviceProviderId, serviceTypeId, missionDate, missionPlace, observation }) => ({ id, medicalRecordId, serviceProviderId, serviceTypeId, missionDate, missionPlace, observation }))}
+						rows={services.map(({ id, medicalRecordId, serviceProviderId, serviceTypeId, serviceDate, feeAmount, billedAmount, taxRate, billingStatus, settlingDate, bank, paymentMode, paymentReference, invoiceId, observation }) => ({ id, medicalRecordId, serviceProviderId, serviceTypeId, serviceDate, feeAmount, billedAmount, taxRate, billingStatus, settlingDate, bank, paymentMode, paymentReference, invoiceId, observation }))}
 						columns={[
-							{ key: "serviceTypeId", label: "Service Type", editor: "select", required: true, options: serviceTypes.map(({ id, label }) => ({ value: id, label })) },
+							{ key: "serviceTypeId", label: "Service Type", editor: "select", required: true, optionsBy: { dependencyKey: "serviceProviderId", values: serviceTypesByProvider }, defaultFieldByOption: { fieldKey: "feeAmount", values: defaultFees } },
 							{ key: "serviceProviderId", label: "Provider", editor: "select", required: true, options: providers.map(({ id, label }) => ({ value: id, label })) },
-							{ key: "missionDate", label: "Mission Date", editor: "date", format: "date", nullable: true },
-							{ key: "missionPlace", label: "Mission Place", nullable: true },
+							{ key: "serviceDate", label: "Service Date", editor: "date", format: "date", nullable: true },
+							{ key: "feeAmount", label: "Fee Amount", editor: "number", nullable: true },
+							{ key: "billedAmount", label: "Billed Amount", editor: "number", nullable: true },
+							{ key: "taxRate", label: "Tax Rate", editor: "number", nullable: true },
+							{ key: "billingStatus", label: "Billing Status", editor: "select", required: true, options: [{ value: "WTN", label: "Waiting" }, { value: "BLD", label: "Billed" }, { value: "STL", label: "Settled" }] },
+							{ key: "settlingDate", label: "Settling Date", editor: "date", format: "date", nullable: true },
+							{ key: "bank", label: "Bank", nullable: true },
+							{ key: "paymentMode", label: "Payment Mode", editor: "select", nullable: true, options: [{ value: null, label: "None" }, { value: "CHQ", label: "Check" }, { value: "VRM", label: "Transfer" }, { value: "CSH", label: "Cash" }] },
+							{ key: "paymentReference", label: "Payment Reference", nullable: true },
+							{ key: "invoiceId", label: "Invoice", editor: "select", nullable: true, options: invoiceOptions },
 							{ key: "observation", label: "Observation", nullable: true },
 						]}
 						onCreate={createMedicalService.bind(null, recordId)}
@@ -58,22 +76,27 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 						onDelete={deleteMedicalService}
 					/>
 				</Section>
-				<Section title="Medical Documents">
+				<Section title="Medical Certificates">
 					<ReferencialDataGrid
-						title="Medical Documents"
-						rows={documents.map(({ id, medicalRecordId, type, serviceProviderId, observation, signed }) => ({ id, medicalRecordId, type, serviceProviderId, observation, signed }))}
+					title="Medical Certificates"
+					rows={certificates.map(({ id, medicalRecordId, type, serviceProviderId, daysNumber, startDate, endDate, observation }) => ({ id, medicalRecordId, type, serviceProviderId, daysNumber, startDate, endDate, observation }))}
 						columns={[
-							{ key: "type", label: "Type", editor: "combo-box", options: documentTypes.map((type) => ({ value: type, label: type })), required: true },
-							{ key: "serviceProviderId", label: "Service Provider", editor: "select", nullable: true, options: [
-								{ value: null, label: "None" },
-								...providers.map(({ id, label }) => ({ value: id, label })),
-							] },
-							{ key: "signed", label: "Signed", editor: "checkbox" },
-							{ key: "observation", label: "Observation", nullable: true },
-						]}
-						onCreate={createMedicalDocument.bind(null, recordId)}
-						onUpdate={updateMedicalDocument}
-						onDelete={deleteMedicalDocument}
+						{ key: "type", label: "Type", editor: "select", required: true, options: [
+							{ value: "INIT", label: "Initial" }, { value: "PRLG", label: "Prolongation" }, { value: "RTRN", label: "Return" },
+							{ value: "AGRV", label: "Aggravation" }, { value: "INSP", label: "Inspection" }, { value: "RCVR", label: "Recovery" },
+						] },
+						{ key: "serviceProviderId", label: "Service Provider", editor: "select", nullable: true, options: [
+							{ value: null, label: "None" },
+							...providers.map(({ id, label }) => ({ value: id, label })),
+						] },
+						{ key: "daysNumber", label: "Days Number", editor: "number", required: true },
+						{ key: "startDate", label: "Start Date", editor: "date", format: "date", nullable: true },
+						{ key: "endDate", label: "End Date", editor: "date", format: "date", nullable: true },
+						{ key: "observation", label: "Observation", nullable: true },
+					]}
+					onCreate={createMedicalCertificate.bind(null, recordId)}
+					onUpdate={updateMedicalCertificate}
+					onDelete={deleteMedicalCertificate}
 					/>
 				</Section>
 			</div>

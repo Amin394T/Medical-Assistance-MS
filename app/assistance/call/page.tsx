@@ -15,15 +15,12 @@ export default async function CallPage() {
 			<div className="mx-auto max-w-6xl">
 				<PageHeader section="Assistance" title="Emergency Call" icon={<Headset className="h-6 w-6" />} />
 				<MedicalRecordCallForm
-			policies={policies.map(({ id, policyNumber, clientCompany, insuranceCompany, intermediary, terminated, effectiveDate, terminationDate }) => ({
+			policies={policies.map(({ id, policyNumber, clientCompany, insuranceCompany, intermediary }) => ({
 				id,
 				policyNumber,
 				clientCompanyLabel: clientCompany,
 				insuranceCompanyLabel: insuranceCompany,
 				intermediaryLabel: intermediary,
-				terminated: terminated ?? false,
-				effectiveDate: effectiveDate.toISOString(),
-				terminationDate: terminationDate?.toISOString() ?? null,
 			}))}
 			jobs={jobs.filter((job): job is string => job !== null)}
 			displayReportingDate={now.toISOString()}

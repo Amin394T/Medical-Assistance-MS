@@ -6,6 +6,11 @@
 - disallow deletion for policies and insurance providers
 - disable editing for read-only fields
     + merrecord details: policy
+- document printing from tables
+
+- reporting date not read only and required
+- record services or certificates modifications should update lastUpdated and lastUpdater
+- replace USER with logged-in user
 
 
 ## IMPROVEMENTS
@@ -24,14 +29,17 @@
 
 
 ## NEEDS
-- current data model, required for migration.
-- how will data migration from cuurrent server happen?
-- what is the current printing solution? can it be re-used?
-- how are subsequent services known? through phone calls?
-- how do you decide which service provider to send? location heuristics?
-- delta files structures (both).
-- can a client exist in the list but have no corresponding policy?
-- all causes/scenarios of policy invalidity.
+- delta file(s) fields, list of beneficiaries
+- details about lawyer procedure records
+- certificates from hospitals only, regulating doctor?
 - are brokers and agents just informational?
-- can record policy and type be updated?
-- all document types.
+- go through reports
+= why does poliy verification required a record
+
+- remaining columns in certificates
+- insurance company balance and treshold
+- invoice per record or can have multiple
+- is tax the same for all
+
+- current data model, required for migration.
+- what is the current printing solution? can it be re-used?

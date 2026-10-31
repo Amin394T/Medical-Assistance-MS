@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
 import { db } from "../index";
@@ -16,11 +16,10 @@ export async function listInsurancePolicies() {
     .from(insurancePolicies)
     .innerJoin(insuranceCompanyAlias, eq(insurancePolicies.insuranceCompanyId, insuranceCompanyAlias.id))
     .leftJoin(intermediaryAlias, eq(insurancePolicies.intermediaryId, intermediaryAlias.id))
-    .orderBy(desc(insurancePolicies.createdAt));
+    .orderBy(desc(insurancePolicies.creationDate));
 
   return rows.map(({ insurance_policies, insuranceCompany, intermediary }) => ({
     ...insurance_policies,
-    nominativeList: insurance_policies.nominativeList?.split(",") ?? [],
     insuranceCompany: insuranceCompany.label,
     intermediary: intermediary ? intermediary.label : null,
   }));
@@ -36,10 +35,10 @@ export async function createInsurancePolicy(input: NewInsurancePolicy) {
 }
 
 export async function updateInsurancePolicy(id: number, input: InsurancePolicy) {
-  await validatePolicyProviders(input.insuranceCompanyId, input.intermediaryId);  
+  await validatePolicyProviders(input.insuranceCompanyId, input.intermediaryId ?? null);
   const [record] = await db
     .update(insurancePolicies)
-    .set(input)
+    .set({ ...input, lastModified: new Date() })
     .where(eq(insurancePolicies.id, id))
     .returning();
   return record ?? null;
@@ -68,5 +67,3 @@ async function validatePolicyProviders(insuranceCompanyId: number, intermediaryI
     if (intermediary?.type !== "AGT" && intermediary?.type !== "BRK") throw new Error("Invalid Intermediary");
   }
 }
-
-// TODO: adapt create and update to delta file processing

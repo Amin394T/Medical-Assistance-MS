@@ -9,7 +9,7 @@ import type { getMedicalRecord } from "@/db/actions/medicalRecords";
 import type { SetMedicalRecord } from "@/db/schemas";
 
 type MedicalRecordDetails = NonNullable<Awaited<ReturnType<typeof getMedicalRecord>>>;
-type PolicyOption = { id: number; policyNumber: string; clientCompany: string; insuranceCompany: string; intermediary: string | null; terminated: boolean };
+type PolicyOption = { id: number; policyNumber: string; clientCompany: string; insuranceCompany: string; intermediary: string | null };
 
 type MedicalRecordEditFormProps = {
   record: MedicalRecordDetails;
@@ -42,22 +42,19 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
           type: String(data.get("type")) as SetMedicalRecord["type"],
           policyId: Number(data.get("policyId")),
           reportingDate: parseDate("reportingDate") ?? new Date(),
-          reporterFirstName: String(data.get("reporterFirstName") ?? ""),
-          reporterLastName: String(data.get("reporterLastName") ?? "") || null,
+          reporterName: String(data.get("reporterName") ?? "") || null,
           reporterPhone: String(data.get("reporterPhone") ?? ""),
           accidentPlace: String(data.get("accidentPlace")) as SetMedicalRecord["accidentPlace"],
           accidentDate: parseDate("accidentDate") ?? new Date(),
           accidentCause: (String(data.get("accidentCause") ?? "") || null) as SetMedicalRecord["accidentCause"],
           victimFirstName: String(data.get("victimFirstName") ?? ""),
-          victimLastName: String(data.get("victimLastName") ?? ""),
+          victimLastName: String(data.get("victimLastName") ?? "") || null,
           victimPhone: String(data.get("victimPhone") ?? "") || null,
           victimNationalId: String(data.get("victimNationalId") ?? ""),
           victimJob: String(data.get("victimJob") ?? "") || null,
           evolution: String(data.get("evolution")) as SetMedicalRecord["evolution"],
-          delegation: data.get("delegation") === "on",
           delegationDate: parseDate("delegationDate"),
-          coverage: data.get("coverage") === "on",
-          coverageDate: parseDate("coverageDate"),
+          regulatoryDoctor: String(data.get("regulatoryDoctor") ?? "") || null,
           status: String(data.get("status")) as SetMedicalRecord["status"],
           observation: String(data.get("observation") ?? "") || null,
         };
@@ -75,7 +72,7 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
 
       <Section title="01 / Client Data">
         <div className="grid gap-5 md:grid-cols-2">
-          <label className="relative block"><span className="mb-2 block text-sm font-semibold text-slate-700">Insurance Policy<span className="ml-1 text-teal-700">*</span></span><input value={policyQuery} onFocus={() => setIsPolicyListOpen(true)} onClick={() => setIsPolicyListOpen(true)} onChange={(event) => { setPolicyQuery(event.target.value); setPolicyId(""); setIsPolicyListOpen(true); }} className={inputClass} placeholder="Search policy number or client" role="combobox" aria-expanded={isPolicyListOpen} aria-controls="edit-policy-picker-options" aria-autocomplete="list" /><input type="hidden" name="policyId" value={policyId} />{isPolicyListOpen ? <div id="edit-policy-picker-options" role="listbox" className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto border border-slate-200 bg-white shadow-lg">{policies.filter((policy) => `${policy.policyNumber} ${policy.clientCompany}`.toLowerCase().includes(policyQuery.trim().toLowerCase())).slice(0, 8).map((policy) => <button key={policy.id} type="button" role="option" aria-selected={String(policy.id) === policyId} onMouseDown={(event) => event.preventDefault()} onClick={() => { setPolicyId(String(policy.id)); setPolicyQuery(policy.policyNumber); setIsPolicyListOpen(false); }} className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm hover:bg-teal-50"><span className="block font-semibold text-slate-900">{policy.policyNumber}</span><span className="block text-xs text-slate-500">{policy.clientCompany}{policy.terminated ? " · Terminated" : ""}</span></button>)}</div> : null}</label>
+          <label className="relative block"><span className="mb-2 block text-sm font-semibold text-slate-700">Insurance Policy<span className="ml-1 text-teal-700">*</span></span><input value={policyQuery} onFocus={() => setIsPolicyListOpen(true)} onClick={() => setIsPolicyListOpen(true)} onChange={(event) => { setPolicyQuery(event.target.value); setPolicyId(""); setIsPolicyListOpen(true); }} className={inputClass} placeholder="Search policy number or client" role="combobox" aria-expanded={isPolicyListOpen} aria-controls="edit-policy-picker-options" aria-autocomplete="list" /><input type="hidden" name="policyId" value={policyId} />{isPolicyListOpen ? <div id="edit-policy-picker-options" role="listbox" className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto border border-slate-200 bg-white shadow-lg">{policies.filter((policy) => `${policy.policyNumber} ${policy.clientCompany}`.toLowerCase().includes(policyQuery.trim().toLowerCase())).slice(0, 8).map((policy) => <button key={policy.id} type="button" role="option" aria-selected={String(policy.id) === policyId} onMouseDown={(event) => event.preventDefault()} onClick={() => { setPolicyId(String(policy.id)); setPolicyQuery(policy.policyNumber); setIsPolicyListOpen(false); }} className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm hover:bg-teal-50"><span className="block font-semibold text-slate-900">{policy.policyNumber}</span><span className="block text-xs text-slate-500">{policy.clientCompany}</span></button>)}</div> : null}</label>
           <ReadOnly label="Client Company" value={selectedPolicy?.clientCompany ?? null} />
           <ReadOnly label="Insurance Provider" value={formatInsuranceProvider(selectedPolicy?.insuranceCompany, selectedPolicy?.intermediary)} />
         </div>
@@ -84,8 +81,7 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
       <Section title="02 / Reporter Data">
         <div className="grid gap-5 md:grid-cols-2">
           <DateTimeField name="reportingDate" label="Reporting Date" value={record.reportingDate} required />
-          <TextField name="reporterFirstName" label="Reporter First Name" defaultValue={record.reporterFirstName} required />
-          <TextField name="reporterLastName" label="Reporter Last Name" defaultValue={record.reporterLastName ?? ""} />
+          <TextField name="reporterName" label="Reporter Name" defaultValue={record.reporterName ?? ""} />
           <TextField name="reporterPhone" label="Reporter Phone" defaultValue={record.reporterPhone} required type="tel" />
         </div>
       </Section>
@@ -94,7 +90,7 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
         <div className="grid gap-5 md:grid-cols-2">
           <DateTimeField name="accidentDate" label="Accident Date" value={record.accidentDate} required />
           <SelectField name="type" label="Accident Type" defaultValue={record.type} required options={[
-            ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VF", "Policy verification"], ["SS", "Special service"], ["PR", "Occupational disease"],
+            ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VF", "Policy verification"], ["SS", "Special service"], ["PR", "Occupational disease"], ["AV", "Lawyer procedure"],
           ]} />
           <SelectField name="accidentCause" label="Accident Cause" defaultValue={record.accidentCause ?? ""} options={[
             ["", "Not specified"], ["FALL", "Falling or slipping"], ["EQIP", "Machine or equipment"], ["FATG", "Overexertion and fatigue"], ["HAZD", "Hazardous substance"], ["VIOL", "Workplace violence"], ["OBJC", "Moving objects"],
@@ -108,7 +104,7 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
       <Section title="04 / Victim Data">
         <div className="grid gap-5 md:grid-cols-2">
           <TextField name="victimFirstName" label="Victim First Name" defaultValue={record.victimFirstName} required />
-          <TextField name="victimLastName" label="Victim Last Name" defaultValue={record.victimLastName} required />
+          <TextField name="victimLastName" label="Victim Last Name" defaultValue={record.victimLastName ?? ""} />
           <TextField name="victimPhone" label="Victim Phone" defaultValue={record.victimPhone ?? ""} type="tel" />
           <TextField name="victimNationalId" label="Victim National ID" defaultValue={record.victimNationalId} required />
           <TextField name="victimJob" label="Victim Job" defaultValue={record.victimJob ?? ""} options={jobs} />
@@ -118,17 +114,14 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
       <Section title="05 / Status Data">
         <div className="grid gap-5 md:grid-cols-2">
           <SelectField name="status" label="Record Status" defaultValue={record.status} required options={[
-            ["PROG", "In progress"], ["SETT", "Settled"], ["CLOS", "Closed"], ["ABAN", "Abandoned"], ["BILL", "Billed"],
+            ["PROG", "In progress"], ["CLOS", "Closed"], ["ABAN", "Abandoned"],
           ]} />
           <SelectField name="evolution" label="Evolution" defaultValue={record.evolution} required options={[
             ["INIT", "Initial"], ["RELP", "Relapse"], ["DEAT", "Death"], ["COMP", "Complement"],
           ]} />
-          <ReadOnly label="Record Fate" value={record.fate} />
-          <ReadOnly label="Fate Reason" value={record.fateReason} />
-          <CheckboxField name="delegation" label="Delegation" checked={record.delegation ?? false} />
+          <ReadOnly label="Record Fate" value={record.fate ? "Valid" : "Rejected"} />
           <DateTimeField name="delegationDate" label="Delegation Date" value={record.delegationDate} />
-          <CheckboxField name="coverage" label="Coverage" checked={record.coverage ?? false} />
-          <DateField name="coverageDate" label="Coverage Date" value={record.coverageDate} />
+          <TextField name="regulatoryDoctor" label="Regulatory Doctor" defaultValue={record.regulatoryDoctor ?? ""} />
         </div>
       </Section>
 
@@ -136,8 +129,8 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
         <div className="grid gap-5 md:grid-cols-2">
           <ReadOnly label="Managed By" value={record.managedBy} />
           <TextField name="observation" label="Observation" defaultValue={record.observation ?? ""} />
-          <ReadOnly label="Created At" value={formatDateTime(record.createdAt)} />
-          <ReadOnly label="Updated At" value={formatDateTime(record.updatedAt)} />
+          <ReadOnly label="Opening Date" value={formatDateTime(record.openingDate)} />
+          <ReadOnly label="Last Modified" value={formatDateTime(record.lastModified)} />
         </div>
       </Section>
 
@@ -167,14 +160,6 @@ function DateTimeField({ name, label, value, required }: { name: string; label: 
   return <TextField name={name} label={label} type="datetime-local" defaultValue={value ? toLocalDateTime(value) : ""} required={required} />;
 }
 
-function DateField({ name, label, value }: { name: string; label: string; value: Date | null }) {
-  return <TextField name={name} label={label} type="date" defaultValue={value ? toLocalDate(value) : ""} />;
-}
-
-function CheckboxField({ name, label, checked }: { name: string; label: string; checked: boolean }) {
-  return <label className="flex min-h-11 items-center gap-2 text-sm font-semibold text-slate-700"><input name={name} type="checkbox" defaultChecked={checked} className="h-4 w-4 accent-teal-700" />{label}</label>;
-}
-
 function ReadOnly({ label, value }: { label: string; value: string | number | null }) {
   return <div><span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span><div className="flex h-11 items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-600">{value ?? "-"}</div></div>;
 }
@@ -195,10 +180,6 @@ function Notice({ tone, children }: { tone: "error" | "success"; children: React
 
 function toLocalDateTime(value: Date) {
   return new Date(value.getTime() - value.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
-}
-
-function toLocalDate(value: Date) {
-  return toLocalDateTime(value).slice(0, 10);
 }
 
 const inputClass = "h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:bg-white focus:ring-2 focus:ring-teal-100";
