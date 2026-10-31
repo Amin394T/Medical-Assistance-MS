@@ -26,6 +26,7 @@
 - location matching between service providers and accident place
 - data archiving
 - user actions audit
+- medical coverages displayed like medical certificates
 
 
 ## NEEDS

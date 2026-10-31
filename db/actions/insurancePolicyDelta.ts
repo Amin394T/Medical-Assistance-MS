@@ -2,13 +2,14 @@
 
 import ExcelJS from "exceljs";
 import { Readable } from "node:stream";
+import { eq } from "drizzle-orm";
 import { db } from "../index";
-import { insurancePolicies, insurancePolicyStatuses, insuranceProviders } from "../schemas";
+import { insurancePolicies, insuranceProviders } from "../schemas";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 
-type DeltaStatus = "VALID" | "SSPD" | "TRMN";
+type DeltaStatus = "VALI" | "SUSP" | "TERM";
 
 type PolicyDeltaRow = {
   rowNumber: number;
@@ -22,7 +23,7 @@ type PolicyDeltaRow = {
 
 export type PolicyDeltaImportResult = {
   policiesCreated: number;
-  statusEntriesAdded: number;
+  statusesUpdated: number;
   unchangedPolicies: number;
 };
 
@@ -52,16 +53,8 @@ export async function uploadPolicyDeltaFile(formData: FormData): Promise<PolicyD
       matches.push(policy);
       policiesByNumber.set(key, matches);
     }
-    const statuses = tx.select().from(insurancePolicyStatuses).all();
-    const statusesByPolicy = new Map<number, typeof statuses>();
-    for (const status of statuses) {
-      const current = statusesByPolicy.get(status.policyId) ?? [];
-      current.push(status);
-      statusesByPolicy.set(status.policyId, current);
-    }
-
     let policiesCreated = 0;
-    let statusEntriesAdded = 0;
+    let statusesUpdated = 0;
     let unchangedPolicies = 0;
 
     for (const row of rows) {
@@ -90,43 +83,32 @@ export async function uploadPolicyDeltaFile(formData: FormData): Promise<PolicyD
           effectiveDate: row.effectiveDate,
           insuranceCompanyId: insurer.id,
           intermediaryId: intermediary?.id ?? null,
-          type: "REV",
+          status: row.status,
           creationDate: now,
-          lastModified: now,
+          lastUpdated: now,
         }).returning().all();
 
         policy = createdPolicy;
         policiesByNumber.set(normalize(policy.policyNumber), [policy]);
         policiesCreated += 1;
+        continue;
       }
 
-      const latestStatus = (statusesByPolicy.get(policy.id) ?? [])
-        .filter((status) => status.cancelled !== true)
-        .sort((left, right) =>
-          right.effectiveDate.getTime() - left.effectiveDate.getTime()
-          || right.updateDate.getTime() - left.updateDate.getTime())[0];
-      const currentStatus = latestStatus?.status ?? "VALID";
-
-      if (currentStatus === row.status) {
+      if (policy.status === row.status) {
         unchangedPolicies += 1;
         continue;
       }
 
-      const [createdStatus] = tx.insert(insurancePolicyStatuses).values({
-        policyId: policy.id,
-        status: row.status,
-        effectiveDate: row.effectiveDate,
-        updateDate: now,
-        cancelled: false,
-      }).returning().all();
-
-      const current = statusesByPolicy.get(policy.id) ?? [];
-      current.push(createdStatus);
-      statusesByPolicy.set(policy.id, current);
-      statusEntriesAdded += 1;
+      tx.update(insurancePolicies)
+        .set({ status: row.status, lastUpdated: now })
+        .where(eq(insurancePolicies.id, policy.id))
+        .run();
+      policy.status = row.status;
+      policy.lastUpdated = now;
+      statusesUpdated += 1;
     }
 
-    return { policiesCreated, statusEntriesAdded, unchangedPolicies };
+    return { policiesCreated, statusesUpdated, unchangedPolicies };
   });
 }
 
@@ -201,9 +183,9 @@ function parseEffectiveDate(row: ExcelJS.Row, columnNumber: number, rowNumber: n
 
 function parseStatus(value: string, rowNumber: number): DeltaStatus {
   switch (value) {
-    case "VALID": return "VALID";
-    case "SUSPENDED": return "SSPD";
-    case "TERMINATED": return "TRMN";
+    case "VALID": return "VALI";
+    case "SUSPENDED": return "SUSP";
+    case "TERMINATED": return "TERM";
     default: throw new Error(`Row ${rowNumber}: status must be VALID, SUSPENDED, or TERMINATED.`);
   }
 }

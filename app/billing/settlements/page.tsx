@@ -22,7 +22,7 @@ export default async function ServiceSettlementPage() {
     String(provider.id),
     serviceTypes.filter(({ targetProfile }) => targetProfile === provider.profile).map(({ id, label }) => ({ value: id, label })),
   ]));
-  const defaultFees = Object.fromEntries(serviceTypes.map(({ id, defaultFee }) => [String(id), defaultFee]));
+  const defaultPayments = Object.fromEntries(serviceTypes.map(({ id, paymentAmount }) => [String(id), paymentAmount]));
 
   return (
     <section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
@@ -35,11 +35,11 @@ export default async function ServiceSettlementPage() {
             medicalRecordId: row.medicalRecordId,
             serviceProviderId: row.serviceProviderId,
             serviceTypeId: row.serviceTypeId,
-            serviceDate: row.serviceDate,
-            feeAmount: row.feeAmount,
-            billedAmount: row.billedAmount,
+            date: row.date,
+            paymentAmount: row.paymentAmount,
+            billingAmount: row.billingAmount,
             taxRate: row.taxRate,
-            billingStatus: row.billingStatus,
+            settlementStatus: row.settlementStatus,
             settlingDate: row.settlingDate,
             bank: row.bank ?? null,
             paymentMode: row.paymentMode ?? null,
@@ -50,13 +50,13 @@ export default async function ServiceSettlementPage() {
           columns={[
             { key: "medicalRecordId", label: "Medical Record", editor: "select", required: true, options: records.map(({ id, reference, victimName }) => ({ value: id, label: `${reference} - ${victimName}` })) },
             { key: "serviceProviderId", label: "Provider", editor: "select", required: true, options: providers.map(({ id, label }) => ({ value: id, label })) },
-            { key: "serviceTypeId", label: "Service Type", editor: "select", required: true, optionsBy: { dependencyKey: "serviceProviderId", values: serviceTypesByProvider }, defaultFieldByOption: { fieldKey: "feeAmount", values: defaultFees } },
-            { key: "serviceDate", label: "Service Date", editor: "date", format: "date", nullable: true },
-            { key: "feeAmount", label: "Fee Amount", editor: "number", nullable: true },
-            { key: "billedAmount", label: "Billed Amount", editor: "number", nullable: true },
-            { key: "taxRate", label: "Tax Rate", editor: "number", nullable: true },
-            { key: "billingStatus", label: "Billing Status", editor: "select", required: true, options: [
-              { value: "WTN", label: "Waiting" }, { value: "BLD", label: "Billed" }, { value: "STL", label: "Settled" },
+            { key: "serviceTypeId", label: "Service Type", editor: "select", required: true, optionsBy: { dependencyKey: "serviceProviderId", values: serviceTypesByProvider }, defaultFieldByOption: { fieldKey: "paymentAmount", values: defaultPayments } },
+            { key: "date", label: "Service Date", editor: "date", format: "date", nullable: true },
+            { key: "paymentAmount", label: "Payment Amount", editor: "number" },
+            { key: "billingAmount", label: "Billing Amount", editor: "number" },
+            { key: "taxRate", label: "Tax Rate", editor: "number" },
+            { key: "settlementStatus", label: "Settlement Status", editor: "select", required: true, options: [
+              { value: "WAIT", label: "Waiting" }, { value: "BILL", label: "Billed" }, { value: "SETT", label: "Settled" },
             ] },
             { key: "settlingDate", label: "Settling Date", editor: "date", format: "date", nullable: true },
             { key: "paymentMode", label: "Payment Mode", editor: "select", nullable: true, options: [
@@ -65,7 +65,7 @@ export default async function ServiceSettlementPage() {
             { key: "paymentReference", label: "Payment Reference", nullable: true },
             { key: "invoiceId", label: "Invoice", editor: "select", nullable: true, options: [
               { value: null, label: "None" },
-              ...invoices.map(({ id, date, insuranceProvider }) => ({ value: id, label: `${date.toLocaleDateString()} - ${insuranceProvider}` })),
+              ...invoices.map(({ id, reference, insuranceProvider }) => ({ value: id, label: `${reference} - ${insuranceProvider}` })),
             ] },
             { key: "observation", label: "Observation", nullable: true },
           ]}

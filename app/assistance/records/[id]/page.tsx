@@ -3,7 +3,7 @@ import { ClipboardPen } from "lucide-react";
 import { getMedicalRecord, listJobs } from "@/db/actions/medicalRecords";
 import { listInsurancePolicies } from "@/db/actions/insurancePolicies";
 import { createMedicalCertificate, deleteMedicalCertificate, listRecordMedicalCertificates, updateMedicalCertificate } from "@/db/actions/medicalCertificates";
-import { createMedicalService, deleteMedicalService, listRecordMedicalServices, updateMedicalService } from "@/db/actions/medicalServices";
+import { createRecordMedicalService, deleteMedicalService, listRecordMedicalServices, updateMedicalService } from "@/db/actions/medicalServices";
 import { listServiceProviders } from "@/db/actions/serviceProviders";
 import { listServiceTypes } from "@/db/actions/serviceTypes";
 import { listInvoices } from "@/db/actions/invoices";
@@ -31,15 +31,15 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 	if (!record) return <Message message="Record Not Found." />;
 
 	const referenceValue = String(record.reference);
-	const reference = `${record.type}-${referenceValue.slice(0, -2)}-${referenceValue.slice(-2)}`;
+	const reference = `${record.accidentType}-${referenceValue.slice(0, -2)}-${referenceValue.slice(-2)}`;
 	const serviceTypesByProvider = Object.fromEntries(providers.map((provider) => [
 		String(provider.id),
 		serviceTypes.filter(({ targetProfile }) => targetProfile === provider.profile).map(({ id, label }) => ({ value: id, label })),
 	]));
-	const defaultFees = Object.fromEntries(serviceTypes.map(({ id, defaultFee }) => [String(id), defaultFee]));
+	const defaultPayments = Object.fromEntries(serviceTypes.map(({ id, paymentAmount }) => [String(id), paymentAmount]));
 	const invoiceOptions = [
 		{ value: null, label: "None" },
-		...invoices.map(({ id, date, insuranceProvider }) => ({ value: id, label: `${date.toLocaleDateString()} - ${insuranceProvider}` })),
+		...invoices.map(({ id, reference, insuranceProvider }) => ({ value: id, label: `${reference} - ${insuranceProvider}` })),
 	];
 
 	return (
@@ -55,15 +55,15 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 				<Section title="Medical Services">
 					<ReferencialDataGrid
 						title="Medical Services"
-						rows={services.map(({ id, medicalRecordId, serviceProviderId, serviceTypeId, serviceDate, feeAmount, billedAmount, taxRate, billingStatus, settlingDate, bank, paymentMode, paymentReference, invoiceId, observation }) => ({ id, medicalRecordId, serviceProviderId, serviceTypeId, serviceDate, feeAmount, billedAmount, taxRate, billingStatus, settlingDate, bank, paymentMode, paymentReference, invoiceId, observation }))}
+						rows={services.map(({ id, medicalRecordId, serviceProviderId, serviceTypeId, date, paymentAmount, billingAmount, taxRate, settlementStatus, settlingDate, bank, paymentMode, paymentReference, invoiceId, observation }) => ({ id, medicalRecordId, serviceProviderId, serviceTypeId, date, paymentAmount, billingAmount, taxRate, settlementStatus, settlingDate, bank, paymentMode, paymentReference, invoiceId, observation }))}
 						columns={[
-							{ key: "serviceTypeId", label: "Service Type", editor: "select", required: true, optionsBy: { dependencyKey: "serviceProviderId", values: serviceTypesByProvider }, defaultFieldByOption: { fieldKey: "feeAmount", values: defaultFees } },
+							{ key: "serviceTypeId", label: "Service Type", editor: "select", required: true, optionsBy: { dependencyKey: "serviceProviderId", values: serviceTypesByProvider }, defaultFieldByOption: { fieldKey: "paymentAmount", values: defaultPayments } },
 							{ key: "serviceProviderId", label: "Provider", editor: "select", required: true, options: providers.map(({ id, label }) => ({ value: id, label })) },
-							{ key: "serviceDate", label: "Service Date", editor: "date", format: "date", nullable: true },
-							{ key: "feeAmount", label: "Fee Amount", editor: "number", nullable: true },
-							{ key: "billedAmount", label: "Billed Amount", editor: "number", nullable: true },
-							{ key: "taxRate", label: "Tax Rate", editor: "number", nullable: true },
-							{ key: "billingStatus", label: "Billing Status", editor: "select", required: true, options: [{ value: "WTN", label: "Waiting" }, { value: "BLD", label: "Billed" }, { value: "STL", label: "Settled" }] },
+							{ key: "date", label: "Service Date", editor: "date", format: "date", nullable: true },
+							{ key: "paymentAmount", label: "Payment Amount", editor: "number" },
+							{ key: "billingAmount", label: "Billing Amount", editor: "number" },
+							{ key: "taxRate", label: "Tax Rate", editor: "number" },
+							{ key: "settlementStatus", label: "Settlement Status", editor: "select", required: true, options: [{ value: "WAIT", label: "Waiting" }, { value: "BILL", label: "Billed" }, { value: "SETT", label: "Settled" }] },
 							{ key: "settlingDate", label: "Settling Date", editor: "date", format: "date", nullable: true },
 							{ key: "bank", label: "Bank", nullable: true },
 							{ key: "paymentMode", label: "Payment Mode", editor: "select", nullable: true, options: [{ value: null, label: "None" }, { value: "CHQ", label: "Check" }, { value: "VRM", label: "Transfer" }, { value: "CSH", label: "Cash" }] },
@@ -71,7 +71,7 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 							{ key: "invoiceId", label: "Invoice", editor: "select", nullable: true, options: invoiceOptions },
 							{ key: "observation", label: "Observation", nullable: true },
 						]}
-						onCreate={createMedicalService.bind(null, recordId)}
+						onCreate={createRecordMedicalService.bind(null, recordId)}
 						onUpdate={updateMedicalService}
 						onDelete={deleteMedicalService}
 					/>
@@ -79,17 +79,17 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 				<Section title="Medical Certificates">
 					<ReferencialDataGrid
 					title="Medical Certificates"
-					rows={certificates.map(({ id, medicalRecordId, type, serviceProviderId, daysNumber, startDate, endDate, observation }) => ({ id, medicalRecordId, type, serviceProviderId, daysNumber, startDate, endDate, observation }))}
+					rows={certificates.map(({ id, medicalRecordId, type, serviceProviderId, dayCount, startDate, endDate, observation }) => ({ id, medicalRecordId, type, serviceProviderId, dayCount, startDate, endDate, observation }))}
 						columns={[
 						{ key: "type", label: "Type", editor: "select", required: true, options: [
-							{ value: "INIT", label: "Initial" }, { value: "PRLG", label: "Prolongation" }, { value: "RTRN", label: "Return" },
-							{ value: "AGRV", label: "Aggravation" }, { value: "INSP", label: "Inspection" }, { value: "RCVR", label: "Recovery" },
+							{ value: "INIT", label: "Initial" }, { value: "PROL", label: "Prolongation" }, { value: "RETU", label: "Return" },
+							{ value: "AGGR", label: "Aggravation" }, { value: "INSP", label: "Inspection" }, { value: "RECO", label: "Recovery" },
 						] },
 						{ key: "serviceProviderId", label: "Service Provider", editor: "select", nullable: true, options: [
 							{ value: null, label: "None" },
 							...providers.map(({ id, label }) => ({ value: id, label })),
 						] },
-						{ key: "daysNumber", label: "Days Number", editor: "number", required: true },
+						{ key: "dayCount", label: "Day Count", editor: "number", required: true },
 						{ key: "startDate", label: "Start Date", editor: "date", format: "date", nullable: true },
 						{ key: "endDate", label: "End Date", editor: "date", format: "date", nullable: true },
 						{ key: "observation", label: "Observation", nullable: true },

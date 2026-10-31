@@ -39,7 +39,7 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
           return value ? new Date(value) : null;
         };
         const values: SetMedicalRecord = {
-          type: String(data.get("type")) as SetMedicalRecord["type"],
+          accidentType: String(data.get("accidentType")) as SetMedicalRecord["accidentType"],
           policyId: Number(data.get("policyId")),
           reportingDate: parseDate("reportingDate") ?? new Date(),
           reporterName: String(data.get("reporterName") ?? "") || null,
@@ -52,7 +52,7 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
           victimPhone: String(data.get("victimPhone") ?? "") || null,
           victimNationalId: String(data.get("victimNationalId") ?? ""),
           victimJob: String(data.get("victimJob") ?? "") || null,
-          evolution: String(data.get("evolution")) as SetMedicalRecord["evolution"],
+          accidentEvolution: String(data.get("accidentEvolution")) as SetMedicalRecord["accidentEvolution"],
           delegationDate: parseDate("delegationDate"),
           regulatoryDoctor: String(data.get("regulatoryDoctor") ?? "") || null,
           status: String(data.get("status")) as SetMedicalRecord["status"],
@@ -89,14 +89,14 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
       <Section title="03 / Accident Data">
         <div className="grid gap-5 md:grid-cols-2">
           <DateTimeField name="accidentDate" label="Accident Date" value={record.accidentDate} required />
-          <SelectField name="type" label="Accident Type" defaultValue={record.type} required options={[
+          <SelectField name="accidentType" label="Accident Type" defaultValue={record.accidentType} required options={[
             ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VF", "Policy verification"], ["SS", "Special service"], ["PR", "Occupational disease"], ["AV", "Lawyer procedure"],
           ]} />
           <SelectField name="accidentCause" label="Accident Cause" defaultValue={record.accidentCause ?? ""} options={[
             ["", "Not specified"], ["FALL", "Falling or slipping"], ["EQIP", "Machine or equipment"], ["FATG", "Overexertion and fatigue"], ["HAZD", "Hazardous substance"], ["VIOL", "Workplace violence"], ["OBJC", "Moving objects"],
           ]} />
           <SelectField name="accidentPlace" label="Accident Place" defaultValue={record.accidentPlace} required options={[
-            ["WS", "Workshop"], ["RT", "Route"], ["OF", "Office"], ["CS", "Construction"],
+            ["WS", "Workshop"], ["RT", "Route"], ["OF", "Office"], ["CT", "Construction"],
           ]} />
         </div>
       </Section>
@@ -114,12 +114,11 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
       <Section title="05 / Status Data">
         <div className="grid gap-5 md:grid-cols-2">
           <SelectField name="status" label="Record Status" defaultValue={record.status} required options={[
-            ["PROG", "In progress"], ["CLOS", "Closed"], ["ABAN", "Abandoned"],
+            ["PRG", "In progress"], ["RJC", "Rejected"], ["CLS", "Closed"], ["ABN", "Abandoned"],
           ]} />
-          <SelectField name="evolution" label="Evolution" defaultValue={record.evolution} required options={[
+          <SelectField name="accidentEvolution" label="Evolution" defaultValue={record.accidentEvolution} required options={[
             ["INIT", "Initial"], ["RELP", "Relapse"], ["DEAT", "Death"], ["COMP", "Complement"],
           ]} />
-          <ReadOnly label="Record Fate" value={record.fate ? "Valid" : "Rejected"} />
           <DateTimeField name="delegationDate" label="Delegation Date" value={record.delegationDate} />
           <TextField name="regulatoryDoctor" label="Regulatory Doctor" defaultValue={record.regulatoryDoctor ?? ""} />
         </div>
@@ -127,10 +126,10 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
 
       <Section title="06 / Audit Data">
         <div className="grid gap-5 md:grid-cols-2">
-          <ReadOnly label="Managed By" value={record.managedBy} />
+          <ReadOnly label="Manager" value={record.manager} />
           <TextField name="observation" label="Observation" defaultValue={record.observation ?? ""} />
-          <ReadOnly label="Opening Date" value={formatDateTime(record.openingDate)} />
-          <ReadOnly label="Last Modified" value={formatDateTime(record.lastModified)} />
+          <ReadOnly label="Last Updated" value={formatDateTime(record.lastUpdated)} />
+          <ReadOnly label="Last Updater" value={record.lastUpdater} />
         </div>
       </Section>
 

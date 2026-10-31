@@ -30,23 +30,37 @@ Before editing files for a substantial task:
 Find the tables definitions in `README.md`, in the "DATA STRUCTURE" section.
 
 Things to keep in mind:
-- Primary keys are not mentionned, should be "id" for all tables,
-- Do not create extra columns, like created_at and update_at, other than "id",
-- "selectable" means that its a foreign key, add "_id" to the name,
-- "list" means an enumeration, values are those separated by comma, when a value contains 2 parts separated by dash, the second part is the DB value, while the first is the UI display value,
-- "inferred" is a UI directive, does not indicate that the column is a foreign key,
-- "UI-only" indicates that the field is not a table column, rather it is fetched with joins,
-- "combo-box" is a UI directive, does not indicate an enumeration,
-- "read-only" is a UI directive, the field can still be set, just not from the UI,
-- "boolean" columns are not required, defaults to FALSE, NULL is equivalent to FALSE,
-- "NOW" means current date + time,
-- "USER" means current application user, a UI directive, do not put any default value,
-- "date-time" means date with time (up to seconds), while "date" means date without time, both cases are stored as a timestamp, the difference is in the UI display,
-- "defaults to" should not be treated as a table column constraint unless the filed is also "read-only" or hidden at creation. additionally, the default value should display in the UI forms if the field is visible, while being editable unless it's a "read-only" field,
-- if "required" is not meantionned, then the field is optional,
-- if the type is not mentionned, then the field is of text type,
+- Primary keys are not mentionned, should be "id" for all tables ;
+- Do not create extra columns, like created_at and update_at, other than "id" ;
+- "selectable" means that its a foreign key, add "_id" to the name ;
+- "list" means an enumeration, values are those separated by comma, when a value contains 2 parts separated by dash, the second part is the DB value, while the first is the UI display value ;
+- "inferred" is a UI directive, does not indicate that the column is a foreign key ;
+- "UI-only" indicates that the field is not a table column, rather it is fetched with joins ;
+- "combo-box" is a UI directive, does not indicate an enumeration ;
+- "read-only" is a UI directive, the field can still be set, just not by the user from the UI ;
+- "boolean" columns are not required, defaults to FALSE, NULL is equivalent to FALSE ;
+- "NOW" means current date + time ;
+- "USER" means current application user, a UI directive, do not put any default value ;
+- "date-time" means date with time, displays in DD-MM-YYYY HH24:MI format ;
+- "date" means date without time, displays in DD-MM-YYYY format, but still stored as timestamp like date-time ;
+- "defaults to" should not be treated as a table column constraint unless the filed is also "read-only" or hidden at creation. additionally, the default value should display in the UI forms if the field is visible, while being editable unless it's a "read-only" field ;
+- "hidden" is a UI directive, it means the field or group of fields are not to be displayed ;
+- if "required" is not meantionned, then the field is optional ;
+- if the type is not mentionned, then the field is of text type ;
 
 <!-- DB-data-structure:end -->
+
+
+
+<!-- UI-design-directives:start -->
+
+About form pages:
+- Forms should spread fields on a 3 columns grid,
+
+About table pages:
+- 
+
+<!-- UI-design-directives:end -->
 
 
 

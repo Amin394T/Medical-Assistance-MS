@@ -4,6 +4,7 @@ import { insuranceProviders } from "./insuranceProviders";
 
 export const invoices = sqliteTable("invoices", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  reference: integer("reference").notNull().unique(),
   date: integer("date", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
   totalAmount: real("total_amount").notNull(),
   insuranceProviderId: integer("insurance_provider_id").notNull().references(() => insuranceProviders.id),

@@ -1,85 +1,65 @@
 "use server";
 
-import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, isNotNull, lte } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
 import { db } from "../index";
-import { insurancePolicies, insuranceProviders, insurancePolicyStatuses, medicalRecords } from "../schemas";
+import { insurancePolicies, insuranceProviders, medicalRecords } from "../schemas";
 import type { NewMedicalRecord, SetMedicalRecord } from "../schemas";
 
 export async function listMedicalRecords() {
+  const insuranceCompany = alias(insuranceProviders, "insuranceCompany");
+  const intermediary = alias(insuranceProviders, "intermediary");
   const rows = await db
     .select({
       id: medicalRecords.id,
       reference: medicalRecords.reference,
-      type: medicalRecords.type,
+      type: medicalRecords.accidentType,
       policyId: medicalRecords.policyId,
       policy: insurancePolicies.policyNumber,
       clientCompany: insurancePolicies.clientCompany,
-      insuranceCompany: insuranceProviders.label,
+      insuranceCompany: insuranceCompany.label,
+      intermediary: intermediary.label,
       victimNameFirst: medicalRecords.victimFirstName,
       victimNameLast: medicalRecords.victimLastName,
       accidentDate: medicalRecords.accidentDate,
       status: medicalRecords.status,
-      manager: medicalRecords.managedBy,
-      openingDate: medicalRecords.openingDate,
-      lastModified: medicalRecords.lastModified,
+      manager: medicalRecords.manager,
+      lastUpdated: medicalRecords.lastUpdated,
+      lastUpdater: medicalRecords.lastUpdater,
     })
     .from(medicalRecords)
     .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
-    .innerJoin(insuranceProviders, eq(insurancePolicies.insuranceCompanyId, insuranceProviders.id));
-
-  const statuses = rows.length
-    ? await db
-      .select()
-      .from(insurancePolicyStatuses)
-      .where(and(
-        inArray(insurancePolicyStatuses.policyId, [...new Set(rows.map(({ policyId }) => policyId))]),
-        or(eq(insurancePolicyStatuses.cancelled, false), isNull(insurancePolicyStatuses.cancelled)),
-      ))
-    : [];
+    .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceCompanyId, insuranceCompany.id))
+    .leftJoin(intermediary, eq(insurancePolicies.intermediaryId, intermediary.id))
+    .orderBy(desc(medicalRecords.accidentDate));
 
   return rows.map((row) => ({
     ...row,
     victimName: [row.victimNameFirst, row.victimNameLast].filter(Boolean).join(" "),
     status: getRecordStatusLabel(row.status),
-    createdAt: row.openingDate,
-    updatedAt: row.lastModified,
-    fate: inferPolicyFate(statuses, row.policyId, row.accidentDate),
   }));
 }
 
 export async function getMedicalRecord(id: number) {
-  const insuranceCompanyAlias = alias(insuranceProviders, "insuranceCompany");
-  const intermediaryAlias = alias(insuranceProviders, "intermediary");
-
+  const insuranceCompany = alias(insuranceProviders, "insuranceCompany");
+  const intermediary = alias(insuranceProviders, "intermediary");
   const [row] = await db
     .select()
     .from(medicalRecords)
     .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
-    .innerJoin(insuranceCompanyAlias, eq(insurancePolicies.insuranceCompanyId, insuranceCompanyAlias.id))
-    .leftJoin(intermediaryAlias, eq(insurancePolicies.intermediaryId, intermediaryAlias.id))
+    .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceCompanyId, insuranceCompany.id))
+    .leftJoin(intermediary, eq(insurancePolicies.intermediaryId, intermediary.id))
     .where(eq(medicalRecords.id, id));
 
   if (!row) return null;
 
-  const statuses = await db
-    .select()
-    .from(insurancePolicyStatuses)
-    .where(and(
-      eq(insurancePolicyStatuses.policyId, row.insurance_policies.id),
-      or(eq(insurancePolicyStatuses.cancelled, false), isNull(insurancePolicyStatuses.cancelled)),
-    ));
-
   return {
     ...row.medical_records,
-    createdAt: row.medical_records.openingDate,
-    updatedAt: row.medical_records.lastModified,
-    fate: inferPolicyFate(statuses, row.insurance_policies.id, row.medical_records.accidentDate),
     policyNumber: row.insurance_policies.policyNumber,
     clientCompany: row.insurance_policies.clientCompany,
     insuranceCompany: row.insuranceCompany.label,
-    intermediary: row.intermediary ? row.intermediary.label : null,
+    intermediary: row.intermediary?.label ?? null,
   };
 }
 
@@ -93,41 +73,48 @@ export async function listJobs() {
 
 export async function createMedicalRecord(input: NewMedicalRecord) {
   const [policy] = await db
-    .select()
+    .select({ id: insurancePolicies.id, status: insurancePolicies.status })
     .from(insurancePolicies)
     .where(eq(insurancePolicies.id, input.policyId));
-  if (!policy) throw new Error("Insurance Policy Not Found");
+  if (!policy) throw new Error("Insurance policy not found.");
 
-  const referenceDate = getCompactDate(input.accidentDate);
-  const firstReference = Number(referenceDate) * 100;
+  const firstReference = Number(getCompactDate(input.accidentDate)) * 100;
   const lastReference = firstReference + 99;
-  const [prevReference] = await db
+  const [previousReference] = await db
     .select({ reference: medicalRecords.reference })
     .from(medicalRecords)
-    .where(and(gte(medicalRecords.reference, firstReference), lte(medicalRecords.reference, lastReference)))
+    .where(and(
+      gte(medicalRecords.reference, firstReference),
+      lte(medicalRecords.reference, lastReference),
+    ))
     .orderBy(desc(medicalRecords.reference))
     .limit(1);
-  const nextReference = (prevReference?.reference ?? firstReference) + 1;
-  if (nextReference > lastReference) throw new Error("The daily medical-record reference limit has been reached.");
+  const reference = (previousReference?.reference ?? firstReference) + 1;
+  if (reference > lastReference) throw new Error("The daily medical-record reference limit has been reached.");
 
+  const now = new Date();
   const [record] = await db
     .insert(medicalRecords)
     .values({
       ...input,
-      reference: nextReference,
-      openingDate: new Date(),
-      lastModified: new Date(),
+      reference,
+      status: isPolicyRejected(policy.status) ? "RJC" : "PRG",
+      manager: "USER",
+      lastUpdated: now,
+      lastUpdater: "USER",
     })
     .returning();
   return record;
 }
 
 export async function updateMedicalRecord(id: number, input: SetMedicalRecord) {
+  await ensurePolicyExists(input.policyId);
   const [record] = await db
     .update(medicalRecords)
     .set({
       ...input,
-      lastModified: new Date(),
+      lastUpdated: new Date(),
+      lastUpdater: "USER",
     })
     .where(eq(medicalRecords.id, id))
     .returning();
@@ -144,9 +131,10 @@ export async function deleteMedicalRecord(id: number) {
 
 function getRecordStatusLabel(status: SetMedicalRecord["status"]) {
   switch (status) {
-    case "PROG": return "In Progress";
-    case "CLOS": return "Closed";
-    case "ABAN": return "Abandoned";
+    case "PRG": return "In Progress";
+    case "RJC": return "Rejected";
+    case "CLS": return "Closed";
+    case "ABN": return "Abandoned";
     default: return status;
   }
 }
@@ -158,14 +146,14 @@ function getCompactDate(date: Date) {
   return `${year}${month}${day}`;
 }
 
-function inferPolicyFate(
-  statuses: { policyId: number; status: "VALID" | "SSPD" | "TRMN"; effectiveDate: Date; updateDate: Date; cancelled: boolean | null }[],
-  policyId: number,
-  accidentDate: Date,
-) {
-  const latestStatus = statuses
-    .filter((status) => status.policyId === policyId && status.effectiveDate <= accidentDate && !status.cancelled)
-    .sort((left, right) => right.effectiveDate.getTime() - left.effectiveDate.getTime() || right.updateDate.getTime() - left.updateDate.getTime())[0];
+function isPolicyRejected(status: string) {
+  return status === "SUSP" || status === "TERM";
+}
 
-  return latestStatus === undefined || latestStatus.status === "VALID";
+async function ensurePolicyExists(policyId: number) {
+  const [policy] = await db
+    .select({ id: insurancePolicies.id })
+    .from(insurancePolicies)
+    .where(eq(insurancePolicies.id, policyId));
+  if (!policy) throw new Error("Insurance policy not found.");
 }

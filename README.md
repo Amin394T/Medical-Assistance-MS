@@ -69,111 +69,108 @@
 - medical record:
 
     // 1. client data:
-    + reference: read-only, defaults to (accident date YYMMDD + daily 2-digits sequence),
-    + insurance policy: required, selectable (list searchable by policy and client name),
-    + client company: read-only, inferred (from selected insurance policy), UI-only,
-    + insurance provider: read-only, inferred (from selected insurance policy, insurance company + intermediary between brackets if available), UI-only,
-    + reporting date: required, date-time, defaults to NOW,
-    + reporter name:
-    + reporter phone: required,
+    + reference: required, read-only, unique, defaults to calculated (accident date YYMMDD + daily 2-digits sequence) ;
+    + insurance policy: required, selectable (list searchable by policy and client name) ;
+    + client company: UI-only, read-only, inferred (from selected insurance policy) ;
+    + insurance provider: UI-only, read-only, inferred (from selected insurance policy, insurance company + intermediary between brackets if available) ;
+    + reporting date: required, date-time, defaults to NOW ;
+    + reporter name ;
+    + reporter phone: required ;
 
     // 2. accident data:
-    + accident date: required, date-time, defaults to NOW,
-    + accident type: required, list (workplace accident - AT, illness & pain - MD, policy verification - VF, special service - SS, occupational disease - PR, lawyer procedure - AV), defaults to "AT",
-    + accident cause: list (falling or slipping - FALL, machine or equipment - EQIP, overexertion and fatigue - FATG, hazardous substance - HAZD, workplace violence - VIOL, moving objects - OBJC),
-    + accident place: required, list (workshop - WS, route - RT, office - OF, construction - CT),
-    + accident evolution: required, list (initial - INIT, relapse - RELP, death - DEAT, complement - COMP), defaults to "INIT",
+    + accident date: required, date-time, defaults to NOW ;
+    + accident type: required, list (workplace accident - AT, illness & pain - MD, policy verification - VF, special service - SS, occupational disease - PR, lawyer procedure - AV), defaults to "AT" ;
+    + accident place: required, list (workshop - WS, route - RT, office - OF, construction - CT) ;
+    + accident cause: list (falling or slipping - FALL, machine or equipment - EQIP, overexertion and fatigue - FATG, hazardous substance - HAZD, workplace violence - VIOL, moving objects - OBJC) ;
+    + accident evolution: required, list (initial - INIT, relapse - RELP, death - DEAT, complement - COMP), defaults to "INIT" ;
 
     // 3. victim data:
-    + victim first name: required,
-    + victim last name:
-    + victim phone:
-    + victim national ID: required,
-    + victim job:
+    + victim first name: required ;
+    + victim last name ;
+    + victim phone ;
+    + victim national ID: required ;
+    + victim job ;
 
-    // 4. status data (hidden at creation):
-    + status: required, list (in progress - PRG, rejected - RJC, closed - CLS, abandoned - ABN), defaults to (if a non-cancelled suspension or termination status exist, then "RJC", esle "PRG"),
-    + delegation date: date-time,
-    + regulatory doctor: 
-    + manager: required, read-only, defaults to USER,
-    + observation:
-    + last updated: required, read-only, date-time, automatically updated at modification time,
-    + last updater: required,
+    // 4. status data (hidden in "/assistance/call"):
+    + status: required, list (in progress - PRG, rejected - RJC, closed - CLS, abandoned - ABN), defaults to calculated (if a non-cancelled suspension or termination status exist, then "RJC", esle "PRG") ;
+    + delegation date: date-time ;
+    + regulatory doctor ;
+    + manager: required, read-only, defaults to USER ;
+    + observation ;
+    + last updated: required, read-only, date-time, defaults to NOW, automatically updated at modification time ;
+    + last updater: required, read-only, defaults to USER ;
 
 - medical service:
-    + record: required, selectable,
-    + service provider: required, selectable,
-    + service type: required, selectable (from service type, those corresponding to service provider profile),
-    + service date: date,
-    + fee amount: required, number, defaults to service type's "default fee",
-    + billed amount: number,
-    + tax rate: number,
-    + billing status: required, list (waiting - WTN, billed - BLD, settled - STL),
-    + settling date: date,
-    + bank: combo-box,
-    + payment mode: list (check - CHQ, transfer - VRM, cash - CSH),
-    + payment reference:
-    + invoice: selectable (from invoices)
-    + observation:
+    + record: required, selectable (displays accident type - reference) ;
+
+    // 1. service data:
+    + service provider: required, selectable (displays service provider name and profile) ;
+    + service type: required, selectable (from service type, those corresponding to the selected service provider's profile) ;
+    + date: date ;
+    + observation ;
+    + settlement status: required, read-only, list (waiting - WAIT, billed - BILL, settled - SETT), defaults to "WAIT" ;
+    + settling date: date, read-only ;
+    
+    // 2. payment data (hidden in "/assistance/records/:id"):
+    + invoice: selectable (from invoices. displays reference) ;
+    + payment amount: required, number, defaults to calculated (service type's "payment amount") ;
+    + billing amount: required, number, defaults to calculated (service type's "billing amount") ;
+    + tax rate: required, number, defaults to calculated (service type's "tax rate") ;
+    + bank: combo-box ;
+    + payment mode: list (check - CHQ, transfer - VRM, cash - CSH) ;
+    + payment reference ;
 
 - medical certificate:
-    + record: required, selectable,
-    + type: required, list (initial - INIT, prolongation - PRLG, return - RTRN, aggravation - AGRV, inspection - INSP, recovery - RCVR),
-    + service provider: selectable,
-    + days number: required, number,
-    + start date: date,
-    + end date: date,
-    + observation:
-
-- medical coverage (TODO):
-    + ?
+    + record: required, selectable, hidden ;
+    + type: required, list (initial - INIT, prolongation - PROL, return - RETU, aggravation - AGGR, inspection - INSP, recovery - RECO) ;
+    + service provider: selectable (displays service provider name) ;
+    + day count: required, number ;
+    + start date: date ;
+    + end date: date ;
+    + observation ;
 
 - insurance provider:
-    + label: required, unique,
-    + corporate id:
-    + type: required, list (company - CMP, agent - AGT, broker - BRK, special - SPC),
-    + phone:
-    + email:
-    + balance: number,
+    + label: required, unique ;
+    + corporate id ;
+    + type: required, list (company - CMP, agent - AGT, broker - BRK, special - SPC) ;
+    + phone ;
+    + email ;
+    + balance: number ;
 
-- insurance policy:
-    + policy number: required,
-    + client company: required,
-    + effective date: required, date,
-    + insurance company: required, selectable,
-    + intermediary: selectable (from insurance provider where type is "AGT" or "BRK"),
-    + type: required, list (revisable - REV, fixed-rate - FIX),
-    + creation date: read-only, date-time, defaults to NOW,
-    + last modified: read-only, date-time, automatically updated at modification time,
-
-- insurance policy status
-    + policy: required, selectable,
-    + status: required, list (valid - VALID, suspended - SSPD, terminated - TRMN),
-    + effective date: required, date,
-    + update date: required, date, defaults to NOW,
-    + cancelled: boolean,
+- insurance policy (entirely read-only):
+    + policy number: required, unique, read-only ;
+    + client company: required, read-only ;
+    + effective date: required, date, read-only ;
+    + status: required, read-only, list (valid - VALI, resumed - RESU, suspended - SUSP, terminated - TERM) ;
+    + insurance company: required, read-only, selectable ;
+    + intermediary: read-only, selectable (from insurance provider where type is "AGT" or "BRK") ;·
+    + creation date: required, read-only, date-time, defaults to NOW ;
+    + last updated: required, read-only, date-time, automatically updated at modification time ;
 
 - service type:
-    + label: required,
-    + default fee: required, number, defaults to 0,
-    + target profile: required, combo-box,
+    + label: required, unique ;
+    + payment amount: required, number, defaults to 0 ;
+    + billing amount: required, number, defaults to 0 ;
+    + tax rate: required, number, defaults to 0 ;
+    + target profile: required, combo-box ;
 
 - service provider:
-    + label: required, unique,
-    + corporate name:
-    + profile: required, selectable (distinct values of column "target profile" from "service type")
-    + contact name:
-    + phone: required,
-    + email:
-    + bank: combo-box,
-    + bank account:
+    + label: required, unique ;
+    + corporate name ;
+    + profile: required, selectable (distinct values of column "target profile" from "service type") ;
+    + contact name ;
+    + phone: required ;
+    + email ;
+    + bank: combo-box ;
+    + bank account ;
 
-- invoice:
-    + date: read-only, date, defaults to NOW
-    + total amount: required, number,
-    + insurance provider: required, selectable,
-    + bank: combo-box,
-    + payment mode: list (check - CHQ, transfer - VRM, cash - CSH),
-    + payment reference:
-    + cashed: boolean,
-    + cashing date: date,
+- service invoice:
+    + reference: required, read-only, unique, defaults to calculated (current year date YYMM + yearly 6-digits sequence) ;
+    + date: required, read-only, date, defaults to NOW
+    + total amount: required, number ;
+    + insurance provider: required, selectable ;
+    + bank: combo-box ;
+    + payment mode: list (check - CHQ, transfer - VRM, cash - CSH) ;
+    + payment reference ;
+    + cashed: boolean ;
+    + cashing date: date ;

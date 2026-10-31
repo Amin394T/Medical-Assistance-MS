@@ -12,7 +12,7 @@ export const medicalRecords = sqliteTable("medical_records", {
   accidentDate: integer("accident_date", { mode: "timestamp" }).notNull(),
   accidentType: text("accident_type", { enum: ["AT", "MD", "VF", "SS", "PR", "AV"] }).notNull(),
   accidentPlace: text("accident_place", { enum: ["WS", "RT", "OF", "CT"] }).notNull(),
-  accidentCause: text("accident_cause", { enum: ["FALL", "EQIP", "FATG", "HAZD", "VIOL", "OBJC"] }).notNull(),
+  accidentCause: text("accident_cause", { enum: ["FALL", "EQIP", "FATG", "HAZD", "VIOL", "OBJC"] }),
   accidentEvolution: text("accident_evolution", { enum: ["INIT", "RELP", "DEAT", "COMP"] }).notNull(),
   victimFirstName: text("victim_first_name").notNull(),
   victimLastName: text("victim_last_name"),

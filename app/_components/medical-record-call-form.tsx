@@ -28,7 +28,7 @@ type CallFormValues = {
   type: "AT" | "MD" | "VF" | "SS" | "PR" | "AV";
   reporterName: string;
   reporterPhone: string;
-  accidentPlace: "WS" | "RT" | "OF" | "CS";
+  accidentPlace: "WS" | "RT" | "OF" | "CT";
   victimFirstName: string;
   victimLastName: string;
   victimNationalId: string;
@@ -77,7 +77,7 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
 
       try {
         const record = await createMedicalRecord({
-          type: value.type,
+          accidentType: value.type,
           policyId: Number(value.policyId),
           reportingDate: new Date(displayReportingDate),
           reporterName: value.reporterName || null,
@@ -85,12 +85,12 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
           accidentPlace: value.accidentPlace,
           accidentDate: new Date(value.accidentDate),
           accidentCause: value.accidentCause || null,
+          accidentEvolution: "INIT",
           victimFirstName: value.victimFirstName,
           victimLastName: value.victimLastName || null,
           victimNationalId: value.victimNationalId,
           victimPhone: value.victimPhone || null,
           victimJob: value.victimJob || null,
-          managedBy: "" //TODO: replace with current user
         });
         setCreatedReference(formatReference(record.reference));
         form.reset();
@@ -134,7 +134,7 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
               <Field form={form as unknown as FormRenderer} name="accidentDate" label="Accident Date" required type="datetime-local" />
               <form.Field name="type" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Type" required options={[{ value: "AT", label: "Workplace accident" }, { value: "MD", label: "Illness & pain" }, { value: "VF", label: "Policy verification" }, { value: "SS", label: "Special service" }, { value: "PR", label: "Occupational disease" }, { value: "AV", label: "Lawyer procedure" }]} />} />
               <form.Field name="accidentCause" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Cause" options={[{ value: "FALL", label: "Falling or slipping" }, { value: "EQIP", label: "Machine or equipment" }, { value: "FATG", label: "Overexertion and fatigue" }, { value: "HAZD", label: "Hazardous substance" }, { value: "VIOL", label: "Workplace violence" }, { value: "OBJC", label: "Moving objects" }]} placeholder="Select a cause" />} />
-              <form.Field name="accidentPlace" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Place" required options={[{ value: "WS", label: "Workshop" }, { value: "RT", label: "Route" }, { value: "OF", label: "Office" }, { value: "CS", label: "Construction" }]} />} />
+              <form.Field name="accidentPlace" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Place" required options={[{ value: "WS", label: "Workshop" }, { value: "RT", label: "Route" }, { value: "OF", label: "Office" }, { value: "CT", label: "Construction" }]} />} />
             </div>
           </FormSection>
 

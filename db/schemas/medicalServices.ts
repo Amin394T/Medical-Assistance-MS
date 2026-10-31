@@ -1,6 +1,6 @@
 import { sqliteTable, integer, real, text } from "drizzle-orm/sqlite-core";
 
-import { invoices } from "./invoices";
+import { invoices } from "./serviceInvoices";
 import { medicalRecords } from "./medicalRecords";
 import { serviceProviders } from "./serviceProviders";
 import { serviceTypes } from "./serviceTypes";
@@ -10,17 +10,17 @@ export const medicalServices = sqliteTable("medical_services", {
   medicalRecordId: integer("medical_record_id").notNull().references(() => medicalRecords.id),
   serviceProviderId: integer("service_provider_id").notNull().references(() => serviceProviders.id),
   serviceTypeId: integer("service_type_id").notNull().references(() => serviceTypes.id),
-  serviceDate: integer("service_date", { mode: "timestamp" }),
-  feeAmount: real("fee_amount").notNull().default(0),
-  billedAmount: real("billed_amount").default(0),
-  taxRate: real("tax_rate").default(0),
-  billingStatus: text("billing_status", { enum: ["WTN", "BLD", "STL"] }).notNull().default("WTN"),
+  date: integer("date", { mode: "timestamp" }),
+  observation: text("observation"),
+  settlementStatus: text("settlement_status", { enum: ["WAIT", "BILL", "SETT"] }).notNull().default("WAIT"),
   settlingDate: integer("settling_date", { mode: "timestamp" }),
+  invoiceId: integer("invoice_id").references(() => invoices.id),
+  paymentAmount: real("payment_amount").notNull(),
+  billingAmount: real("billing_amount").notNull(),
+  taxRate: real("tax_rate").notNull(),
   bank: text("bank"),
   paymentMode: text("payment_mode", { enum: ["CHQ", "VRM", "CSH"] }),
   paymentReference: text("payment_reference"),
-  invoiceId: integer("invoice_id").references(() => invoices.id),
-  observation: text("observation"),
 });
 
 export type MedicalService = Omit<typeof medicalServices.$inferSelect, "medicalRecordId">;

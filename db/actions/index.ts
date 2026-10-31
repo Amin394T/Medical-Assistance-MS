@@ -1,6 +1,5 @@
 export * from "./insuranceProviders";
 export * from "./insurancePolicies";
-export * from "./insurancePolicyStatuses";
 export * from "./invoices";
 export * from "./serviceProviders";
 export * from "./serviceTypes";

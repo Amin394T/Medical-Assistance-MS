@@ -20,7 +20,7 @@ export async function listRecordMedicalCertificates(recordId: number) {
 }
 
 export async function createMedicalCertificate(recordId: number, input: NewMedicalCertificate) {
-  validateCertificate(input.daysNumber, input.startDate, input.endDate);
+  validateCertificate(input.dayCount, input.startDate, input.endDate);
   const [record] = await db
     .insert(medicalCertificates)
     .values({ ...input, medicalRecordId: recordId })
@@ -29,7 +29,7 @@ export async function createMedicalCertificate(recordId: number, input: NewMedic
 }
 
 export async function updateMedicalCertificate(id: number, input: MedicalCertificate) {
-  validateCertificate(input.daysNumber, input.startDate, input.endDate);
+  validateCertificate(input.dayCount, input.startDate, input.endDate);
   const [record] = await db
     .update(medicalCertificates)
     .set(input)
@@ -46,9 +46,9 @@ export async function deleteMedicalCertificate(id: number) {
   return record ?? null;
 }
 
-function validateCertificate(daysNumber: number, startDate: Date | null | undefined, endDate: Date | null | undefined) {
-  if (!Number.isInteger(daysNumber) || daysNumber < 0) {
-    throw new Error("Days number must be a non-negative whole number.");
+function validateCertificate(dayCount: number, startDate: Date | null | undefined, endDate: Date | null | undefined) {
+  if (!Number.isInteger(dayCount) || dayCount < 0) {
+    throw new Error("Day count must be a non-negative whole number.");
   }
   if (startDate && endDate && startDate > endDate) {
     throw new Error("End date must be on or after start date.");

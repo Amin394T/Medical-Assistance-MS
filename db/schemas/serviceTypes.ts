@@ -2,8 +2,10 @@ import { sqliteTable, integer, real, text } from "drizzle-orm/sqlite-core";
 
 export const serviceTypes = sqliteTable("service_types", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  label: text("label").notNull(),
-  defaultFee: real("default_fee").notNull().default(0),
+  label: text("label").notNull().unique(),
+  paymentAmount: real("payment_amount").notNull(),
+  billingAmount: real("billing_amount").notNull(),
+  taxRate: real("tax_rate").notNull(),
   targetProfile: text("target_profile").notNull(),
 });
 

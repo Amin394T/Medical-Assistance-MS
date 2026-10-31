@@ -27,6 +27,7 @@ export async function listProfiles() {
 }
 
 export async function createServiceType(input: NewServiceType) {
+  validateAmounts(input);
   const [record] = await db
     .insert(serviceTypes)
     .values(input)
@@ -35,6 +36,7 @@ export async function createServiceType(input: NewServiceType) {
 }
 
 export async function updateServiceType(id: number, input: ServiceType) {
+  validateAmounts(input);
   const [record] = await db
     .update(serviceTypes)
     .set(input)
@@ -49,4 +51,14 @@ export async function deleteServiceType(id: number) {
     .where(eq(serviceTypes.id, id))
     .returning();
   return record ?? null;
+}
+
+function validateAmounts(input: Pick<ServiceType, "paymentAmount" | "billingAmount" | "taxRate">) {
+  for (const [label, value] of [
+    ["Payment amount", input.paymentAmount],
+    ["Billing amount", input.billingAmount],
+    ["Tax rate", input.taxRate],
+  ] as const) {
+    if (!Number.isFinite(value) || value < 0) throw new Error(`${label} must be a non-negative number.`);
+  }
 }
