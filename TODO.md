@@ -1,16 +1,28 @@
 ## REMINDER
-- server-side pagination for records list
-- server-side input validation
-- user authentication
-- make error messages appear as popup notification
-- disallow deletion for policies and insurance providers
+- disallow deletion for insurance providers
+    + no policy change
 - disable editing for read-only fields
-    + merrecord details: policy
-- document printing from tables
-
-- reporting date not read only and required
+    + reporting date not read only and required
 - record services or certificates modifications should update lastUpdated and lastUpdater
 - replace USER with logged-in user
+- automatically revalidate records at delta file upload
+- user authentication
+- server-side pagination for long lists
+- server-side input validation
+- document printing from tables
+- make error messages appear as popup notification
+
+
+## NEEDS
+- can we validate records automatically at delta file upload
+- delta file(s) fields, list of beneficiaries
+- are brokers and agents just informational?
+- go through reports
+- why does policy verification require a record?
+- remaining columns in certificates
+- invoice per record or can have multiple?
+- is tax the same for all?
+- current data model, required for migration
 
 
 ## IMPROVEMENTS
@@ -27,20 +39,3 @@
 - data archiving
 - user actions audit
 - medical coverages displayed like medical certificates
-
-
-## NEEDS
-- delta file(s) fields, list of beneficiaries
-- details about lawyer procedure records
-- certificates from hospitals only, regulating doctor?
-- are brokers and agents just informational?
-- go through reports
-= why does poliy verification required a record
-
-- remaining columns in certificates
-- insurance company balance and treshold
-- invoice per record or can have multiple
-- is tax the same for all
-
-- current data model, required for migration.
-- what is the current printing solution? can it be re-used?

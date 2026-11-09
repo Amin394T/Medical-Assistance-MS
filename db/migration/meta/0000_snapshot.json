@@ -1,9 +1,184 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "c4123cac-1eef-4a8c-833c-6dcd602063fa",
+  "id": "110c81dd-f477-4fbd-a8bd-de206eb83a9a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
+    "billing_cashings": {
+      "name": "billing_cashings",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "insurance_provider_id": {
+          "name": "insurance_provider_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "request_date": {
+          "name": "request_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "total_amount": {
+          "name": "total_amount",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "bank": {
+          "name": "bank",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "payment_mode": {
+          "name": "payment_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "payment_reference": {
+          "name": "payment_reference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "cashed": {
+          "name": "cashed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "cashing_date": {
+          "name": "cashing_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "billing_cashings_insurance_provider_id_insurance_providers_id_fk": {
+          "name": "billing_cashings_insurance_provider_id_insurance_providers_id_fk",
+          "tableFrom": "billing_cashings",
+          "tableTo": "insurance_providers",
+          "columnsFrom": [
+            "insurance_provider_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "billing_invoices": {
+      "name": "billing_invoices",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "medical_record_id": {
+          "name": "medical_record_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "reference": {
+          "name": "reference",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "issue_date": {
+          "name": "issue_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "total_amount": {
+          "name": "total_amount",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cashing_id": {
+          "name": "cashing_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "billing_invoices_reference_unique": {
+          "name": "billing_invoices_reference_unique",
+          "columns": [
+            "reference"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "billing_invoices_medical_record_id_medical_records_id_fk": {
+          "name": "billing_invoices_medical_record_id_medical_records_id_fk",
+          "tableFrom": "billing_invoices",
+          "tableTo": "medical_records",
+          "columnsFrom": [
+            "medical_record_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "billing_invoices_cashing_id_billing_cashings_id_fk": {
+          "name": "billing_invoices_cashing_id_billing_cashings_id_fk",
+          "tableFrom": "billing_invoices",
+          "tableTo": "billing_cashings",
+          "columnsFrom": [
+            "cashing_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "insurance_providers": {
       "name": "insurance_providers",
       "columns": {
@@ -19,13 +194,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
-        },
-        "corporate_name": {
-          "name": "corporate_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
           "autoincrement": false
         },
         "corporate_id": {
@@ -52,6 +220,13 @@
         "email": {
           "name": "email",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "balance": {
+          "name": "balance",
+          "type": "real",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -102,6 +277,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "insurance_company_id": {
           "name": "insurance_company_id",
           "type": "integer",
@@ -109,51 +291,37 @@
           "notNull": true,
           "autoincrement": false
         },
-        "intermediate_id": {
-          "name": "intermediate_id",
+        "intermediary_id": {
+          "name": "intermediary_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "terminated": {
-          "name": "terminated",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": false
-        },
-        "termination_date": {
-          "name": "termination_date",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
+        "creation_date": {
+          "name": "creation_date",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "updated_at": {
-          "name": "updated_at",
+        "last_updated": {
+          "name": "last_updated",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "insurance_policies_policy_number_unique": {
+          "name": "insurance_policies_policy_number_unique",
+          "columns": [
+            "policy_number"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {
         "insurance_policies_insurance_company_id_insurance_providers_id_fk": {
           "name": "insurance_policies_insurance_company_id_insurance_providers_id_fk",
@@ -168,12 +336,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "insurance_policies_intermediate_id_insurance_providers_id_fk": {
-          "name": "insurance_policies_intermediate_id_insurance_providers_id_fk",
+        "insurance_policies_intermediary_id_insurance_providers_id_fk": {
+          "name": "insurance_policies_intermediary_id_insurance_providers_id_fk",
           "tableFrom": "insurance_policies",
           "tableTo": "insurance_providers",
           "columnsFrom": [
-            "intermediate_id"
+            "intermediary_id"
           ],
           "columnsTo": [
             "id"
@@ -237,6 +405,20 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "bank": {
+          "name": "bank",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "bank_account": {
+          "name": "bank_account",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
@@ -270,6 +452,27 @@
           "notNull": true,
           "autoincrement": false
         },
+        "payment_amount": {
+          "name": "payment_amount",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "billing_amount": {
+          "name": "billing_amount",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tax_rate": {
+          "name": "tax_rate",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "target_profile": {
           "name": "target_profile",
           "type": "text",
@@ -278,7 +481,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "service_types_label_unique": {
+          "name": "service_types_label_unique",
+          "columns": [
+            "label"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -296,18 +507,10 @@
         },
         "reference": {
           "name": "reference",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "record_type": {
-          "name": "record_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'AT'"
         },
         "policy_id": {
           "name": "policy_id",
@@ -323,15 +526,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "reporter_first_name": {
-          "name": "reporter_first_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "reporter_last_name": {
-          "name": "reporter_last_name",
+        "reporter_name": {
+          "name": "reporter_name",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -344,16 +540,23 @@
           "notNull": true,
           "autoincrement": false
         },
-        "accident_place": {
-          "name": "accident_place",
+        "accident_date": {
+          "name": "accident_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "accident_type": {
+          "name": "accident_type",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "accident_date": {
-          "name": "accident_date",
-          "type": "integer",
+        "accident_place": {
+          "name": "accident_place",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -363,6 +566,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
+          "autoincrement": false
+        },
+        "accident_evolution": {
+          "name": "accident_evolution",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
           "autoincrement": false
         },
         "victim_first_name": {
@@ -376,7 +586,7 @@
           "name": "victim_last_name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "victim_phone": {
@@ -400,13 +610,12 @@
           "notNull": false,
           "autoincrement": false
         },
-        "accident_evolution": {
-          "name": "accident_evolution",
+        "status": {
+          "name": "status",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "'INIT'"
+          "autoincrement": false
         },
         "delegation_date": {
           "name": "delegation_date",
@@ -415,55 +624,39 @@
           "notNull": false,
           "autoincrement": false
         },
-        "coverage_issued": {
-          "name": "coverage_issued",
-          "type": "integer",
+        "regulatory_doctor": {
+          "name": "regulatory_doctor",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "coverage_date": {
-          "name": "coverage_date",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "regulator_id": {
-          "name": "regulator_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "record_status": {
-          "name": "record_status",
+        "manager": {
+          "name": "manager",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "'PROG'"
-        },
-        "last_action": {
-          "name": "last_action",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
           "autoincrement": false
-        },
-        "managed_by": {
-          "name": "managed_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'USER'"
         },
         "observation": {
           "name": "observation",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
+          "autoincrement": false
+        },
+        "last_updated": {
+          "name": "last_updated",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_updater": {
+          "name": "last_updater",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
           "autoincrement": false
         }
       },
@@ -483,19 +676,6 @@
           "tableTo": "insurance_policies",
           "columnsFrom": [
             "policy_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "medical_records_regulator_id_service_providers_id_fk": {
-          "name": "medical_records_regulator_id_service_providers_id_fk",
-          "tableFrom": "medical_records",
-          "tableTo": "service_providers",
-          "columnsFrom": [
-            "regulator_id"
           ],
           "columnsTo": [
             "id"
@@ -539,22 +719,79 @@
           "notNull": true,
           "autoincrement": false
         },
-        "mission_date": {
-          "name": "mission_date",
+        "date": {
+          "name": "date",
           "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "mission_place": {
-          "name": "mission_place",
-          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "observation": {
           "name": "observation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "settlement_status": {
+          "name": "settlement_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'WAIT'"
+        },
+        "settling_date": {
+          "name": "settling_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "invoice_id": {
+          "name": "invoice_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "payment_amount": {
+          "name": "payment_amount",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "billing_amount": {
+          "name": "billing_amount",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tax_rate": {
+          "name": "tax_rate",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "bank": {
+          "name": "bank",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "payment_mode": {
+          "name": "payment_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "payment_reference": {
+          "name": "payment_reference",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -601,14 +838,27 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "medical_services_invoice_id_billing_invoices_id_fk": {
+          "name": "medical_services_invoice_id_billing_invoices_id_fk",
+          "tableFrom": "medical_services",
+          "tableTo": "billing_invoices",
+          "columnsFrom": [
+            "invoice_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "medical_documents": {
-      "name": "medical_documents",
+    "medical_certificates": {
+      "name": "medical_certificates",
       "columns": {
         "id": {
           "name": "id",
@@ -635,7 +885,28 @@
           "name": "service_provider_id",
           "type": "integer",
           "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "day_count": {
+          "name": "day_count",
+          "type": "integer",
+          "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "observation": {
@@ -644,20 +915,13 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "signed": {
-          "name": "signed",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "medical_documents_medical_record_id_medical_records_id_fk": {
-          "name": "medical_documents_medical_record_id_medical_records_id_fk",
-          "tableFrom": "medical_documents",
+        "medical_certificates_medical_record_id_medical_records_id_fk": {
+          "name": "medical_certificates_medical_record_id_medical_records_id_fk",
+          "tableFrom": "medical_certificates",
           "tableTo": "medical_records",
           "columnsFrom": [
             "medical_record_id"
@@ -668,9 +932,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "medical_documents_service_provider_id_service_providers_id_fk": {
-          "name": "medical_documents_service_provider_id_service_providers_id_fk",
-          "tableFrom": "medical_documents",
+        "medical_certificates_service_provider_id_service_providers_id_fk": {
+          "name": "medical_certificates_service_provider_id_service_providers_id_fk",
+          "tableFrom": "medical_certificates",
           "tableTo": "service_providers",
           "columnsFrom": [
             "service_provider_id"

@@ -1,1 +1,0 @@
-ALTER TABLE `medical_records` RENAME COLUMN "record_type" TO "type";

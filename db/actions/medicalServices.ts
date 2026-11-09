@@ -1,9 +1,9 @@
 "use server";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "../index";
-import { medicalServices, serviceProviders, serviceTypes } from "../schemas";
+import { billingInvoices, medicalRecords, medicalServices, serviceProviders, serviceTypes } from "../schemas";
 import type { MedicalService, NewMedicalService } from "../schemas";
 
 export async function listRecordMedicalServices(recordId: number) {
@@ -43,16 +43,30 @@ export async function listServicesForSettlement() {
       paymentReference: medicalServices.paymentReference,
     })
     .from(medicalServices)
+    .innerJoin(medicalRecords, eq(medicalServices.medicalRecordId, medicalRecords.id))
     .innerJoin(serviceProviders, eq(medicalServices.serviceProviderId, serviceProviders.id))
     .innerJoin(serviceTypes, eq(medicalServices.serviceTypeId, serviceTypes.id))
+    .where(and(
+      eq(medicalRecords.status, "PRG"),
+      inArray(medicalServices.settlementStatus, ["WAIT", "BILL"]),
+    ))
     .orderBy(desc(medicalServices.date));
 }
 
 export async function createMedicalService(recordId: number, input: NewMedicalService) {
   await validateService(input.serviceProviderId, input.serviceTypeId);
+  await ensureRecordExists(recordId);
+  await validateInvoiceForRecord(input.invoiceId ?? null, recordId);
+  validateAmounts(input.paymentAmount, input.billingAmount, input.taxRate);
   const [record] = await db
     .insert(medicalServices)
-    .values({ ...input, medicalRecordId: recordId })
+    .values({
+      ...input,
+      medicalRecordId: recordId,
+      settlementStatus: input.invoiceId ? "BILL" : "WAIT",
+      settlingDate: null,
+      invoiceId: input.invoiceId ?? null,
+    })
     .returning();
   return record;
 }
@@ -70,9 +84,37 @@ export async function createRecordMedicalService(recordId: number, values: Recor
 
 export async function updateMedicalService(id: number, input: MedicalService) {
   await validateService(input.serviceProviderId, input.serviceTypeId);
+  validateAmounts(input.paymentAmount, input.billingAmount, input.taxRate);
+  const [existing] = await db
+    .select()
+    .from(medicalServices)
+    .where(eq(medicalServices.id, id));
+  if (!existing) return null;
+  const invoiceId = input.invoiceId ?? null;
+  await validateInvoiceForRecord(invoiceId, existing.medicalRecordId);
+  if (existing.settlementStatus === "SETT" && invoiceId !== existing.invoiceId) {
+    throw new Error("A settled medical service cannot be reassigned to an invoice.");
+  }
+  const settlementStatus = invoiceId
+    ? existing.settlementStatus === "WAIT" ? "BILL" : existing.settlementStatus
+    : existing.settlementStatus === "BILL" ? "WAIT" : existing.settlementStatus;
   const [record] = await db
     .update(medicalServices)
-    .set(input)
+    .set({
+      serviceProviderId: input.serviceProviderId,
+      serviceTypeId: input.serviceTypeId,
+      date: input.date,
+      observation: input.observation,
+      invoiceId,
+      paymentAmount: input.paymentAmount,
+      billingAmount: input.billingAmount,
+      taxRate: input.taxRate,
+      bank: input.bank,
+      paymentMode: input.paymentMode,
+      paymentReference: input.paymentReference,
+      settlementStatus,
+      settlingDate: existing.settlingDate,
+    })
     .where(eq(medicalServices.id, id))
     .returning();
   return record ?? null;
@@ -156,6 +198,16 @@ function optionalString(value: unknown) {
   return value == null || value === "" ? null : String(value);
 }
 
+function validateAmounts(paymentAmount: number, billingAmount: number, taxRate: number) {
+  for (const [label, amount] of [
+    ["Payment amount", paymentAmount],
+    ["Billing amount", billingAmount],
+    ["Tax rate", taxRate],
+  ] as const) {
+    if (!Number.isFinite(amount) || amount < 0) throw new Error(`${label} must be a non-negative number.`);
+  }
+}
+
 async function getServiceType(serviceTypeId: number) {
   const [serviceType] = await db
     .select()
@@ -163,6 +215,26 @@ async function getServiceType(serviceTypeId: number) {
     .where(eq(serviceTypes.id, serviceTypeId));
   if (!serviceType) throw new Error("Service type not found.");
   return serviceType;
+}
+
+async function ensureRecordExists(recordId: number) {
+  const [record] = await db
+    .select({ id: medicalRecords.id })
+    .from(medicalRecords)
+    .where(eq(medicalRecords.id, recordId));
+  if (!record) throw new Error("Medical record not found.");
+}
+
+async function validateInvoiceForRecord(invoiceId: number | null, recordId: number) {
+  if (invoiceId === null) return;
+  const [invoice] = await db
+    .select({ id: billingInvoices.id })
+    .from(billingInvoices)
+    .where(and(
+      eq(billingInvoices.id, invoiceId),
+      eq(billingInvoices.medicalRecordId, recordId),
+    ));
+  if (!invoice) throw new Error("The selected invoice does not belong to this medical record.");
 }
 
 async function validateService(serviceProviderId: number, serviceTypeId: number) {

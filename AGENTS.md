@@ -55,10 +55,19 @@ Things to keep in mind:
 <!-- UI-design-directives:start -->
 
 About form pages:
-- Forms should spread fields on a 3 columns grid,
+- Forms should spread fields on a 3 columns grid ;
 
 About table pages:
-- 
+- sorting is available for all columns ;
+- row filtering by default unless custom column filters are specified ;
+- a "reset grid" button should be on the opposite side of the row filter bar, used to reset sorting and filtering ;
+- a "create" button should be to the right of the "reset" button ;
+    + upon clicking, a new empty row should appear as the first row, with save and delete buttons similar to those that appear when editing ;
+    + clicking on "delete" cancels the creation immediatly ;
+- editable tables display and "edit" button at the start of each row ;
+    + clicking the edit row button transforms columns into fields ;
+    + the "edit" button turns into "save", "cancel", and "delete" buttons ;
+    + deleting only marks the row for deletion, until "save" is pressed ;
 
 <!-- UI-design-directives:end -->
 

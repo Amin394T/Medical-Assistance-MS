@@ -132,6 +132,7 @@ export async function deleteMedicalRecord(id: number) {
 function getRecordStatusLabel(status: SetMedicalRecord["status"]) {
   switch (status) {
     case "PRG": return "In Progress";
+    case "DSP": return "Disputed";
     case "RJC": return "Rejected";
     case "CLS": return "Closed";
     case "ABN": return "Abandoned";

@@ -10,7 +10,7 @@ export const medicalRecords = sqliteTable("medical_records", {
   reporterName: text("reporter_name"),
   reporterPhone: text("reporter_phone").notNull(),
   accidentDate: integer("accident_date", { mode: "timestamp" }).notNull(),
-  accidentType: text("accident_type", { enum: ["AT", "MD", "VF", "SS", "PR", "AV"] }).notNull(),
+  accidentType: text("accident_type", { enum: ["AT", "MD", "VF", "SS", "PR"] }).notNull(),
   accidentPlace: text("accident_place", { enum: ["WS", "RT", "OF", "CT"] }).notNull(),
   accidentCause: text("accident_cause", { enum: ["FALL", "EQIP", "FATG", "HAZD", "VIOL", "OBJC"] }),
   accidentEvolution: text("accident_evolution", { enum: ["INIT", "RELP", "DEAT", "COMP"] }).notNull(),
@@ -19,7 +19,7 @@ export const medicalRecords = sqliteTable("medical_records", {
   victimPhone: text("victim_phone"),
   victimNationalId: text("victim_national_id").notNull(),
   victimJob: text("victim_job"),
-  status: text("status", { enum: ["PRG", "RJC", "CLS", "ABN"] }).notNull(),
+  status: text("status", { enum: ["PRG", "RJC", "DSP", "CLS", "ABN"] }).notNull(),
   delegationDate: integer("delegation_date", { mode: "timestamp" }),
   regulatoryDoctor: text("regulatory_doctor"),
   manager: text("manager").notNull(),
@@ -36,7 +36,7 @@ export type NewMedicalRecord = {
   reporterName: string | null;
   reporterPhone: string;
   accidentDate: Date;
-  accidentType: "AT" | "MD" | "VF" | "SS" | "PR" | "AV";
+  accidentType: "AT" | "MD" | "VF" | "SS" | "PR";
   accidentPlace: "WS" | "RT" | "OF" | "CT";
   accidentCause: "FALL" | "EQIP" | "FATG" | "HAZD" | "VIOL" | "OBJC" | null;
   accidentEvolution: "INIT" | "RELP" | "DEAT" | "COMP";
@@ -53,7 +53,7 @@ export type SetMedicalRecord = {
   reporterName: string | null;
   reporterPhone: string;
   accidentDate: Date;
-  accidentType: "AT" | "MD" | "VF" | "SS" | "PR" | "AV";
+  accidentType: "AT" | "MD" | "VF" | "SS" | "PR";
   accidentPlace: "WS" | "RT" | "OF" | "CT";
   accidentCause: "FALL" | "EQIP" | "FATG" | "HAZD" | "VIOL" | "OBJC" | null;
   accidentEvolution: "INIT" | "RELP" | "DEAT" | "COMP";
@@ -62,7 +62,7 @@ export type SetMedicalRecord = {
   victimPhone: string | null;
   victimNationalId: string;
   victimJob: string | null;
-  status: "PRG" | "RJC" | "CLS" | "ABN";
+  status: "PRG" | "RJC" | "DSP" | "CLS" | "ABN";
   delegationDate: Date | null;
   regulatoryDoctor: string | null;
   observation: string | null;

@@ -1,73 +1,73 @@
 ## WORKFLOWS
-- workplace accident declaration:
+- workplace accident declaration :
     1. medical record is created:
-        + emergency phone call received from victim's company,
-        + caller provides a valid insurance policy,
-        + initial data about the accident, reporter, victim are recorded,
+        + emergency phone call received from a client company ;
+        + caller provides a valid insurance policy ;
+        + initial data about the accident, company, and victim are recorded ;
     2. medical intervention is sent:
-        + service providers (ambulances, doctors...) are called and directed to the accident place,
-        + intervention service data are added to the medical record,
-    3. medical documents are generated and printed:
-        + medical record report is printed and added to a physical record,
-        + medical coverage are sent to relevant service providers (hospitals, pharmacies...), then printed and added to the physical record,
+        + service providers (ambulances, doctors...) are called and directed to the accident place ;
+        + intervention service data are added to the medical record ;
+    3. medical documents are generated:
+        + medical record report is printed and added to a physical record ;
+        + medical coverages are sent to relevant service providers (hospitals, pharmacies...), then printed and added to the physical record.
 
 - workplace accident follow-up :
-    + follow-up e-mails and phone calls are made with the client and service providers,
-    + subsequent medical services (medicine, treatments, check-ups, relapse...) are added to the record,
-    + new medical coverages are generated, sent, and printed,
-    + received medical certificates are added to the record,
-    + record is closed when settled or abandonned,
+    + follow-up e-mails and phone calls are made with the client company and service providers ;
+    + subsequent medical services (medicines, treatments, check-ups...) are added to the medical record ;
+    + new medical coverages are generated, sent, and printed ;
+    + medical certificates (initial, prolongation, aggravation, healing ...) received from hospitals or regulatory physician are added to the medical record ;
+    + medical record is closed when settled or abandonned.
 
 - policy verification :
-    + hospitals call and provides a client's policy number,
-    + a policy verification medical record is created,
-    + the record's fate is communicated to the caller,
-    + if the policy is invalid, an notification e-mail is sent to the insurance provider,
+    + hospital calls and provides a client's insurance policy number ;
+    + policy verification medical record is created (for billing reasons) ;
+    + record's validity, which depends of the policy's status, is communicated to the caller ;
+    + if the policy is invalid, a notification e-mail is sent to the insurance provider.
 
 - delta files loading:
     + insurance company periodically sends latest client policies spreadsheet,
-    + Excel file includes policy, client, effective date, insurer, intermediary, and status columns (intermediary may be blank),
-    + status is VALID, SUSPENDED, or TERMINATED; new policies are added as revisable,
-    + existing policies are not changed; a status history entry is added only when the latest non-canceled status differs,
+    + Excel file includes policy, client, effective date, insurer, intermediary, and status columns (intermediary may be blank) ;
+    + file is processed to create new policies and update exisiting policies' statuses.
 
 - rejected records revalidation :
-    + when the client's policy is invalid, assistance is provided but the client pays the service providers,
-    + the client settles his contract with the insurance provider,
-    + the insurance providers asks for medical record revalidation,
-    + if the fate is valid, processing is resumed on the medical record,
+    + when the client's policy is invalid, assistance is still provided but the client pays the service providers ;
+    + client settles his contract with the insurance provider ;
+    + new policy status is received in newer delta files ;
+    + medical record is automatically validated and its processing is resumed.
 
 - service billing:
-    + a batch of physical files is periodically provided to the person in charge of billing,
-    + the costs for services are added to each medical record,
-    + records that are ready are selected for billing,
-    + invoices are generated and printed, including medical record creation fee,
-    + financial settlements are processed with the service providers,
-    + payments are collected from the insurance companies,
+    + batch of physical files is periodically provided to the billing manager ;
+    + costs for services are added to each medical record ;
+    + records that are ready are selected for billing ;
+    + invoices are generated and printed for each record, including medical record creation fee ;
+    + financial settlements are processed with the service providers ;
+    + payments are then collected from the insurance companies.
 
-- lawyer procedure (TODO):
-    + ?
+- legal procedure:
+    + victim challenges an insurance decision in court (generally disability compensation);
+    + concerned mediacl record' status becomes "in dispute", and is excluded from the list of billable records until the dispute is resolved.
 
 
 ## SCREENS
-- record management:
-    + emergency call: form used to collect data from calls, creates medical records,
-    + medical records: list sorted by date, filter available for most visible columns,
-    + record details: form to visualize all record data, includes editable lists for sevices and certificates,
-- issurance management:
-    + client policies: list of insurance policies, row filter,
-    + insurance providers: editable list of insurance companies, agents, brokers, row filter,
-    + policy update: delta file upload screen, updates policies (new + status change),
-- service management:
-    + healthcare providers: editable list of medical service providers, row filter,
-    + medical services: editable list of medical services, row filter,
-- billing management:
-    + service settlement: editable list sorted by date of provided medical services, row filter,
-    + invoice management: editable list of invoices, row filter,
+- record management :
+    + emergency call : form used to collect data from calls, creates medical records ;
+    + medical records : list of medical records, sorted by date, column filters (reference, policy, company, victim, status, date), read-only ;
+        + record details : form used to displays and edit a record full details, includes editable lists for sevices and certificates ;
+- issurance management :
+    + client policies : list of insurance policies, row filter, read-only ;
+    + insurance providers: list of insurance companies, agents, brokers, and special clients, row filter, grid CRUD;
+    + policy update : upload screen for delta files, updates policies (new + status change) ;
+- service management :
+    + healthcare providers : list of medical service providers, row filter, grid CRUD ;
+    + medical services : list of medical services, row filter, grid CRUD ;
+- billing management :
+    + service settlement : list of billable medical services from valid records (with "in progress" status) and those that have already been billed,  row filter, edit-only, check-box with each row + button that creates an invoice per record (groups services from same record) for selected services ;
+    + invoice cashing : list of cashings, row filter, read-only ;
+        + cashing details : form used display, create, and edit a cashing of invoices, includes a list of invoices which, during creation, displays all non-cashed invoices for selection, while during edit, displays invoices that are linked to this cashing, read-only in both cases.
 
 
 ## DATA STRUCTURE
 - medical record:
-
     // 1. client data:
     + reference: required, read-only, unique, defaults to calculated (accident date YYMMDD + daily 2-digits sequence) ;
     + insurance policy: required, selectable (list searchable by policy and client name) ;
@@ -79,7 +79,7 @@
 
     // 2. accident data:
     + accident date: required, date-time, defaults to NOW ;
-    + accident type: required, list (workplace accident - AT, illness & pain - MD, policy verification - VF, special service - SS, occupational disease - PR, lawyer procedure - AV), defaults to "AT" ;
+    + accident type: required, list (workplace accident - AT, illness & pain - MD, policy verification - VF, special service - SS, occupational disease - PR), defaults to "AT" ;
     + accident place: required, list (workshop - WS, route - RT, office - OF, construction - CT) ;
     + accident cause: list (falling or slipping - FALL, machine or equipment - EQIP, overexertion and fatigue - FATG, hazardous substance - HAZD, workplace violence - VIOL, moving objects - OBJC) ;
     + accident evolution: required, list (initial - INIT, relapse - RELP, death - DEAT, complement - COMP), defaults to "INIT" ;
@@ -92,7 +92,7 @@
     + victim job ;
 
     // 4. status data (hidden in "/assistance/call"):
-    + status: required, list (in progress - PRG, rejected - RJC, closed - CLS, abandoned - ABN), defaults to calculated (if a non-cancelled suspension or termination status exist, then "RJC", esle "PRG") ;
+    + status: required, list (in progress - PRG, disputed - DSP, rejected - RJC, closed - CLS, abandoned - ABN), defaults to calculated (if a non-cancelled suspension or termination status exist, then "RJC", esle "PRG") ;
     + delegation date: date-time ;
     + regulatory doctor ;
     + manager: required, read-only, defaults to USER ;
@@ -164,11 +164,17 @@
     + bank: combo-box ;
     + bank account ;
 
-- service invoice:
+- billing invoice :
+    + record: required, selectable ;
     + reference: required, read-only, unique, defaults to calculated (current year date YYMM + yearly 6-digits sequence) ;
-    + date: required, read-only, date, defaults to NOW
+    + issue date: required, read-only, date, defaults to NOW ;
     + total amount: required, number ;
+    + cashing: optional, selectable ;
+
+- billing cashing :
     + insurance provider: required, selectable ;
+    + request date: required, read-only, date, defaults to NOW ;
+    + total amount: required, number ;
     + bank: combo-box ;
     + payment mode: list (check - CHQ, transfer - VRM, cash - CSH) ;
     + payment reference ;
