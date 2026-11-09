@@ -36,7 +36,11 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 		String(provider.id),
 		serviceTypes.filter(({ targetProfile }) => targetProfile === provider.profile).map(({ id, label }) => ({ value: id, label })),
 	]));
-	const defaultPayments = Object.fromEntries(serviceTypes.map(({ id, paymentAmount }) => [String(id), paymentAmount]));
+	const defaultServiceAmounts = [
+		{ fieldKey: "paymentAmount", values: Object.fromEntries(serviceTypes.map(({ id, paymentAmount }) => [String(id), paymentAmount])) },
+		{ fieldKey: "billingAmount", values: Object.fromEntries(serviceTypes.map(({ id, billingAmount }) => [String(id), billingAmount])) },
+		{ fieldKey: "taxRate", values: Object.fromEntries(serviceTypes.map(({ id, taxRate }) => [String(id), taxRate])) },
+	];
 	const invoiceOptions = [
 		{ value: null, label: "None" },
 		...invoices.map(({ id, reference, insuranceProvider }) => ({ value: id, label: `${reference} - ${insuranceProvider}` })),
@@ -57,7 +61,7 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 						title="Medical Services"
 						rows={services.map(({ id, medicalRecordId, serviceProviderId, serviceTypeId, date, paymentAmount, billingAmount, taxRate, settlementStatus, settlingDate, bank, paymentMode, paymentReference, invoiceId, observation }) => ({ id, medicalRecordId, serviceProviderId, serviceTypeId, date, paymentAmount, billingAmount, taxRate, settlementStatus, settlingDate, bank, paymentMode, paymentReference, invoiceId, observation }))}
 						columns={[
-							{ key: "serviceTypeId", label: "Service Type", editor: "select", required: true, optionsBy: { dependencyKey: "serviceProviderId", values: serviceTypesByProvider }, defaultFieldByOption: { fieldKey: "paymentAmount", values: defaultPayments } },
+							{ key: "serviceTypeId", label: "Service Type", editor: "select", required: true, optionsBy: { dependencyKey: "serviceProviderId", values: serviceTypesByProvider }, defaultFieldsByOption: defaultServiceAmounts },
 							{ key: "serviceProviderId", label: "Provider", editor: "select", required: true, options: providers.map(({ id, label }) => ({ value: id, label })) },
 							{ key: "date", label: "Service Date", editor: "date", format: "date", nullable: true },
 							{ key: "paymentAmount", label: "Payment Amount", editor: "number" },

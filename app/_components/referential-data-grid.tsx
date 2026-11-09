@@ -1,9 +1,11 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createColumnHelper, createSortedRowModel, rowSortingFeature, tableFeatures, useTable } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, RotateCcw, Save, Search, SquarePen, SquarePlus, Trash2, X } from "lucide-react";
+import { createColumnHelper, createSortedRowModel, rowSelectionFeature, rowSortingFeature, tableFeatures, useTable } from "@tanstack/react-table";
+import type { RowSelectionState } from "@tanstack/react-table";
+import { ArrowDown, ArrowUp, ChevronsUpDown, Eye, RotateCcw, Save, Search, SquarePen, SquarePlus, Trash2, X } from "lucide-react";
 
 type EntityValue = string | number | boolean | Date | null;
 type EntityRow = Record<string, EntityValue> & { id: number };
@@ -19,7 +21,7 @@ export type EntityColumn = {
   editor?: EditorType;
   options?: SelectOption[];
   optionsBy?: { dependencyKey: string; values: Record<string, SelectOption[]> };
-  defaultFieldByOption?: { fieldKey: string; values: Record<string, number> };
+  defaultFieldsByOption?: { fieldKey: string; values: Record<string, number> }[];
   required?: boolean;
   nullable?: boolean;
   readOnly?: boolean;
@@ -29,14 +31,26 @@ type ReferencialDataGridProps<Row extends EntityRow, CreateValues extends object
   title: string;
   rows: Row[];
   columns: EntityColumn[];
-  onCreate: (values: CreateValues) => Promise<unknown>;
-  onUpdate: (id: number, values: Row) => Promise<unknown>;
-  onDelete: (id: number) => Promise<unknown>;
+  onCreate?: (values: CreateValues) => Promise<unknown>;
+  onUpdate?: (id: number, values: Row) => Promise<unknown>;
+  onDelete?: (id: number) => Promise<unknown>;
   readOnly?: boolean;
+  canCreate?: boolean;
+  canDelete?: boolean;
+  detailsHrefPrefix?: string;
+  createHref?: string;
+  createLabel?: string;
+  selection?: {
+    key: string;
+    selectableValues: EntityValue[];
+    actionLabel: string;
+    onAction: (ids: number[]) => Promise<unknown>;
+  };
 };
 
 const features = tableFeatures({
   rowSortingFeature,
+  rowSelectionFeature,
   sortedRowModel: createSortedRowModel(),
   sortFns: {
     entity: (rowA, rowB, columnId) => compareValues(rowA.getValue(columnId), rowB.getValue(columnId)),
@@ -45,15 +59,18 @@ const features = tableFeatures({
 
 const columnHelper = createColumnHelper<typeof features, EntityRow>();
 
-export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends object = Omit<Row, "id">>({ title, rows, columns, onCreate, onUpdate, onDelete, readOnly = false }: ReferencialDataGridProps<Row, CreateValues>) {
+export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends object = Omit<Row, "id">>({ title, rows, columns, onCreate, onUpdate, onDelete, readOnly = false, canCreate = true, canDelete = true, detailsHrefPrefix, createHref, createLabel = "New Record", selection }: ReferencialDataGridProps<Row, CreateValues>) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [drafts, setDrafts] = useState<Record<string, DraftRow>>({});
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [newDraft, setNewDraft] = useState<DraftRow | null>(null);
+  const [selectionPending, setSelectionPending] = useState(false);
+  const [selectionError, setSelectionError] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
   const filteredRows = useMemo(
     () => rows.filter((row) => !normalizedQuery || columns.some((column) =>
@@ -73,8 +90,12 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
     features,
     columns: tableColumns,
     data: filteredRows,
-    state: { sorting },
+    state: { sorting, rowSelection },
     onSortingChange: setSorting,
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: selection
+      ? (row) => selection.selectableValues.includes(row.original[selection.key])
+      : false,
     getRowId: (row) => String(row.id),
   });
 
@@ -85,6 +106,7 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
     setErrors((current) => ({ ...current, [key]: "" }));
     try {
       validateDraft(newDraft, columns);
+      if (!onCreate) throw new Error("Creating rows is not available.");
       const result = await onCreate(parseDraft(newDraft, columns) as CreateValues);
       if (result == null) throw new Error("The new row could not be created.");
       setNewDraft(null);
@@ -104,9 +126,11 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
     setErrors((current) => ({ ...current, [key]: "" }));
     try {
       if (deleting[key]) {
+        if (!onDelete) throw new Error("Deleting rows is not available.");
         const result = await onDelete(row.id);
         if (result == null) throw new Error("The row could not be deleted.");
       } else {
+        if (!onUpdate) throw new Error("Updating rows is not available.");
         validateDraft(draft, columns);
         const result = await onUpdate(row.id, { ...row, ...parseDraft(draft, columns) } as Row);
         if (result == null) throw new Error("The row could not be updated.");
@@ -126,6 +150,24 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
     setErrors((current) => ({ ...current, new: "" }));
   };
 
+  const runSelectionAction = async () => {
+    if (!selection) return;
+    const ids = table.getSelectedRowIds().map(Number).filter(Number.isInteger);
+    if (!ids.length) return;
+    setSelectionPending(true);
+    setSelectionError("");
+    try {
+      const result = await selection.onAction(ids);
+      if (result == null) throw new Error("The selected rows could not be processed.");
+      setRowSelection({});
+      router.refresh();
+    } catch (error) {
+      setSelectionError(errorMessage(error));
+    } finally {
+      setSelectionPending(false);
+    }
+  };
+
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between gap-4 px-5 py-5">
@@ -136,9 +178,12 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
         </label>
         <div className="flex shrink-0 gap-2">
           <button type="button" onClick={() => { setQuery(""); setSorting([]); }} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"><RotateCcw className="h-3.5 w-3.5" />Reset Table</button>
-          {!readOnly && <button type="button" onClick={startCreate} disabled={newDraft !== null} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"><SquarePlus className="h-3.5 w-3.5" />New Record</button>}
+          {selection && <button type="button" onClick={() => void runSelectionAction()} disabled={selectionPending || !table.getSelectedRowIds().length} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50">{selectionPending ? "Processing..." : selection.actionLabel} ({table.getSelectedRowIds().length})</button>}
+          {createHref ? <Link href={createHref} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-800"><SquarePlus className="h-3.5 w-3.5" />{createLabel}</Link> : null}
+          {!readOnly && canCreate && !createHref && <button type="button" onClick={startCreate} disabled={newDraft !== null} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"><SquarePlus className="h-3.5 w-3.5" />{createLabel}</button>}
         </div>
       </div>
+      {selectionError ? <p role="alert" className="px-5 pb-3 text-sm text-rose-700">{selectionError}</p> : null}
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-max border-collapse text-left text-sm">
@@ -146,6 +191,7 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 <th scope="col" className="whitespace-nowrap px-5 py-3 font-semibold" />
+                {selection ? <th scope="col" className="px-3 py-3 text-center"><span className="sr-only">Select</span></th> : null}
                 {headerGroup.headers.map((header) => {
                   const sorted = header.column.getIsSorted();
                   return <th key={header.id} scope="col" className="whitespace-nowrap px-5 py-3 font-semibold">
@@ -169,7 +215,7 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
               </td>
               {columns.map((column) => <td key={column.key} className="max-w-xs px-3 py-3">{column.readOnly ? <span className="text-xs text-slate-400">Set automatically</span> : <GridEditor column={{ ...column, options: resolveOptions(column, newDraft) }} value={newDraft[column.key]} onChange={(value) => setNewDraft((current) => current ? updateDraft(current, column, value, columns, true) : current)} />}</td>)}
             </tr> : null}
-            {table.getRowModel().rows.length === 0 && !newDraft ? <tr><td colSpan={columns.length + 1} className="px-5 py-16 text-center text-sm text-slate-500">No {title.toLowerCase()} match your search.</td></tr> : table.getRowModel().rows.map((row) => {
+            {table.getRowModel().rows.length === 0 && !newDraft ? <tr><td colSpan={columns.length + 1 + Number(Boolean(selection))} className="px-5 py-16 text-center text-sm text-slate-500">No {title.toLowerCase()} match your search.</td></tr> : table.getRowModel().rows.map((row) => {
               const original = row.original as Row;
               const key = String(original.id);
               const draft = drafts[key];
@@ -177,9 +223,10 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
               return <tr key={row.id} className="transition-colors hover:bg-teal-50/40">
                 <td className="whitespace-nowrap px-5 py-3 align-middle">
                   <div className="flex gap-2">
+                    {readOnly && detailsHrefPrefix ? <Link href={`${detailsHrefPrefix}/${row.id}`} aria-label={`View ${title} details`} title="View details" className="rounded-md border border-slate-200 p-1.5 text-slate-600 hover:border-teal-300 hover:text-teal-700"><Eye className="h-4 w-4" /></Link> : null}
                     {!readOnly && draft ? <>
                       <button type="button" aria-label="Save changes" title="Save" onClick={() => void saveRow(original)} disabled={saving[key]} className="rounded-md bg-teal-700 p-1.5 text-white hover:bg-teal-800 disabled:opacity-50"><Save className="h-4 w-4" /></button>
-                      <button type="button" aria-label="Mark row for deletion" title="Delete" onClick={() => setDeleting((current) => ({ ...current, [key]: !markedForDeletion }))} disabled={saving[key] || markedForDeletion} className="rounded-md border border-rose-200 p-1.5 text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"><Trash2 className="h-4 w-4" /></button>
+                      {canDelete && <button type="button" aria-label="Mark row for deletion" title="Delete" onClick={() => setDeleting((current) => ({ ...current, [key]: !markedForDeletion }))} disabled={saving[key] || markedForDeletion} className="rounded-md border border-rose-200 p-1.5 text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"><Trash2 className="h-4 w-4" /></button>}
                       <button type="button" aria-label="Cancel editing" title="Cancel" onClick={() => {
                         setDrafts((current) => { const next = { ...current }; delete next[key]; return next; });
                         setDeleting((current) => { const next = { ...current }; delete next[key]; return next; });
@@ -189,6 +236,17 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
                   </div>
                   {errors[key] ? <p role="alert" className="mt-2 max-w-48 whitespace-normal text-xs text-rose-700">{errors[key]}</p> : null}
                 </td>
+                {selection ? <td className="px-3 py-3 text-center">
+                  <input
+                    type="checkbox"
+                    aria-label={`Select row ${row.id}`}
+                    checked={row.getIsSelected()}
+                    disabled={!row.getCanSelect() || selectionPending || Boolean(draft)}
+                    onClick={row.getToggleSelectedHandler()}
+                    onChange={() => {}}
+                    className="h-4 w-4 accent-teal-700 disabled:opacity-40"
+                  />
+                </td> : null}
                 {row.getAllCells().map((cell, index) => {
                   const column = columns[index];
                   return <td key={cell.id} className={`max-w-xs whitespace-nowrap px-5 py-4 ${markedForDeletion ? "bg-rose-50 text-rose-800 line-through" : "text-slate-700"}`}>
@@ -231,9 +289,11 @@ function createDraft(columns: EntityColumn[], row?: EntityRow): DraftRow {
       const option = resolveOptions(column, { ...row, ...draft })[0];
       if (option) draft[column.key] = String(option.value ?? "");
     }
-    if (!row && column.defaultFieldByOption) {
-      const defaultValue = column.defaultFieldByOption.values[String(draft[column.key] ?? "")];
-      if (defaultValue !== undefined) draft[column.defaultFieldByOption.fieldKey] = String(defaultValue);
+    if (!row && column.defaultFieldsByOption) {
+      for (const { fieldKey, values } of column.defaultFieldsByOption) {
+        const defaultValue = values[String(draft[column.key] ?? "")];
+        if (defaultValue !== undefined) draft[fieldKey] = String(defaultValue);
+      }
     }
   }
   return draft;
@@ -286,15 +346,19 @@ function updateDraft(draft: DraftRow, column: EntityColumn, value: DraftValue, c
       const options = resolveOptions(dependent, updated);
       if (!options.some((option) => String(option.value ?? "") === String(updated[dependent.key] ?? ""))) {
         updated[dependent.key] = String(options[0]?.value ?? "");
-        if (isNew && dependent.defaultFieldByOption) {
-          const defaultValue = dependent.defaultFieldByOption.values[String(updated[dependent.key])];
-          if (defaultValue !== undefined) updated[dependent.defaultFieldByOption.fieldKey] = String(defaultValue);
+        if (isNew && dependent.defaultFieldsByOption) {
+          for (const { fieldKey, values } of dependent.defaultFieldsByOption) {
+            const defaultValue = values[String(updated[dependent.key])];
+            if (defaultValue !== undefined) updated[fieldKey] = String(defaultValue);
+          }
         }
       }
     }
-    if (isNew && dependent.defaultFieldByOption && dependent.key === column.key) {
-      const defaultValue = dependent.defaultFieldByOption.values[String(value)];
-      if (defaultValue !== undefined) updated[dependent.defaultFieldByOption.fieldKey] = String(defaultValue);
+    if (isNew && dependent.defaultFieldsByOption && dependent.key === column.key) {
+      for (const { fieldKey, values } of dependent.defaultFieldsByOption) {
+        const defaultValue = values[String(value)];
+        if (defaultValue !== undefined) updated[fieldKey] = String(defaultValue);
+      }
     }
   }
   return updated;

@@ -3,7 +3,16 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "../index";
-import { billingInvoices, medicalRecords, medicalServices, serviceProviders, serviceTypes } from "../schemas";
+import {
+  billingCashings,
+  billingInvoices,
+  insurancePolicies,
+  insuranceProviders,
+  medicalRecords,
+  medicalServices,
+  serviceProviders,
+  serviceTypes,
+} from "../schemas";
 import type { MedicalService, NewMedicalService } from "../schemas";
 
 export async function listRecordMedicalServices(recordId: number) {
@@ -26,6 +35,12 @@ export async function listServicesForSettlement() {
     .select({
       id: medicalServices.id,
       medicalRecordId: medicalServices.medicalRecordId,
+      recordReference: medicalRecords.reference,
+      accidentType: medicalRecords.accidentType,
+      victimFirstName: medicalRecords.victimFirstName,
+      victimLastName: medicalRecords.victimLastName,
+      clientCompany: insurancePolicies.clientCompany,
+      insuranceProvider: insuranceProviders.label,
       serviceProviderId: medicalServices.serviceProviderId,
       serviceTypeId: medicalServices.serviceTypeId,
       serviceProvider: serviceProviders.label,
@@ -35,6 +50,7 @@ export async function listServicesForSettlement() {
       settlementStatus: medicalServices.settlementStatus,
       settlingDate: medicalServices.settlingDate,
       invoiceId: medicalServices.invoiceId,
+      invoiceReference: billingInvoices.reference,
       paymentAmount: medicalServices.paymentAmount,
       billingAmount: medicalServices.billingAmount,
       taxRate: medicalServices.taxRate,
@@ -44,8 +60,11 @@ export async function listServicesForSettlement() {
     })
     .from(medicalServices)
     .innerJoin(medicalRecords, eq(medicalServices.medicalRecordId, medicalRecords.id))
+    .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
+    .innerJoin(insuranceProviders, eq(insurancePolicies.insuranceCompanyId, insuranceProviders.id))
     .innerJoin(serviceProviders, eq(medicalServices.serviceProviderId, serviceProviders.id))
     .innerJoin(serviceTypes, eq(medicalServices.serviceTypeId, serviceTypes.id))
+    .leftJoin(billingInvoices, eq(medicalServices.invoiceId, billingInvoices.id))
     .where(and(
       eq(medicalRecords.status, "PRG"),
       inArray(medicalServices.settlementStatus, ["WAIT", "BILL"]),
@@ -95,29 +114,45 @@ export async function updateMedicalService(id: number, input: MedicalService) {
   if (existing.settlementStatus === "SETT" && invoiceId !== existing.invoiceId) {
     throw new Error("A settled medical service cannot be reassigned to an invoice.");
   }
+  const invoiceTotalsNeedUpdate = existing.invoiceId !== invoiceId || existing.billingAmount !== input.billingAmount;
+  const affectedInvoiceIds = [...new Set([existing.invoiceId, invoiceId].filter((value): value is number => value !== null))];
+  if (invoiceTotalsNeedUpdate && affectedInvoiceIds.length) {
+    const linkedCashings = await db
+      .select({ cashed: billingCashings.cashed })
+      .from(billingInvoices)
+      .leftJoin(billingCashings, eq(billingInvoices.cashingId, billingCashings.id))
+      .where(inArray(billingInvoices.id, affectedInvoiceIds));
+    if (linkedCashings.some(({ cashed }) => cashed)) {
+      throw new Error("A medical service linked to a cashed invoice cannot change its billing amount or invoice.");
+    }
+  }
   const settlementStatus = invoiceId
     ? existing.settlementStatus === "WAIT" ? "BILL" : existing.settlementStatus
     : existing.settlementStatus === "BILL" ? "WAIT" : existing.settlementStatus;
-  const [record] = await db
-    .update(medicalServices)
-    .set({
-      serviceProviderId: input.serviceProviderId,
-      serviceTypeId: input.serviceTypeId,
-      date: input.date,
-      observation: input.observation,
-      invoiceId,
-      paymentAmount: input.paymentAmount,
-      billingAmount: input.billingAmount,
-      taxRate: input.taxRate,
-      bank: input.bank,
-      paymentMode: input.paymentMode,
-      paymentReference: input.paymentReference,
-      settlementStatus,
-      settlingDate: existing.settlingDate,
-    })
-    .where(eq(medicalServices.id, id))
-    .returning();
-  return record ?? null;
+  return db.transaction((tx) => {
+    const [record] = tx
+      .update(medicalServices)
+      .set({
+        serviceProviderId: input.serviceProviderId,
+        serviceTypeId: input.serviceTypeId,
+        date: input.date,
+        observation: input.observation,
+        invoiceId,
+        paymentAmount: input.paymentAmount,
+        billingAmount: input.billingAmount,
+        taxRate: input.taxRate,
+        bank: input.bank,
+        paymentMode: input.paymentMode,
+        paymentReference: input.paymentReference,
+        settlementStatus,
+        settlingDate: existing.settlingDate,
+      })
+      .where(eq(medicalServices.id, id))
+      .returning()
+      .all();
+    if (invoiceTotalsNeedUpdate) recalculateInvoiceTotals(tx, affectedInvoiceIds);
+    return record ?? null;
+  });
 }
 
 export async function updateSettlementMedicalService(id: number, values: Record<string, unknown>) {
@@ -128,11 +163,60 @@ export async function updateSettlementMedicalService(id: number, values: Record<
 }
 
 export async function deleteMedicalService(id: number) {
-  const [record] = await db
-    .delete(medicalServices)
-    .where(eq(medicalServices.id, id))
-    .returning();
-  return record ?? null;
+  const [existing] = await db
+    .select()
+    .from(medicalServices)
+    .where(eq(medicalServices.id, id));
+  if (!existing) return null;
+  if (existing.invoiceId !== null) {
+    const [invoice] = await db
+      .select({ cashed: billingCashings.cashed })
+      .from(billingInvoices)
+      .leftJoin(billingCashings, eq(billingInvoices.cashingId, billingCashings.id))
+      .where(eq(billingInvoices.id, existing.invoiceId));
+    if (invoice?.cashed) throw new Error("A medical service linked to a cashed invoice cannot be deleted.");
+  }
+  return db.transaction((tx) => {
+    const [record] = tx
+      .delete(medicalServices)
+      .where(eq(medicalServices.id, id))
+      .returning()
+      .all();
+    if (existing.invoiceId !== null) recalculateInvoiceTotals(tx, [existing.invoiceId]);
+    return record ?? null;
+  });
+}
+
+function recalculateInvoiceTotals(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], invoiceIds: number[]) {
+  for (const invoiceId of invoiceIds) {
+    const services = tx
+      .select({ billingAmount: medicalServices.billingAmount })
+      .from(medicalServices)
+      .where(eq(medicalServices.invoiceId, invoiceId))
+      .all();
+    const totalAmount = roundCurrency(services.reduce((total, service) => total + service.billingAmount, 0));
+    tx.update(billingInvoices)
+      .set({ totalAmount })
+      .where(eq(billingInvoices.id, invoiceId))
+      .run();
+
+    const [invoice] = tx
+      .select({ cashingId: billingInvoices.cashingId })
+      .from(billingInvoices)
+      .where(eq(billingInvoices.id, invoiceId))
+      .all();
+    if (invoice?.cashingId === null || invoice?.cashingId === undefined) continue;
+    const cashingInvoices = tx
+      .select({ totalAmount: billingInvoices.totalAmount })
+      .from(billingInvoices)
+      .where(eq(billingInvoices.cashingId, invoice.cashingId))
+      .all();
+    const cashingTotal = roundCurrency(cashingInvoices.reduce((total, item) => total + item.totalAmount, 0));
+    tx.update(billingCashings)
+      .set({ totalAmount: cashingTotal })
+      .where(eq(billingCashings.id, invoice.cashingId))
+      .run();
+  }
 }
 
 async function getSettlementServiceInput(values: Record<string, unknown>, useTypeDefaults: boolean): Promise<Omit<MedicalService, "id">> {
@@ -206,6 +290,10 @@ function validateAmounts(paymentAmount: number, billingAmount: number, taxRate: 
   ] as const) {
     if (!Number.isFinite(amount) || amount < 0) throw new Error(`${label} must be a non-negative number.`);
   }
+}
+
+function roundCurrency(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
 async function getServiceType(serviceTypeId: number) {

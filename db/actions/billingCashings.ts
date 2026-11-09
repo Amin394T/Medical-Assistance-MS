@@ -7,6 +7,7 @@ import {
   billingCashings,
   billingInvoices,
   insurancePolicies,
+  insuranceProviders,
   medicalRecords,
 } from "../schemas";
 
@@ -25,6 +26,7 @@ export async function listBillingCashings() {
     .select({
       id: billingCashings.id,
       insuranceProviderId: billingCashings.insuranceProviderId,
+      insuranceProvider: insuranceProviders.label,
       requestDate: billingCashings.requestDate,
       totalAmount: billingCashings.totalAmount,
       bank: billingCashings.bank,
@@ -35,6 +37,7 @@ export async function listBillingCashings() {
       invoiceCount: sql<number>`count(${billingInvoices.id})`.mapWith(Number),
     })
     .from(billingCashings)
+    .innerJoin(insuranceProviders, eq(billingCashings.insuranceProviderId, insuranceProviders.id))
     .leftJoin(billingInvoices, eq(billingInvoices.cashingId, billingCashings.id))
     .groupBy(billingCashings.id)
     .orderBy(desc(billingCashings.requestDate));
@@ -69,9 +72,7 @@ export async function createBillingCashing(input: BillingCashingInput) {
   const parsed = parseInput(input);
   return db.transaction((tx) => {
     const invoices = getInvoicesForCashing(tx, parsed.invoiceIds, parsed.insuranceProviderId);
-    if (invoices.some((invoice) => invoice.cashingId !== null)) {
-      throw new Error("One or more selected invoices are already assigned to a cashing.");
-    }
+    validateInvoicesNotCashed(tx, invoices);
 
     const totalAmount = roundCurrency(invoices.reduce((total, invoice) => total + invoice.totalAmount, 0));
     const [cashing] = tx
@@ -90,6 +91,7 @@ export async function createBillingCashing(input: BillingCashingInput) {
       .all();
     if (!cashing) throw new Error("The billing cashing could not be created.");
 
+    releaseInvoicesFromOpenCashings(tx, invoices, null);
     tx.update(billingInvoices)
       .set({ cashingId: cashing.id })
       .where(inArray(billingInvoices.id, parsed.invoiceIds))
@@ -114,9 +116,7 @@ export async function updateBillingCashing(idValue: number, input: BillingCashin
     }
 
     const invoices = getInvoicesForCashing(tx, parsed.invoiceIds, parsed.insuranceProviderId);
-    if (invoices.some((invoice) => invoice.cashingId !== null && invoice.cashingId !== id)) {
-      throw new Error("One or more selected invoices are already assigned to another cashing.");
-    }
+    validateInvoicesNotCashed(tx, invoices, id);
     const currentInvoiceIds = tx
       .select({ id: billingInvoices.id })
       .from(billingInvoices)
@@ -148,6 +148,7 @@ export async function updateBillingCashing(idValue: number, input: BillingCashin
       .all();
     if (!updated) return null;
 
+    releaseInvoicesFromOpenCashings(tx, invoices, id);
     tx.update(billingInvoices)
       .set({ cashingId: null })
       .where(and(eq(billingInvoices.cashingId, id), notInArray(billingInvoices.id, parsed.invoiceIds)))
@@ -192,10 +193,12 @@ function getInvoicesForCashing(tx: Parameters<Parameters<typeof db.transaction>[
       cashingId: billingInvoices.cashingId,
       totalAmount: billingInvoices.totalAmount,
       insuranceProviderId: insurancePolicies.insuranceCompanyId,
+      cashingSettled: billingCashings.cashed,
     })
     .from(billingInvoices)
     .innerJoin(medicalRecords, eq(billingInvoices.medicalRecordId, medicalRecords.id))
     .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
+    .leftJoin(billingCashings, eq(billingInvoices.cashingId, billingCashings.id))
     .where(inArray(billingInvoices.id, invoiceIds))
     .all();
   if (invoices.length !== invoiceIds.length) throw new Error("One or more billing invoices were not found.");
@@ -203,6 +206,55 @@ function getInvoicesForCashing(tx: Parameters<Parameters<typeof db.transaction>[
     throw new Error("All selected invoices must belong to the selected insurance provider.");
   }
   return invoices;
+}
+
+function validateInvoicesNotCashed(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  invoices: ReturnType<typeof getInvoicesForCashing>,
+  ignoredCashingId?: number,
+) {
+  const cashingIds = [...new Set(
+    invoices
+      .map((invoice) => invoice.cashingId)
+      .filter((id): id is number => id !== null && id !== ignoredCashingId),
+  )];
+  if (!cashingIds.length) return;
+  const cashings = tx
+    .select({ id: billingCashings.id, cashed: billingCashings.cashed })
+    .from(billingCashings)
+    .where(inArray(billingCashings.id, cashingIds))
+    .all();
+  if (cashings.some((cashing) => cashing.cashed)) {
+    throw new Error("One or more selected invoices have already been cashed.");
+  }
+}
+
+function releaseInvoicesFromOpenCashings(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  invoices: ReturnType<typeof getInvoicesForCashing>,
+  keepCashingId: number | null,
+) {
+  const sourceIds = [...new Set(
+    invoices
+      .map((invoice) => invoice.cashingId)
+      .filter((id): id is number => id !== null && id !== keepCashingId),
+  )];
+  for (const sourceId of sourceIds) {
+    tx.update(billingInvoices)
+      .set({ cashingId: null })
+      .where(and(eq(billingInvoices.cashingId, sourceId), inArray(billingInvoices.id, invoices.map((invoice) => invoice.id))))
+      .run();
+    const remaining = tx
+      .select({ totalAmount: billingInvoices.totalAmount })
+      .from(billingInvoices)
+      .where(eq(billingInvoices.cashingId, sourceId))
+      .all();
+    const totalAmount = roundCurrency(remaining.reduce((total, invoice) => total + invoice.totalAmount, 0));
+    tx.update(billingCashings)
+      .set({ totalAmount })
+      .where(eq(billingCashings.id, sourceId))
+      .run();
+  }
 }
 
 function parseInput(input: BillingCashingInput) {

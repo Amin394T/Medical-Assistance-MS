@@ -44,7 +44,7 @@ export async function listAvailableBillingInvoices(cashingId?: number) {
   const selectedCashingId = cashingId === undefined ? undefined : requiredId(cashingId, "Billing cashing");
   const condition = selectedCashingId
     ? or(isNull(billingInvoices.cashingId), eq(billingInvoices.cashingId, selectedCashingId))
-    : isNull(billingInvoices.cashingId);
+    : or(isNull(billingInvoices.cashingId), eq(billingCashings.cashed, false));
   return db
     .select({
       id: billingInvoices.id,
@@ -56,11 +56,13 @@ export async function listAvailableBillingInvoices(cashingId?: number) {
       insuranceProviderId: insurancePolicies.insuranceCompanyId,
       insuranceProvider: insuranceProviders.label,
       cashingId: billingInvoices.cashingId,
+      cashingSettled: billingCashings.cashed,
     })
     .from(billingInvoices)
     .innerJoin(medicalRecords, eq(billingInvoices.medicalRecordId, medicalRecords.id))
     .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
     .innerJoin(insuranceProviders, eq(insurancePolicies.insuranceCompanyId, insuranceProviders.id))
+    .leftJoin(billingCashings, eq(billingInvoices.cashingId, billingCashings.id))
     .where(condition)
     .orderBy(desc(billingInvoices.issueDate));
 }
@@ -69,61 +71,35 @@ export async function createBillingInvoice(medicalRecordIdValue: number, medical
   const medicalRecordId = requiredId(medicalRecordIdValue, "Medical record");
   const medicalServiceIds = uniqueIds(medicalServiceIdsValue, "Medical service");
 
-  return db.transaction((tx) => {
-    const [record] = tx
-      .select({ id: medicalRecords.id, status: medicalRecords.status })
-      .from(medicalRecords)
-      .where(eq(medicalRecords.id, medicalRecordId))
-      .all();
-    if (!record) throw new Error("Medical record not found.");
-    if (record.status !== "PRG") throw new Error("Only in-progress medical records can be invoiced.");
+  return db.transaction((tx) => createInvoiceForRecord(tx, medicalRecordId, medicalServiceIds, new Date()));
+}
 
+export async function createBillingInvoicesForServices(medicalServiceIdsValue: number[]) {
+  const medicalServiceIds = uniqueIds(medicalServiceIdsValue, "Medical service");
+  return db.transaction((tx) => {
     const services = tx
       .select({
         id: medicalServices.id,
         recordId: medicalServices.medicalRecordId,
-        settlementStatus: medicalServices.settlementStatus,
-        invoiceId: medicalServices.invoiceId,
-        billingAmount: medicalServices.billingAmount,
       })
       .from(medicalServices)
       .where(inArray(medicalServices.id, medicalServiceIds))
       .all();
     if (services.length !== medicalServiceIds.length) throw new Error("One or more medical services were not found.");
-    if (services.some((service) => service.recordId !== medicalRecordId)) {
-      throw new Error("All selected medical services must belong to the same medical record.");
-    }
-    if (services.some((service) => service.settlementStatus !== "WAIT" || service.invoiceId !== null)) {
-      throw new Error("Only waiting, uninvoiced medical services can be added to a new invoice.");
+
+    const servicesByRecord = new Map<number, number[]>();
+    for (const service of services) {
+      const ids = servicesByRecord.get(service.recordId) ?? [];
+      ids.push(service.id);
+      servicesByRecord.set(service.recordId, ids);
     }
 
-    const totalAmount = roundCurrency(services.reduce((total, service) => total + service.billingAmount, 0));
     const issueDate = new Date();
-    const year = String(issueDate.getFullYear()).slice(-2);
-    const yearStart = Number(`${year}00000000`);
-    const yearEnd = Number(`${year}99999999`);
-    const references = tx
-      .select({ reference: billingInvoices.reference })
-      .from(billingInvoices)
-      .where(and(gte(billingInvoices.reference, yearStart), lte(billingInvoices.reference, yearEnd)))
-      .all();
-    const sequence = references.reduce((max, invoice) => Math.max(max, invoice.reference % 1_000_000), 0) + 1;
-    if (sequence > 999_999) throw new Error("The yearly billing-invoice reference limit has been reached.");
-    const reference = Number(`${year}${String(issueDate.getMonth() + 1).padStart(2, "0")}${String(sequence).padStart(6, "0")}`);
-
-    const [invoice] = tx
-      .insert(billingInvoices)
-      .values({ medicalRecordId, reference, issueDate, totalAmount })
-      .returning()
-      .all();
-    if (!invoice) throw new Error("The billing invoice could not be created.");
-
-    tx.update(medicalServices)
-      .set({ invoiceId: invoice.id, settlementStatus: "BILL" })
-      .where(inArray(medicalServices.id, medicalServiceIds))
-      .run();
-
-    return invoice;
+    const created = [];
+    for (const [recordId, serviceIds] of servicesByRecord) {
+      created.push(createInvoiceForRecord(tx, recordId, serviceIds, issueDate));
+    }
+    return created;
   });
 }
 
@@ -223,4 +199,64 @@ function parseAmount(value: unknown, label: string) {
 
 function roundCurrency(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function createInvoiceForRecord(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  medicalRecordId: number,
+  medicalServiceIds: number[],
+  issueDate: Date,
+) {
+  const [record] = tx
+    .select({ id: medicalRecords.id, status: medicalRecords.status })
+    .from(medicalRecords)
+    .where(eq(medicalRecords.id, medicalRecordId))
+    .all();
+  if (!record) throw new Error("Medical record not found.");
+  if (record.status !== "PRG") throw new Error("Only in-progress medical records can be invoiced.");
+
+  const services = tx
+    .select({
+      id: medicalServices.id,
+      recordId: medicalServices.medicalRecordId,
+      settlementStatus: medicalServices.settlementStatus,
+      invoiceId: medicalServices.invoiceId,
+      billingAmount: medicalServices.billingAmount,
+    })
+    .from(medicalServices)
+    .where(inArray(medicalServices.id, medicalServiceIds))
+    .all();
+  if (services.length !== medicalServiceIds.length) throw new Error("One or more medical services were not found.");
+  if (services.some((service) => service.recordId !== medicalRecordId)) {
+    throw new Error("All selected medical services must belong to the same medical record.");
+  }
+  if (services.some((service) => service.settlementStatus !== "WAIT" || service.invoiceId !== null)) {
+    throw new Error("Only waiting, uninvoiced medical services can be added to a new invoice.");
+  }
+
+  const totalAmount = roundCurrency(services.reduce((total, service) => total + service.billingAmount, 0));
+  const year = String(issueDate.getFullYear()).slice(-2);
+  const yearStart = Number(`${year}00000000`);
+  const yearEnd = Number(`${year}99999999`);
+  const references = tx
+    .select({ reference: billingInvoices.reference })
+    .from(billingInvoices)
+    .where(and(gte(billingInvoices.reference, yearStart), lte(billingInvoices.reference, yearEnd)))
+    .all();
+  const sequence = references.reduce((max, invoice) => Math.max(max, invoice.reference % 1_000_000), 0) + 1;
+  if (sequence > 999_999) throw new Error("The yearly billing-invoice reference limit has been reached.");
+  const reference = Number(`${year}${String(issueDate.getMonth() + 1).padStart(2, "0")}${String(sequence).padStart(6, "0")}`);
+
+  const [invoice] = tx
+    .insert(billingInvoices)
+    .values({ medicalRecordId, reference, issueDate, totalAmount })
+    .returning()
+    .all();
+  if (!invoice) throw new Error("The billing invoice could not be created.");
+
+  tx.update(medicalServices)
+    .set({ invoiceId: invoice.id, settlementStatus: "BILL" })
+    .where(inArray(medicalServices.id, medicalServiceIds))
+    .run();
+  return invoice;
 }

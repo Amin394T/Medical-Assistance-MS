@@ -30,7 +30,7 @@ const navigation = [
     category: "Billing",
     items: [
       { label: "Service Settlement", href: "/billing/settlements", icon: HandCoins },
-      { label: "Invoice Management", href: "/billing/invoices", icon: FileText },
+      { label: "Invoice Cashing", href: "/billing/cashings", icon: FileText },
     ],
   },
 ];
