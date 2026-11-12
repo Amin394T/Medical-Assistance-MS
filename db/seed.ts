@@ -5,6 +5,7 @@ import {
   billingCashings,
   billingInvoices,
   insurancePolicies,
+  insurancePolicyEmployees,
   insuranceProviders,
   medicalCertificates,
   medicalRecords,
@@ -46,6 +47,7 @@ const counts = db.transaction((tx) => {
   tx.delete(billingInvoices).run();
   tx.delete(billingCashings).run();
   tx.delete(medicalRecords).run();
+  tx.delete(insurancePolicyEmployees).run();
   tx.delete(insurancePolicies).run();
   tx.delete(serviceProviders).run();
   tx.delete(serviceTypes).run();
@@ -62,13 +64,19 @@ const counts = db.transaction((tx) => {
 
   const policyIds = new Map(
     tx.insert(insurancePolicies).values([
-      { policyNumber: "AM-2026-00418", clientCompany: "Maple Works Manufacturing", effectiveDate: dateOffset(420), status: "VALI", insuranceCompanyId: getId(insuranceProviderIds, "Atlas Mutual Assurance", "insurance provider"), intermediaryId: getId(insuranceProviderIds, "Cedar Lane Brokers", "insurance provider"), creationDate: dateOffset(420), lastUpdated: now },
-      { policyNumber: "AM-2026-00972", clientCompany: "Brightline Construction", effectiveDate: dateOffset(260), status: "RESU", insuranceCompanyId: getId(insuranceProviderIds, "Atlas Mutual Assurance", "insurance provider"), intermediaryId: getId(insuranceProviderIds, "Harbor Insurance Agency", "insurance provider"), creationDate: dateOffset(260), lastUpdated: now },
-      { policyNumber: "NS-2024-00136", clientCompany: "Riverside Food Logistics", effectiveDate: dateOffset(700), status: "TERM", insuranceCompanyId: getId(insuranceProviderIds, "Northstar Coverage", "insurance provider"), intermediaryId: null, creationDate: dateOffset(700), lastUpdated: dateOffset(30) },
-      { policyNumber: "NS-2026-01005", clientCompany: "Juniper Electrical Services", effectiveDate: dateOffset(-30), status: "SUSP", insuranceCompanyId: getId(insuranceProviderIds, "Northstar Coverage", "insurance provider"), intermediaryId: getId(insuranceProviderIds, "Cedar Lane Brokers", "insurance provider"), creationDate: now, lastUpdated: now },
-      { policyNumber: "AM-2026-01550", clientCompany: "Stonebridge Distribution", effectiveDate: dateOffset(180), status: "VALI", insuranceCompanyId: getId(insuranceProviderIds, "Atlas Mutual Assurance", "insurance provider"), intermediaryId: null, creationDate: dateOffset(180), lastUpdated: now },
+      { policyNumber: "AM-2026-00418", clientCompany: "Maple Works Manufacturing", clientActivity: "Manufacturing", clientAddress: "14 Maple Industrial Way", clientCity: "Springfield", type: "REV" as const, effectiveDate: dateOffset(420), status: "VALI" as const, insuranceCompanyId: getId(insuranceProviderIds, "Atlas Mutual Assurance", "insurance provider"), intermediaryId: getId(insuranceProviderIds, "Cedar Lane Brokers", "insurance provider"), creationDate: dateOffset(420), lastUpdated: now },
+      { policyNumber: "AM-2026-00972", clientCompany: "Brightline Construction", clientActivity: "Construction", clientAddress: "82 North Road", clientCity: "Riverton", type: "FIX" as const, effectiveDate: dateOffset(260), status: "VALI" as const, insuranceCompanyId: getId(insuranceProviderIds, "Atlas Mutual Assurance", "insurance provider"), intermediaryId: getId(insuranceProviderIds, "Harbor Insurance Agency", "insurance provider"), creationDate: dateOffset(260), lastUpdated: now },
+      { policyNumber: "NS-2024-00136", clientCompany: "Riverside Food Logistics", clientActivity: "Food logistics", clientAddress: "2 River Park", clientCity: "Northport", type: "REV" as const, effectiveDate: dateOffset(700), status: "TERM" as const, insuranceCompanyId: getId(insuranceProviderIds, "Northstar Coverage", "insurance provider"), intermediaryId: null, creationDate: dateOffset(700), lastUpdated: dateOffset(30) },
+      { policyNumber: "NS-2026-01005", clientCompany: "Juniper Electrical Services", clientActivity: "Electrical services", clientAddress: "37 Juniper Street", clientCity: "Lakeview", type: "FIX" as const, effectiveDate: dateOffset(-30), status: "SUSP" as const, insuranceCompanyId: getId(insuranceProviderIds, "Northstar Coverage", "insurance provider"), intermediaryId: getId(insuranceProviderIds, "Cedar Lane Brokers", "insurance provider"), creationDate: now, lastUpdated: now },
+      { policyNumber: "AM-2026-01550", clientCompany: "Stonebridge Distribution", clientActivity: "Distribution", clientAddress: "9 Stonebridge Avenue", clientCity: "Fairview", type: "FIX" as const, effectiveDate: dateOffset(180), status: "VALI" as const, insuranceCompanyId: getId(insuranceProviderIds, "Atlas Mutual Assurance", "insurance provider"), intermediaryId: null, creationDate: dateOffset(180), lastUpdated: now },
     ]).returning().all().map(({ id, policyNumber }) => [policyNumber, id]),
   );
+
+  tx.insert(insurancePolicyEmployees).values([
+    { policyId: getId(policyIds, "AM-2026-00972", "insurance policy"), employee: "9001000002" },
+    { policyId: getId(policyIds, "AM-2026-01550", "insurance policy"), employee: "9001000010" },
+    { policyId: getId(policyIds, "NS-2026-01005", "insurance policy"), employee: "9001000011" },
+  ]).run();
 
   const serviceTypeIds = new Map(
     tx.insert(serviceTypes).values([
@@ -111,7 +119,7 @@ const counts = db.transaction((tx) => {
       reference: recordReference(dateOffset(6, 7)), accidentType: "MD" as const, policyNumber: "NS-2024-00136", reportingDate: dateOffset(6, 8),
       reporterName: "Rosa Diaz", reporterPhone: "+1 555 030 1003", accidentPlace: "OF" as const, accidentDate: dateOffset(6, 7), accidentCause: "FATG" as const,
       accidentEvolution: "INIT" as const, victimFirstName: "Lucas", victimLastName: "Perry", victimPhone: "+1 555 030 2003", victimNationalId: "9001000003",
-      victimJob: "Warehouse associate", status: "RJC" as const, delegationDate: null, regulatoryDoctor: null, manager: "Amin Hassan",
+      victimJob: "Warehouse associate", status: "RJC" as const, statusReason: "TER" as const, delegationDate: null, regulatoryDoctor: null, manager: "Amin Hassan",
       observation: "The policy was terminated before the reported event.",
     },
     {

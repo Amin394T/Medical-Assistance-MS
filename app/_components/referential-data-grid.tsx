@@ -25,6 +25,8 @@ export type EntityColumn = {
   required?: boolean;
   nullable?: boolean;
   readOnly?: boolean;
+  dialogTitle?: string;
+  dialogValues?: EntityValue[];
 };
 
 type ReferencialDataGridProps<Row extends EntityRow, CreateValues extends object> = {
@@ -40,6 +42,7 @@ type ReferencialDataGridProps<Row extends EntityRow, CreateValues extends object
   detailsHrefPrefix?: string;
   createHref?: string;
   createLabel?: string;
+  loadDialogItems?: (id: number) => Promise<string[]>;
   selection?: {
     key: string;
     selectableValues: EntityValue[];
@@ -59,7 +62,7 @@ const features = tableFeatures({
 
 const columnHelper = createColumnHelper<typeof features, EntityRow>();
 
-export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends object = Omit<Row, "id">>({ title, rows, columns, onCreate, onUpdate, onDelete, readOnly = false, canCreate = true, canDelete = true, detailsHrefPrefix, createHref, createLabel = "New Record", selection }: ReferencialDataGridProps<Row, CreateValues>) {
+export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends object = Omit<Row, "id">>({ title, rows, columns, onCreate, onUpdate, onDelete, readOnly = false, canCreate = true, canDelete = true, detailsHrefPrefix, createHref, createLabel = "New Record", loadDialogItems, selection }: ReferencialDataGridProps<Row, CreateValues>) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
@@ -71,6 +74,8 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
   const [newDraft, setNewDraft] = useState<DraftRow | null>(null);
   const [selectionPending, setSelectionPending] = useState(false);
   const [selectionError, setSelectionError] = useState("");
+  const [dialog, setDialog] = useState<{ key: string; title: string; items: string[]; loading: boolean; error: string } | null>(null);
+  const [dialogQuery, setDialogQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
   const filteredRows = useMemo(
     () => rows.filter((row) => !normalizedQuery || columns.some((column) =>
@@ -168,6 +173,25 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
     }
   };
 
+  const openDialog = async (row: Row, column: EntityColumn) => {
+    if (!loadDialogItems || !column.dialogTitle) return;
+    const key = `${row.id}:${column.key}`;
+    setDialog({
+      key,
+      title: `${column.dialogTitle} — ${formatValue(row[column.key], column)}`,
+      items: [],
+      loading: true,
+      error: "",
+    });
+    setDialogQuery("");
+    try {
+      const items = await loadDialogItems(row.id);
+      setDialog((current) => current?.key === key ? { ...current, items, loading: false } : current);
+    } catch (error) {
+      setDialog((current) => current?.key === key ? { ...current, loading: false, error: errorMessage(error) } : current);
+    }
+  };
+
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between gap-4 px-5 py-5">
@@ -249,11 +273,14 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
                 </td> : null}
                 {row.getAllCells().map((cell, index) => {
                   const column = columns[index];
+                  const canOpenDialog = Boolean(column.dialogTitle && column.dialogValues?.includes(original[column.key]) && loadDialogItems);
                   return <td key={cell.id} className={`max-w-xs whitespace-nowrap px-5 py-4 ${markedForDeletion ? "bg-rose-50 text-rose-800 line-through" : "text-slate-700"}`}>
                     {draft && !readOnly ? column.readOnly
                       ? formatValue(original[column.key], { ...column, options: resolveOptions(column, original) })
                       : <GridEditor column={{ ...column, options: resolveOptions(column, draft) }} value={draft[column.key]} disabled={markedForDeletion || saving[key]} onChange={(value) => setDrafts((current) => ({ ...current, [key]: updateDraft(current[key], column, value, columns, false) }))} />
-                      : <table.FlexRender cell={cell} />}
+                      : canOpenDialog
+                        ? <button type="button" onClick={() => void openDialog(original, column)} className="font-medium text-teal-700 underline decoration-teal-300 underline-offset-2 hover:text-teal-900">{formatValue(original[column.key], column)}</button>
+                        : <table.FlexRender cell={cell} />}
                   </td>;
                 })}
               </tr>;
@@ -261,6 +288,38 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
           </tbody>
         </table>
       </div>
+      {dialog ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" onMouseDown={(event) => {
+        if (event.target === event.currentTarget) setDialog(null);
+      }}>
+        <section role="dialog" aria-modal="true" aria-labelledby="grid-dialog-title" className="w-full max-w-xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+          <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+            <div>
+              <h2 id="grid-dialog-title" className="text-lg font-semibold text-slate-900">{dialog.title}</h2>
+              <p className="mt-1 text-sm text-slate-500">{dialog.loading ? "Loading covered employees..." : dialog.error || `${dialog.items.length} covered employees`}</p>
+            </div>
+            <button type="button" aria-label="Close dialog" onClick={() => setDialog(null)} className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+          </div>
+          <div className="p-5">
+            <label className="relative block">
+              <span className="sr-only">Search covered employees</span>
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input value={dialogQuery} onChange={(event) => setDialogQuery(event.target.value)} disabled={dialog.loading || Boolean(dialog.error)} placeholder="Search covered employees" className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 disabled:opacity-50" />
+            </label>
+            <ul className="mt-4 max-h-72 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200">
+              {!dialog.loading && !dialog.error && dialog.items.filter((employee) => employee.toLowerCase().includes(dialogQuery.trim().toLowerCase())).map((employee, index) => (
+                <li key={`${employee}-${index}`} className="px-4 py-3 text-sm text-slate-700">{employee}</li>
+              ))}
+              {dialog.loading
+                ? <li className="px-4 py-8 text-center text-sm text-slate-500">Loading covered employees...</li>
+                : dialog.error
+                  ? <li role="alert" className="px-4 py-8 text-center text-sm text-rose-700">{dialog.error}</li>
+                  : dialog.items.filter((employee) => employee.toLowerCase().includes(dialogQuery.trim().toLowerCase())).length === 0
+                    ? <li className="px-4 py-8 text-center text-sm text-slate-500">{dialog.items.length ? "No employees match your search." : "No covered employees are listed for this policy."}</li>
+                : null}
+            </ul>
+          </div>
+        </section>
+      </div> : null}
     </div>
   );
 }

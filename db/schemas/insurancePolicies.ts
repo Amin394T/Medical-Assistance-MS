@@ -6,12 +6,16 @@ export const insurancePolicies = sqliteTable("insurance_policies", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   policyNumber: text("policy_number").notNull().unique(),
   clientCompany: text("client_company").notNull(),
+  clientActivity: text("client_activity"),
+  clientAddress: text("client_address"),
+  clientCity: text("client_city"),
+  type: text("type", { enum: ["REV", "FIX"] }).notNull(),
   effectiveDate: integer("effective_date", { mode: "timestamp" }).notNull(),
-  status: text("status", { enum: ["VALI", "RESU", "SUSP", "TERM"] }).notNull(),
+  status: text("status", { enum: ["VALI", "SUSP", "TERM"] }).notNull(),
   insuranceCompanyId: integer("insurance_company_id").notNull().references(() => insuranceProviders.id),
   intermediaryId: integer("intermediary_id").references(() => insuranceProviders.id),
   creationDate: integer("creation_date", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-  lastUpdated: integer("last_updated", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()).$onUpdateFn(() => new Date()),
+  lastUpdated: integer("last_updated", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
 export type InsurancePolicy = typeof insurancePolicies.$inferSelect;

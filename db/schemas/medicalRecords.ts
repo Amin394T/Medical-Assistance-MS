@@ -20,6 +20,7 @@ export const medicalRecords = sqliteTable("medical_records", {
   victimNationalId: text("victim_national_id").notNull(),
   victimJob: text("victim_job"),
   status: text("status", { enum: ["PRG", "RJC", "DSP", "CLS", "ABN"] }).notNull(),
+  statusReason: text("status_reason", { enum: ["SUS", "TER", "COV"] }),
   delegationDate: integer("delegation_date", { mode: "timestamp" }),
   regulatoryDoctor: text("regulatory_doctor"),
   manager: text("manager").notNull(),
@@ -63,6 +64,7 @@ export type SetMedicalRecord = {
   victimNationalId: string;
   victimJob: string | null;
   status: "PRG" | "RJC" | "DSP" | "CLS" | "ABN";
+  statusReason: "SUS" | "TER" | "COV" | null;
   delegationDate: Date | null;
   regulatoryDoctor: string | null;
   observation: string | null;

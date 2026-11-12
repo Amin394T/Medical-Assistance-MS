@@ -1,4 +1,4 @@
-import { createInsurancePolicy, deleteInsurancePolicy, listInsurancePolicies, updateInsurancePolicy } from "@/db/actions/insurancePolicies";
+import { listInsurancePolicies, listInsurancePolicyEmployees } from "@/db/actions/insurancePolicies";
 import { listInsuranceProviders } from "@/db/actions/insuranceProviders";
 import { ReferencialDataGrid } from "@/app/_components/referential-data-grid";
 import { PageHeader } from "@/app/_components/page-header";
@@ -8,10 +8,14 @@ export const dynamic = "force-dynamic";
 
 export default async function InsurancePoliciesPage() {
 	const [policies, providers] = await Promise.all([listInsurancePolicies(), listInsuranceProviders()]);
-	const rows = policies.map(({ id, policyNumber, clientCompany, effectiveDate, status, insuranceCompanyId, intermediaryId, creationDate, lastUpdated }) => ({
+	const rows = policies.map(({ id, policyNumber, clientCompany, clientActivity, clientAddress, clientCity, type, effectiveDate, status, insuranceCompanyId, intermediaryId, creationDate, lastUpdated }) => ({
 		id,
 		policyNumber,
 		clientCompany,
+		clientActivity,
+		clientAddress,
+		clientCity,
+		type,
 		effectiveDate,
 		status,
 		insuranceCompanyId,
@@ -32,13 +36,19 @@ export default async function InsurancePoliciesPage() {
 				<ReferencialDataGrid
 					title="Client Policies"
 					rows={rows}
+					loadDialogItems={listInsurancePolicyEmployees}
 					columns={[
 						{ key: "policyNumber", label: "Policy Number", required: true, readOnly: true },
 						{ key: "clientCompany", label: "Client Company", required: true, readOnly: true },
+						{ key: "clientActivity", label: "Client Activity", readOnly: true },
+						{ key: "clientAddress", label: "Client Address", readOnly: true },
+						{ key: "clientCity", label: "Client City", readOnly: true },
+						{ key: "type", label: "Policy Type", readOnly: true, options: [
+							{ value: "REV", label: "Revisable" }, { value: "FIX", label: "Fixed-rate" },
+						], dialogTitle: "Covered Employees", dialogValues: ["FIX"] },
 						{ key: "effectiveDate", label: "Effective Date", format: "date", readOnly: true },
 						{ key: "status", label: "Status", readOnly: true, options: [
 							{ value: "VALI", label: "Valid" },
-							{ value: "RESU", label: "Resumed" },
 							{ value: "SUSP", label: "Suspended" },
 							{ value: "TERM", label: "Terminated" },
 						] },
@@ -47,9 +57,6 @@ export default async function InsurancePoliciesPage() {
 						{ key: "creationDate", label: "Creation Date", format: "datetime", readOnly: true },
 						{ key: "lastUpdated", label: "Last Updated", format: "datetime", readOnly: true },
 					]}
-					onCreate={createInsurancePolicy}
-					onUpdate={updateInsurancePolicy}
-					onDelete={deleteInsurancePolicy}
 					readOnly
 				/>
 			</div>

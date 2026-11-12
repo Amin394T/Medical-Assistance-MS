@@ -4,7 +4,7 @@ import { and, desc, eq, gte, isNotNull, lte } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
 import { db } from "../index";
-import { insurancePolicies, insuranceProviders, medicalRecords } from "../schemas";
+import { insurancePolicies, insurancePolicyEmployees, insuranceProviders, medicalRecords } from "../schemas";
 import type { NewMedicalRecord, SetMedicalRecord } from "../schemas";
 
 export async function listMedicalRecords() {
@@ -72,53 +72,98 @@ export async function listJobs() {
 }
 
 export async function createMedicalRecord(input: NewMedicalRecord) {
-  const [policy] = await db
-    .select({ id: insurancePolicies.id, status: insurancePolicies.status })
-    .from(insurancePolicies)
-    .where(eq(insurancePolicies.id, input.policyId));
-  if (!policy) throw new Error("Insurance policy not found.");
+  return db.transaction((tx) => {
+    const [coverage] = tx
+      .select({
+        type: insurancePolicies.type,
+        status: insurancePolicies.status,
+      })
+      .from(insurancePolicies)
+      .where(eq(insurancePolicies.id, input.policyId))
+      .all();
+    if (!coverage) throw new Error("Insurance policy not found.");
 
-  const firstReference = Number(getCompactDate(input.accidentDate)) * 100;
-  const lastReference = firstReference + 99;
-  const [previousReference] = await db
-    .select({ reference: medicalRecords.reference })
-    .from(medicalRecords)
-    .where(and(
-      gte(medicalRecords.reference, firstReference),
-      lte(medicalRecords.reference, lastReference),
-    ))
-    .orderBy(desc(medicalRecords.reference))
-    .limit(1);
-  const reference = (previousReference?.reference ?? firstReference) + 1;
-  if (reference > lastReference) throw new Error("The daily medical-record reference limit has been reached.");
+    const coveredEmployees = coverage.type === "FIX" && coverage.status === "VALI"
+      ? tx.select({ employee: insurancePolicyEmployees.employee })
+        .from(insurancePolicyEmployees)
+        .where(eq(insurancePolicyEmployees.policyId, input.policyId))
+        .all()
+        .map(({ employee }) => employee)
+      : [];
+    const statusReason = getPolicyStatusReason(coverage.type, coverage.status, input.victimNationalId, coveredEmployees);
 
-  const now = new Date();
-  const [record] = await db
-    .insert(medicalRecords)
-    .values({
-      ...input,
-      reference,
-      status: isPolicyRejected(policy.status) ? "RJC" : "PRG",
-      manager: "USER",
-      lastUpdated: now,
-      lastUpdater: "USER",
-    })
-    .returning();
-  return record;
+    const firstReference = Number(getCompactDate(input.accidentDate)) * 100;
+    const lastReference = firstReference + 99;
+    const [previousReference] = tx
+      .select({ reference: medicalRecords.reference })
+      .from(medicalRecords)
+      .where(and(
+        gte(medicalRecords.reference, firstReference),
+        lte(medicalRecords.reference, lastReference),
+      ))
+      .orderBy(desc(medicalRecords.reference))
+      .limit(1)
+      .all();
+    const reference = (previousReference?.reference ?? firstReference) + 1;
+    if (reference > lastReference) throw new Error("The daily medical-record reference limit has been reached.");
+
+    const now = new Date();
+    const [record] = tx
+      .insert(medicalRecords)
+      .values({
+        ...input,
+        reference,
+        status: statusReason ? "RJC" : "PRG",
+        statusReason,
+        manager: "USER",
+        lastUpdated: now,
+        lastUpdater: "USER",
+      })
+      .returning()
+      .all();
+    if (!record) throw new Error("The medical record could not be created.");
+    return record;
+  });
 }
 
 export async function updateMedicalRecord(id: number, input: SetMedicalRecord) {
-  await ensurePolicyExists(input.policyId);
-  const [record] = await db
-    .update(medicalRecords)
-    .set({
-      ...input,
-      lastUpdated: new Date(),
-      lastUpdater: "USER",
-    })
-    .where(eq(medicalRecords.id, id))
-    .returning();
-  return record ?? null;
+  if (input.statusReason !== null && input.statusReason !== "SUS" && input.statusReason !== "TER" && input.statusReason !== "COV") {
+    throw new Error("Invalid medical-record status reason.");
+  }
+  return db.transaction((tx) => {
+    const [policy] = tx
+      .select({
+        type: insurancePolicies.type,
+        status: insurancePolicies.status,
+      })
+      .from(insurancePolicies)
+      .where(eq(insurancePolicies.id, input.policyId))
+      .all();
+    if (!policy) throw new Error("Insurance policy not found.");
+
+    const coveredEmployees = input.status === "RJC" && policy.type === "FIX" && policy.status === "VALI"
+      ? tx.select({ employee: insurancePolicyEmployees.employee })
+        .from(insurancePolicyEmployees)
+        .where(eq(insurancePolicyEmployees.policyId, input.policyId))
+        .all()
+        .map(({ employee }) => employee)
+      : [];
+    const calculatedReason = input.status === "RJC"
+      ? getPolicyStatusReason(policy.type, policy.status, input.victimNationalId, coveredEmployees)
+      : null;
+    const [record] = tx
+      .update(medicalRecords)
+      .set({
+        ...input,
+        statusReason: input.status === "RJC" ? input.statusReason ?? calculatedReason : null,
+        lastUpdated: new Date(),
+        lastUpdater: "USER",
+      })
+      .where(eq(medicalRecords.id, id))
+      .returning()
+      .all();
+    return record ?? null;
+  });
 }
 
 export async function deleteMedicalRecord(id: number) {
@@ -147,14 +192,17 @@ function getCompactDate(date: Date) {
   return `${year}${month}${day}`;
 }
 
-function isPolicyRejected(status: string) {
-  return status === "SUSP" || status === "TERM";
+function getPolicyStatusReason(type: "REV" | "FIX", status: "VALI" | "SUSP" | "TERM", employeeId: string, employees: string[]) {
+  if (status === "SUSP") return "SUS" as const;
+  if (status === "TERM") return "TER" as const;
+  if (type !== "FIX") return null;
+
+  const normalizedEmployeeId = normalizeEmployeeId(employeeId);
+  return employees.some((employee) => normalizeEmployeeId(employee) === normalizedEmployeeId)
+    ? null
+    : "COV" as const;
 }
 
-async function ensurePolicyExists(policyId: number) {
-  const [policy] = await db
-    .select({ id: insurancePolicies.id })
-    .from(insurancePolicies)
-    .where(eq(insurancePolicies.id, policyId));
-  if (!policy) throw new Error("Insurance policy not found.");
+function normalizeEmployeeId(value: string) {
+  return value.trim().toLowerCase();
 }

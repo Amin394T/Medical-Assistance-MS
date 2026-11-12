@@ -56,6 +56,7 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
           delegationDate: parseDate("delegationDate"),
           regulatoryDoctor: String(data.get("regulatoryDoctor") ?? "") || null,
           status: String(data.get("status")) as SetMedicalRecord["status"],
+          statusReason: (String(data.get("statusReason") ?? "") || null) as SetMedicalRecord["statusReason"],
           observation: String(data.get("observation") ?? "") || null,
         };
         const updated = await updateMedicalRecord(record.id, values);
@@ -90,7 +91,7 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
         <div className="grid gap-5 md:grid-cols-2">
           <DateTimeField name="accidentDate" label="Accident Date" value={record.accidentDate} required />
           <SelectField name="accidentType" label="Accident Type" defaultValue={record.accidentType} required options={[
-            ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VF", "Policy verification"], ["SS", "Special service"], ["PR", "Occupational disease"], ["AV", "Lawyer procedure"],
+            ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VF", "Policy verification"], ["SS", "Special service"], ["PR", "Occupational disease"],
           ]} />
           <SelectField name="accidentCause" label="Accident Cause" defaultValue={record.accidentCause ?? ""} options={[
             ["", "Not specified"], ["FALL", "Falling or slipping"], ["EQIP", "Machine or equipment"], ["FATG", "Overexertion and fatigue"], ["HAZD", "Hazardous substance"], ["VIOL", "Workplace violence"], ["OBJC", "Moving objects"],
@@ -114,7 +115,10 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
       <Section title="05 / Status Data">
         <div className="grid gap-5 md:grid-cols-2">
           <SelectField name="status" label="Record Status" defaultValue={record.status} required options={[
-            ["PRG", "In progress"], ["RJC", "Rejected"], ["CLS", "Closed"], ["ABN", "Abandoned"],
+            ["PRG", "In progress"], ["DSP", "Disputed"], ["RJC", "Rejected"], ["CLS", "Closed"], ["ABN", "Abandoned"],
+          ]} />
+          <SelectField name="statusReason" label="Status Reason" defaultValue={record.statusReason ?? ""} options={[
+            ["", "None"], ["SUS", "Policy suspended"], ["TER", "Policy terminated"], ["COV", "Coverage limited"],
           ]} />
           <SelectField name="accidentEvolution" label="Evolution" defaultValue={record.accidentEvolution} required options={[
             ["INIT", "Initial"], ["RELP", "Relapse"], ["DEAT", "Death"], ["COMP", "Complement"],

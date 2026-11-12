@@ -1,9 +1,13 @@
 ## REMINDER
+- variate status colors
+- fix date display
+- sync record details sections
 - disallow deletion for insurance providers
     + no policy change
 - disable editing for read-only fields
     + reporting date not read only and required
 - record services or certificates modifications should update lastUpdated and lastUpdater
+- link medical records to its invoices
 - replace USER with logged-in user
 - automatically revalidate records at delta file upload
 - user authentication
@@ -14,15 +18,12 @@
 
 
 ## NEEDS
-- can we validate records automatically at delta file upload
-- delta file(s) fields, list of beneficiaries
-- are brokers and agents just informational?
 - go through reports
-- why does policy verification require a record?
+- current data model, required for migration
+- where does intermediary come from?
 - remaining columns in certificates
 - invoice per record or can have multiple?
 - is tax the same for all?
-- current data model, required for migration
 
 
 ## IMPROVEMENTS

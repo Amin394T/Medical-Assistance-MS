@@ -2,7 +2,7 @@
 - workplace accident declaration :
     1. medical record is created:
         + emergency phone call received from a client company ;
-        + caller provides a valid insurance policy ;
+        + caller provides a valid insurance policy for the victim ;
         + initial data about the accident, company, and victim are recorded ;
     2. medical intervention is sent:
         + service providers (ambulances, doctors...) are called and directed to the accident place ;
@@ -11,7 +11,7 @@
         + medical record report is printed and added to a physical record ;
         + medical coverages are sent to relevant service providers (hospitals, pharmacies...), then printed and added to the physical record.
 
-- workplace accident follow-up :
+- medical case follow-up :
     + follow-up e-mails and phone calls are made with the client company and service providers ;
     + subsequent medical services (medicines, treatments, check-ups...) are added to the medical record ;
     + new medical coverages are generated, sent, and printed ;
@@ -25,15 +25,16 @@
     + if the policy is invalid, a notification e-mail is sent to the insurance provider.
 
 - delta files loading:
-    + insurance company periodically sends latest client policies spreadsheet,
+    + insurance company periodically sends a spreadsheet of the latest client policies, and another containing an employee list for fixed-rate policies ;
     + Excel file includes policy, client, effective date, insurer, intermediary, and status columns (intermediary may be blank) ;
     + file is processed to create new policies and update exisiting policies' statuses.
 
 - rejected records revalidation :
     + when the client's policy is invalid, assistance is still provided but the client pays the service providers ;
-    + client settles his contract with the insurance provider ;
-    + new policy status is received in newer delta files ;
-    + medical record is automatically validated and its processing is resumed.
+    + client settles his contract status with the insurance provider ;
+    + insurance provider calls and asks to resume record processing despite the invalid policy ;
+    + medical record is revalidated and its processing is resumed ;
+    + new policy status is received in newer delta files.
 
 - service billing:
     + batch of physical files is periodically provided to the billing manager ;
@@ -55,8 +56,9 @@
         + record details : form used to displays and edit a record full details, includes editable lists for sevices and certificates ;
 - issurance management :
     + client policies : list of insurance policies, row filter, read-only ;
+        + covered employees : pop-up showing a list of employees covered by a selected insurance policy of type "fixed-rate", search bar in the top, shows when "fixed-rate" is clicked, read-only ;
     + insurance providers: list of insurance companies, agents, brokers, and special clients, row filter, grid CRUD;
-    + policy update : upload screen for delta files, updates policies (new + status change) ;
+    + policy update : upload screen for the 2 delta files, updates policies (new + status change) and covered employees (overwrite for selected insurance company), the concerned insurance company is to be selected before processing ;
 - service management :
     + healthcare providers : list of medical service providers, row filter, grid CRUD ;
     + medical services : list of medical services, row filter, grid CRUD ;
@@ -71,8 +73,8 @@
     // 1. client data:
     + reference: required, read-only, unique, defaults to calculated (accident date YYMMDD + daily 2-digits sequence) ;
     + insurance policy: required, selectable (list searchable by policy and client name) ;
-    + client company: UI-only, read-only, inferred (from selected insurance policy) ;
-    + insurance provider: UI-only, read-only, inferred (from selected insurance policy, insurance company + intermediary between brackets if available) ;
+    + client company: UI-only (from selected insurance policy) ;
+    + insurance provider: UI-only (from selected insurance policy, insurance company + intermediary between brackets if available) ;
     + reporting date: required, date-time, defaults to NOW ;
     + reporter name ;
     + reporter phone: required ;
@@ -92,7 +94,8 @@
     + victim job ;
 
     // 4. status data (hidden in "/assistance/call"):
-    + status: required, list (in progress - PRG, disputed - DSP, rejected - RJC, closed - CLS, abandoned - ABN), defaults to calculated (if a non-cancelled suspension or termination status exist, then "RJC", esle "PRG") ;
+    + status: required, list (in progress - PRG, disputed - DSP, rejected - RJC, closed - CLS, abandoned - ABN), defaults to calculated (if policy is not valid or policy is of fixed-rate type but victim is not in the covered employees list, then "RJC", esle "PRG") ;
+    + status reason: list (policy suspended - SUS, policy terminated - TER, coverage limited - COV), defaults to calculated (depends of the policy status or the victim's absence from the covered employees list if the policy os fixed-rate) ;
     + delegation date: date-time ;
     + regulatory doctor ;
     + manager: required, read-only, defaults to USER ;
@@ -135,17 +138,27 @@
     + type: required, list (company - CMP, agent - AGT, broker - BRK, special - SPC) ;
     + phone ;
     + email ;
-    + balance: number ;
 
 - insurance policy (entirely read-only):
-    + policy number: required, unique, read-only ;
-    + client company: required, read-only ;
-    + effective date: required, date, read-only ;
-    + status: required, read-only, list (valid - VALI, resumed - RESU, suspended - SUSP, terminated - TERM) ;
-    + insurance company: required, read-only, selectable ;
-    + intermediary: read-only, selectable (from insurance provider where type is "AGT" or "BRK") ;·
+    // 1. shows in delta file (in order):
+    + policy number: required, unique ;
+    + client company: required ;
+    + client activity ;
+    + client address ;
+    + client city ;
+    + type: required, list (revisable - REV, fixed-rate - FIX) ;
+    + status: required, list (valid - VALI, suspended - SUSP, terminated - TERM) ;
+    + effective date: required, date ;
+    
+    // 2. not in delta file:
+    + insurance company: required, selectable (the company selected when applying the delta file) ;
+    + intermediary: selectable (from insurance provider where type is "AGT" or "BRK") ;
     + creation date: required, read-only, date-time, defaults to NOW ;
-    + last updated: required, read-only, date-time, automatically updated at modification time ;
+    + last updated: required, read-only, date-time, automatically updated at modification time IF something changed ;
+
+- insurance policy employee (entirely read-only):
+    + policy: required, selectable ;
+    + employee : required ;
 
 - service type:
     + label: required, unique ;
@@ -171,7 +184,7 @@
     + total amount: required, number ;
     + cashing: optional, selectable ;
 
-- billing cashing :
+- billing invoice cashing :
     + insurance provider: required, selectable ;
     + request date: required, read-only, date, defaults to NOW ;
     + total amount: required, number ;

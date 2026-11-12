@@ -34,8 +34,7 @@ Things to keep in mind:
 - Do not create extra columns, like created_at and update_at, other than "id" ;
 - "selectable" means that its a foreign key, add "_id" to the name ;
 - "list" means an enumeration, values are those separated by comma, when a value contains 2 parts separated by dash, the second part is the DB value, while the first is the UI display value ;
-- "inferred" is a UI directive, does not indicate that the column is a foreign key ;
-- "UI-only" indicates that the field is not a table column, rather it is fetched with joins ;
+- "UI-only" indicates that the field is not a table column, rather it is fetched with joins, and is automatically read-only ;
 - "combo-box" is a UI directive, does not indicate an enumeration ;
 - "read-only" is a UI directive, the field can still be set, just not by the user from the UI ;
 - "boolean" columns are not required, defaults to FALSE, NULL is equivalent to FALSE ;

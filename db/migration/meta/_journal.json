@@ -8,6 +8,13 @@
       "when": 1794266011568,
       "tag": "0000_medical_adam_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1794524582641,
+      "tag": "0001_add_policy_coverage",
+      "breakpoints": true
     }
   ]
 }
