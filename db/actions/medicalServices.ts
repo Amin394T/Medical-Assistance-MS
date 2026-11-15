@@ -1,6 +1,7 @@
 "use server";
 
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, or, sql } from "drizzle-orm";
+import type { SQL, SQLWrapper } from "drizzle-orm";
 
 import { db } from "../index";
 import { touchMedicalRecord } from "./medicalRecordAudit";
@@ -13,6 +14,7 @@ import {
   serviceTypes,
 } from "../schemas";
 import type { MedicalService, NewMedicalService } from "../schemas";
+import type { BillingListOptions } from "./billingListTypes";
 
 export async function listRecordMedicalServices(recordId: number) {
   const rows = await db
@@ -31,8 +33,83 @@ export async function listRecordMedicalServices(recordId: number) {
   }));
 }
 
-export async function listServicesForSettlement() {
-  return db
+const SETTLEMENT_SORT_KEYS = [
+  "record",
+  "invoiceReference",
+  "serviceProviderId",
+  "serviceTypeId",
+  "date",
+  "settlementStatus",
+  "settlingDate",
+  "paymentAmount",
+  "billingAmount",
+  "taxRate",
+  "bank",
+  "paymentMode",
+  "paymentReference",
+  "observation",
+] as const;
+
+const DEFAULT_SETTLEMENT_SORT = "date";
+const DEFAULT_BILLING_PAGE_SIZE = 25;
+
+export async function listServicesForSettlement(options: BillingListOptions = {}) {
+  const search = options.search?.trim() ?? "";
+  const recordReference = sql`upper(${medicalRecords.accidentType} || '-' || substr(printf('%08d', ${medicalRecords.reference}), 1, 6) || '-' || substr(printf('%08d', ${medicalRecords.reference}), 7, 2))`;
+  const settlementStatus = sql`case ${medicalServices.settlementStatus}
+    when 'WAIT' then 'Waiting'
+    when 'BILL' then 'Billed'
+    when 'SETT' then 'Settled'
+  end`;
+  const paymentMode = sql`case ${medicalServices.paymentMode}
+    when 'CHQ' then 'Check'
+    when 'VRM' then 'Transfer'
+    when 'CSH' then 'Cash'
+    else 'None'
+  end`;
+  const contains = (value: SQLWrapper) => sql`instr(lower(coalesce(cast(${value} as text), '-')), lower(${search})) > 0`;
+  const condition = and(
+    eq(medicalRecords.status, "PRG"),
+    inArray(medicalServices.settlementStatus, ["WAIT", "BILL"]),
+    search ? or(
+      contains(recordReference),
+      contains(billingInvoices.reference),
+      contains(serviceProviders.label),
+      contains(serviceTypes.label),
+      contains(sql`strftime('%d-%m-%Y', ${medicalServices.date}, 'unixepoch', 'localtime')`),
+      contains(sql`strftime('%d-%m-%Y', ${medicalServices.settlingDate}, 'unixepoch', 'localtime')`),
+      contains(settlementStatus),
+      contains(medicalServices.paymentAmount),
+      contains(medicalServices.billingAmount),
+      contains(medicalServices.taxRate),
+      contains(medicalServices.bank),
+      contains(paymentMode),
+      contains(medicalServices.paymentReference),
+      contains(medicalServices.observation),
+    ) : undefined,
+  );
+  const [countRow] = await db
+    .select({ total: count() })
+    .from(medicalServices)
+    .innerJoin(medicalRecords, eq(medicalServices.medicalRecordId, medicalRecords.id))
+    .innerJoin(serviceProviders, eq(medicalServices.serviceProviderId, serviceProviders.id))
+    .innerJoin(serviceTypes, eq(medicalServices.serviceTypeId, serviceTypes.id))
+    .leftJoin(billingInvoices, eq(medicalServices.invoiceId, billingInvoices.id))
+    .where(condition);
+  const totalCount = countRow?.total ?? 0;
+  const pageSize = options.pageSize && Number.isSafeInteger(options.pageSize) && options.pageSize > 0
+    ? Math.min(options.pageSize, 100)
+    : DEFAULT_BILLING_PAGE_SIZE;
+  const requestedPage = options.page && Number.isSafeInteger(options.page) && options.page > 0
+    ? options.page
+    : 1;
+  const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
+  const page = Math.min(requestedPage, pageCount);
+  const sort = isSettlementSortKey(options.sort) ? options.sort : DEFAULT_SETTLEMENT_SORT;
+  const sortDesc = options.sortDesc !== false;
+  const sortColumn = getSettlementSortColumn(sort, recordReference, settlementStatus, paymentMode);
+  const orderBy = sortDesc ? desc(sortColumn) : asc(sortColumn);
+  const rows = await db
     .select({
       id: medicalServices.id,
       medicalRecordId: medicalServices.medicalRecordId,
@@ -60,11 +137,39 @@ export async function listServicesForSettlement() {
     .innerJoin(serviceProviders, eq(medicalServices.serviceProviderId, serviceProviders.id))
     .innerJoin(serviceTypes, eq(medicalServices.serviceTypeId, serviceTypes.id))
     .leftJoin(billingInvoices, eq(medicalServices.invoiceId, billingInvoices.id))
-    .where(and(
-      eq(medicalRecords.status, "PRG"),
-      inArray(medicalServices.settlementStatus, ["WAIT", "BILL"]),
-    ))
-    .orderBy(desc(medicalServices.date));
+    .where(condition)
+    .orderBy(orderBy, asc(medicalServices.id))
+    .limit(pageSize)
+    .offset((page - 1) * pageSize);
+  return { rows, totalCount, page, pageSize, search, sort, sortDesc };
+}
+
+function isSettlementSortKey(value: unknown): value is typeof SETTLEMENT_SORT_KEYS[number] {
+  return SETTLEMENT_SORT_KEYS.some((key) => key === value);
+}
+
+function getSettlementSortColumn(
+  sort: typeof SETTLEMENT_SORT_KEYS[number],
+  recordReference: SQL,
+  settlementStatus: SQL,
+  paymentMode: SQL,
+) {
+  switch (sort) {
+    case "record": return recordReference;
+    case "invoiceReference": return billingInvoices.reference;
+    case "serviceProviderId": return serviceProviders.label;
+    case "serviceTypeId": return serviceTypes.label;
+    case "date": return medicalServices.date;
+    case "settlementStatus": return settlementStatus;
+    case "settlingDate": return medicalServices.settlingDate;
+    case "paymentAmount": return medicalServices.paymentAmount;
+    case "billingAmount": return medicalServices.billingAmount;
+    case "taxRate": return medicalServices.taxRate;
+    case "bank": return medicalServices.bank;
+    case "paymentMode": return paymentMode;
+    case "paymentReference": return medicalServices.paymentReference;
+    case "observation": return medicalServices.observation;
+  }
 }
 
 export async function createMedicalService(recordId: number, input: NewMedicalService) {

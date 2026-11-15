@@ -1,8 +1,8 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createColumnHelper, createSortedRowModel, rowSelectionFeature, rowSortingFeature, tableFeatures, useTable } from "@tanstack/react-table";
 import type { RowSelectionState } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ChevronsUpDown, Eye, RotateCcw, Save, Search, SquarePen, SquarePlus, Trash2, X } from "lucide-react";
@@ -46,6 +46,15 @@ type ReferencialDataGridProps<Row extends EntityRow, CreateValues extends object
   createHref?: string;
   createLabel?: string;
   initialSearch?: string;
+  serverPagination?: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    sort: string;
+    sortDesc: boolean;
+    defaultSort: string;
+    defaultSortDesc: boolean;
+  };
   loadDialogItems?: (id: number) => Promise<string[]>;
   selection?: {
     key: string;
@@ -66,10 +75,13 @@ const features = tableFeatures({
 
 const columnHelper = createColumnHelper<typeof features, EntityRow>();
 
-export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends object = Omit<Row, "id">>({ title, rows, columns, onCreate, onUpdate, onDelete, readOnly = false, canCreate = true, canDelete = true, detailsHrefPrefix, createHref, createLabel = "New Record", initialSearch = "", loadDialogItems, selection }: ReferencialDataGridProps<Row, CreateValues>) {
+export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends object = Omit<Row, "id">>({ title, rows, columns, onCreate, onUpdate, onDelete, readOnly = false, canCreate = true, canDelete = true, detailsHrefPrefix, createHref, createLabel = "New Record", initialSearch = "", serverPagination, loadDialogItems, selection }: ReferencialDataGridProps<Row, CreateValues>) {
+  const pathname = usePathname();
   const router = useRouter();
   const [query, setQuery] = useState(initialSearch);
-  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
+  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>(
+    serverPagination ? [{ id: serverPagination.sort, desc: serverPagination.sortDesc }] : [],
+  );
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [drafts, setDrafts] = useState<Record<string, DraftRow>>({});
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
@@ -82,9 +94,9 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
   const [dialogQuery, setDialogQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
   const filteredRows = useMemo(
-    () => rows.filter((row) => !normalizedQuery || columns.some((column) =>
+    () => serverPagination ? rows : rows.filter((row) => !normalizedQuery || columns.some((column) =>
       formatValue(row[column.key], { ...column, options: resolveOptions(column, row) }).toLowerCase().includes(normalizedQuery))),
-    [columns, normalizedQuery, rows],
+    [columns, normalizedQuery, rows, serverPagination],
   );
   const tableColumns = useMemo(
     () => columnHelper.columns(columns.map((column) => columnHelper.accessor((row) => row[column.key], {
@@ -114,13 +126,45 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
     columns: tableColumns,
     data: filteredRows,
     state: { sorting, rowSelection },
-    onSortingChange: setSorting,
+    onSortingChange: (updater) => {
+      const nextSorting = typeof updater === "function" ? updater(sorting) : updater;
+      setSorting(nextSorting);
+      if (!serverPagination) return;
+      const nextSort = nextSorting[0] ?? {
+        id: serverPagination.defaultSort,
+        desc: serverPagination.defaultSortDesc,
+      };
+      router.replace(buildGridHref(pathname, query, 1, nextSort.id, nextSort.desc), { scroll: false });
+    },
+    manualSorting: Boolean(serverPagination),
     onRowSelectionChange: setRowSelection,
     enableRowSelection: selection
       ? (row) => selection.selectableValues.includes(row.original[selection.key])
       : false,
     getRowId: (row) => String(row.id),
   });
+  const selectedIds = serverPagination
+    ? Object.keys(rowSelection).filter((id) => rowSelection[id]).map(Number).filter(Number.isInteger)
+    : table.getSelectedRowIds().map(Number).filter(Number.isInteger);
+
+  useEffect(() => {
+    if (!serverPagination || query === initialSearch) return;
+    const activeSort = sorting[0] ?? {
+      id: serverPagination.defaultSort,
+      desc: serverPagination.defaultSortDesc,
+    };
+    const timeout = window.setTimeout(() => {
+      router.replace(buildGridHref(pathname, query, 1, activeSort.id, activeSort.desc), { scroll: false });
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [
+    initialSearch,
+    pathname,
+    query,
+    router,
+    serverPagination,
+    sorting,
+  ]);
 
   const saveNew = async () => {
     if (!newDraft) return;
@@ -175,7 +219,7 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
 
   const runSelectionAction = async () => {
     if (!selection) return;
-    const ids = table.getSelectedRowIds().map(Number).filter(Number.isInteger);
+    const ids = selectedIds;
     if (!ids.length) return;
     setSelectionPending(true);
     setSelectionError("");
@@ -188,6 +232,24 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
       setSelectionError(errorMessage(error));
     } finally {
       setSelectionPending(false);
+    }
+  };
+
+  const resetTable = () => {
+    setQuery("");
+    setSorting(serverPagination ? [{
+      id: serverPagination.defaultSort,
+      desc: serverPagination.defaultSortDesc,
+    }] : []);
+    setRowSelection({});
+    if (serverPagination) {
+      router.replace(buildGridHref(
+        pathname,
+        "",
+        1,
+        serverPagination.defaultSort,
+        serverPagination.defaultSortDesc,
+      ), { scroll: false });
     }
   };
 
@@ -219,8 +281,8 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all fields" className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100" />
         </label>
         <div className="flex shrink-0 gap-2">
-          <button type="button" onClick={() => { setQuery(""); setSorting([]); }} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"><RotateCcw className="h-3.5 w-3.5" />Reset Table</button>
-          {selection && <button type="button" onClick={() => void runSelectionAction()} disabled={selectionPending || !table.getSelectedRowIds().length} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50">{selectionPending ? "Processing..." : selection.actionLabel} ({table.getSelectedRowIds().length})</button>}
+          <button type="button" onClick={resetTable} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"><RotateCcw className="h-3.5 w-3.5" />Reset Table</button>
+          {selection && <button type="button" onClick={() => void runSelectionAction()} disabled={selectionPending || !selectedIds.length} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50">{selectionPending ? "Processing..." : selection.actionLabel} ({selectedIds.length})</button>}
           {createHref ? <Link href={createHref} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-800"><SquarePlus className="h-3.5 w-3.5" />{createLabel}</Link> : null}
           {!readOnly && canCreate && !createHref && <button type="button" onClick={startCreate} disabled={newDraft !== null} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"><SquarePlus className="h-3.5 w-3.5" />{createLabel}</button>}
         </div>
@@ -306,6 +368,18 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
           </tbody>
         </table>
       </div>
+      {serverPagination ? <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+        <p>Showing {serverPagination.totalCount === 0 ? 0 : (serverPagination.page - 1) * serverPagination.pageSize + 1}-{Math.min(serverPagination.page * serverPagination.pageSize, serverPagination.totalCount)} of {serverPagination.totalCount}</p>
+        <div className="flex items-center gap-3">
+          {serverPagination.page > 1
+            ? <Link href={buildGridHref(pathname, query, serverPagination.page - 1, sorting[0]?.id ?? serverPagination.sort, sorting[0]?.desc ?? serverPagination.sortDesc)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold hover:border-teal-300 hover:text-teal-700">Previous</Link>
+            : <span aria-disabled="true" className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-semibold text-slate-400">Previous</span>}
+          <span>Page {serverPagination.page} of {Math.max(1, Math.ceil(serverPagination.totalCount / serverPagination.pageSize))}</span>
+          {serverPagination.page * serverPagination.pageSize < serverPagination.totalCount
+            ? <Link href={buildGridHref(pathname, query, serverPagination.page + 1, sorting[0]?.id ?? serverPagination.sort, sorting[0]?.desc ?? serverPagination.sortDesc)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold hover:border-teal-300 hover:text-teal-700">Next</Link>
+            : <span aria-disabled="true" className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-semibold text-slate-400">Next</span>}
+        </div>
+      </div> : null}
       {dialog ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" onMouseDown={(event) => {
         if (event.target === event.currentTarget) setDialog(null);
       }}>
@@ -461,4 +535,13 @@ function compareValues(left: EntityValue, right: EntityValue) {
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "The change could not be saved.";
+}
+
+function buildGridHref(pathname: string, search: string, page: number, sort: string, sortDesc: boolean) {
+  const params = new URLSearchParams();
+  if (search.trim()) params.set("search", search);
+  if (page > 1) params.set("page", String(page));
+  params.set("sort", sort);
+  params.set("direction", sortDesc ? "desc" : "asc");
+  return `${pathname}?${params.toString()}`;
 }

@@ -2,20 +2,25 @@ import { FileText } from "lucide-react";
 
 import { PageHeader } from "@/app/_components/page-header";
 import { ReferencialDataGrid } from "@/app/_components/referential-data-grid";
+import { getBillingListQuery } from "@/app/_lib/billing-list-query";
 import { listBillingCashings } from "@/db/actions/billingCashings";
 
 export const dynamic = "force-dynamic";
 
-export default async function BillingCashingsPage() {
-  const rows = await listBillingCashings();
+export default async function BillingCashingsPage({ searchParams }: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const query = await getBillingListQuery(searchParams, "requestDate");
+  const list = await listBillingCashings(query);
 
   return (
     <section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
       <div className="mx-auto max-w-375">
         <PageHeader section="Billing" title="Invoice Cashing" icon={<FileText className="h-6 w-6" />} />
         <ReferencialDataGrid
+          key={JSON.stringify([list.search, list.sort, list.sortDesc])}
           title="Invoice Cashings"
-          rows={rows.map((row) => ({
+          rows={list.rows.map((row) => ({
             id: row.id,
             insuranceProvider: row.insuranceProvider,
             requestDate: row.requestDate,
@@ -44,6 +49,16 @@ export default async function BillingCashingsPage() {
           detailsHrefPrefix="/billing/cashings"
           createHref="/billing/cashings/new"
           createLabel="New Cashing"
+          initialSearch={list.search}
+          serverPagination={{
+            page: list.page,
+            pageSize: list.pageSize,
+            totalCount: list.totalCount,
+            sort: list.sort,
+            sortDesc: list.sortDesc,
+            defaultSort: "requestDate",
+            defaultSortDesc: true,
+          }}
         />
       </div>
     </section>

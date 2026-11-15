@@ -1,8 +1,10 @@
 "use server";
 
-import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, notInArray, or, sql } from "drizzle-orm";
+import type { SQL, SQLWrapper } from "drizzle-orm";
 
 import { db } from "../index";
+import type { BillingListOptions } from "./billingListTypes";
 import {
   billingCashings,
   billingInvoices,
@@ -21,8 +23,65 @@ type BillingCashingInput = {
   cashingDate?: Date | null;
 };
 
-export async function listBillingCashings() {
-  return db
+const CASHING_SORT_KEYS = [
+  "insuranceProvider",
+  "requestDate",
+  "totalAmount",
+  "invoiceCount",
+  "bank",
+  "paymentMode",
+  "paymentReference",
+  "cashed",
+  "cashingDate",
+] as const;
+
+const DEFAULT_CASHING_SORT = "requestDate";
+const DEFAULT_BILLING_PAGE_SIZE = 25;
+
+export async function listBillingCashings(options: BillingListOptions = {}) {
+  const search = options.search?.trim() ?? "";
+  const paymentMode = sql`case ${billingCashings.paymentMode}
+    when 'CHQ' then 'Check'
+    when 'VRM' then 'Transfer'
+    when 'CSH' then 'Cash'
+    else '-'
+  end`;
+  const cashedLabel = sql`case when ${billingCashings.cashed} then 'Yes' else 'No' end`;
+  const invoiceCount = sql<number>`count(${billingInvoices.id})`;
+  const invoiceCountSearch = sql`(select count(*) from billing_invoices where billing_invoices.cashing_id = ${billingCashings.id})`;
+  const contains = (value: SQLWrapper) => sql`instr(lower(coalesce(cast(${value} as text), '-')), lower(${search})) > 0`;
+  const condition = search
+    ? or(
+      contains(insuranceProviders.label),
+      contains(sql`strftime('%d-%m-%Y %H:%M:%S', ${billingCashings.requestDate}, 'unixepoch', 'localtime')`),
+      contains(billingCashings.totalAmount),
+      contains(invoiceCountSearch),
+      contains(billingCashings.bank),
+      contains(paymentMode),
+      contains(billingCashings.paymentReference),
+      contains(cashedLabel),
+      contains(sql`strftime('%d-%m-%Y', ${billingCashings.cashingDate}, 'unixepoch', 'localtime')`),
+    )
+    : undefined;
+  const [countRow] = await db
+    .select({ total: count() })
+    .from(billingCashings)
+    .innerJoin(insuranceProviders, eq(billingCashings.insuranceProviderId, insuranceProviders.id))
+    .where(condition);
+  const totalCount = countRow?.total ?? 0;
+  const pageSize = options.pageSize && Number.isSafeInteger(options.pageSize) && options.pageSize > 0
+    ? Math.min(options.pageSize, 100)
+    : DEFAULT_BILLING_PAGE_SIZE;
+  const requestedPage = options.page && Number.isSafeInteger(options.page) && options.page > 0
+    ? options.page
+    : 1;
+  const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
+  const page = Math.min(requestedPage, pageCount);
+  const sort = isCashingSortKey(options.sort) ? options.sort : DEFAULT_CASHING_SORT;
+  const sortDesc = options.sortDesc !== false;
+  const sortColumn = getCashingSortColumn(sort, invoiceCount, paymentMode);
+  const orderBy = sortDesc ? desc(sortColumn) : asc(sortColumn);
+  const rows = await db
     .select({
       id: billingCashings.id,
       insuranceProviderId: billingCashings.insuranceProviderId,
@@ -34,13 +93,39 @@ export async function listBillingCashings() {
       paymentReference: billingCashings.paymentReference,
       cashed: billingCashings.cashed,
       cashingDate: billingCashings.cashingDate,
-      invoiceCount: sql<number>`count(${billingInvoices.id})`.mapWith(Number),
+      invoiceCount: invoiceCount.mapWith(Number),
     })
     .from(billingCashings)
     .innerJoin(insuranceProviders, eq(billingCashings.insuranceProviderId, insuranceProviders.id))
     .leftJoin(billingInvoices, eq(billingInvoices.cashingId, billingCashings.id))
     .groupBy(billingCashings.id)
-    .orderBy(desc(billingCashings.requestDate));
+    .where(condition)
+    .orderBy(orderBy, asc(billingCashings.id))
+    .limit(pageSize)
+    .offset((page - 1) * pageSize);
+  return { rows, totalCount, page, pageSize, search, sort, sortDesc };
+}
+
+function isCashingSortKey(value: unknown): value is typeof CASHING_SORT_KEYS[number] {
+  return CASHING_SORT_KEYS.some((key) => key === value);
+}
+
+function getCashingSortColumn(
+  sort: typeof CASHING_SORT_KEYS[number],
+  invoiceCount: SQL,
+  paymentMode: SQL,
+) {
+  switch (sort) {
+    case "insuranceProvider": return insuranceProviders.label;
+    case "requestDate": return billingCashings.requestDate;
+    case "totalAmount": return billingCashings.totalAmount;
+    case "invoiceCount": return invoiceCount;
+    case "bank": return billingCashings.bank;
+    case "paymentMode": return paymentMode;
+    case "paymentReference": return billingCashings.paymentReference;
+    case "cashed": return billingCashings.cashed;
+    case "cashingDate": return billingCashings.cashingDate;
+  }
 }
 
 export async function getBillingCashing(idValue: number) {

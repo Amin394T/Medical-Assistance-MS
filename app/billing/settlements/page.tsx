@@ -8,15 +8,16 @@ import { ReferencialDataGrid } from "@/app/_components/referential-data-grid";
 import { PageHeader } from "@/app/_components/page-header";
 import { formatMedicalRecordReference } from "@/app/_lib/medical-record-reference";
 import { settlementStatusBadgeClasses } from "@/app/_lib/status-colors";
+import { getBillingListQuery } from "@/app/_lib/billing-list-query";
 
 export const dynamic = "force-dynamic";
 
 export default async function ServiceSettlementPage({ searchParams }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { search } = await searchParams;
-  const [rows, providers, serviceTypes] = await Promise.all([
-    listServicesForSettlement(),
+  const query = await getBillingListQuery(searchParams, "date");
+  const [list, providers, serviceTypes] = await Promise.all([
+    listServicesForSettlement(query),
     listServiceProviders(),
     listServiceTypes(),
   ]);
@@ -35,8 +36,9 @@ export default async function ServiceSettlementPage({ searchParams }: {
       <div className="mx-auto max-w-375">
         <PageHeader section="Billing" title="Service Settlement" icon={<HandCoins className="h-6 w-6" />} />
         <ReferencialDataGrid
+          key={JSON.stringify([list.search, list.sort, list.sortDesc])}
           title="Service Settlement"
-          rows={rows.map((row) => ({
+          rows={list.rows.map((row) => ({
             id: row.id,
             record: formatMedicalRecordReference(row.accidentType, row.recordReference),
             serviceProviderId: row.serviceProviderId,
@@ -81,7 +83,16 @@ export default async function ServiceSettlementPage({ searchParams }: {
           onDelete={deleteMedicalService}
           canCreate={false}
           canDelete={false}
-          initialSearch={typeof search === "string" ? search : ""}
+          initialSearch={list.search}
+          serverPagination={{
+            page: list.page,
+            pageSize: list.pageSize,
+            totalCount: list.totalCount,
+            sort: list.sort,
+            sortDesc: list.sortDesc,
+            defaultSort: "date",
+            defaultSortDesc: true,
+          }}
           selection={{
             key: "settlementStatus",
             selectableValues: ["WAIT"],
