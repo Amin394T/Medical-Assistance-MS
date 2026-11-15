@@ -3,6 +3,7 @@
 import { eq } from "drizzle-orm";
 
 import { db } from "../index";
+import { touchMedicalRecord } from "./medicalRecordAudit";
 import { medicalCertificates, serviceProviders } from "../schemas";
 import type { MedicalCertificate, NewMedicalCertificate } from "../schemas";
 
@@ -21,21 +22,37 @@ export async function listRecordMedicalCertificates(recordId: number) {
 
 export async function createMedicalCertificate(recordId: number, input: NewMedicalCertificate) {
   validateCertificate(input.dayCount, input.startDate, input.endDate);
-  const [record] = await db
-    .insert(medicalCertificates)
-    .values({ ...input, medicalRecordId: recordId })
-    .returning();
-  return record;
+  return db.transaction((tx) => {
+    const [record] = tx
+      .insert(medicalCertificates)
+      .values({ ...input, medicalRecordId: recordId })
+      .returning()
+      .all();
+    if (!record) throw new Error("The medical certificate could not be created.");
+    touchMedicalRecord(tx, recordId);
+    return record;
+  });
 }
 
 export async function updateMedicalCertificate(id: number, input: MedicalCertificate) {
   validateCertificate(input.dayCount, input.startDate, input.endDate);
-  const [record] = await db
-    .update(medicalCertificates)
-    .set(input)
-    .where(eq(medicalCertificates.id, id))
-    .returning();
-  return record ?? null;
+  return db.transaction((tx) => {
+    const [existing] = tx
+      .select({ medicalRecordId: medicalCertificates.medicalRecordId })
+      .from(medicalCertificates)
+      .where(eq(medicalCertificates.id, id))
+      .all();
+    if (!existing) return null;
+
+    const [record] = tx
+      .update(medicalCertificates)
+      .set(input)
+      .where(eq(medicalCertificates.id, id))
+      .returning()
+      .all();
+    if (record) touchMedicalRecord(tx, existing.medicalRecordId);
+    return record ?? null;
+  });
 }
 
 export async function deleteMedicalCertificate(id: number) {

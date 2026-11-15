@@ -6,6 +6,7 @@ import { eq, inArray } from "drizzle-orm";
 
 import { db } from "../index";
 import { insurancePolicies, insurancePolicyEmployees, insuranceProviders } from "../schemas";
+import { normalizeEmployeeName } from "./policyEmployeeNames";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
@@ -116,7 +117,7 @@ export async function uploadPolicyDeltaFiles(formData: FormData): Promise<Policy
         throw new Error(`Row ${row.rowNumber}: policy "${row.policyNumber}" is not a fixed-rate policy for the selected company.`);
       }
       const employees = employeesByPolicy.get(policy.id) ?? new Map<string, string>();
-      const employeeKey = normalize(row.employee);
+      const employeeKey = normalizeEmployeeName(row.employee);
       if (employees.has(employeeKey)) throw new Error(`Row ${row.rowNumber}: employee "${row.employee}" is duplicated for this policy.`);
       employees.set(employeeKey, row.employee);
       employeesByPolicy.set(policy.id, employees);
@@ -231,8 +232,8 @@ function canonicalHeader(value: string) {
     case "client company": return "client";
     case "policy type": return "type";
     case "insurance company": return "insurer";
-    case "employee id":
-    case "employee number": return "employee";
+    case "employee name":
+    case "employee full name": return "employee";
     default: return header;
   }
 }

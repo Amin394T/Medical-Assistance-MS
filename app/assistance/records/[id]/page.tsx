@@ -45,12 +45,31 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 				<Section title="Medical Services">
 					<ReferencialDataGrid
 						title="Medical Services"
-						rows={services.map(({ id, medicalRecordId, serviceProviderId, serviceTypeId, date, paymentAmount, billingAmount, taxRate, settlementStatus, settlingDate, bank, paymentMode, paymentReference, invoiceId, observation }) => ({ id, medicalRecordId, serviceProviderId, serviceTypeId, date, paymentAmount, billingAmount, taxRate, settlementStatus, settlingDate, bank, paymentMode, paymentReference, invoiceId, observation }))}
+						rows={services.map(({ id, medicalRecordId, serviceProviderId, serviceTypeId, date, paymentAmount, billingAmount, taxRate, settlementStatus, settlingDate, bank, paymentMode, paymentReference, invoiceId, invoiceReference, observation }) => ({
+							id,
+							medicalRecordId,
+							serviceProviderId,
+							serviceTypeId,
+							date,
+							paymentAmount,
+							billingAmount,
+							taxRate,
+							settlementStatus,
+							settlingDate,
+							bank,
+							paymentMode,
+							paymentReference,
+							invoiceId,
+							invoiceReference,
+							invoiceHref: invoiceReference === null ? null : `/billing/settlements?search=${encodeURIComponent(reference)}`,
+							observation,
+						}))}
 						columns={[
 							{ key: "serviceTypeId", label: "Service Type", editor: "select", required: true, optionsBy: { dependencyKey: "serviceProviderId", values: serviceTypesByProvider } },
 							{ key: "serviceProviderId", label: "Provider", editor: "select", required: true, options: providers.map(({ id, label }) => ({ value: id, label })) },
 							{ key: "date", label: "Service Date", editor: "date", format: "date", nullable: true },
 							{ key: "settlementStatus", label: "Settlement Status", readOnly: true, options: [{ value: "WAIT", label: "Waiting" }, { value: "BILL", label: "Billed" }, { value: "SETT", label: "Settled" }], badgeClasses: settlementStatusBadgeClasses },
+							{ key: "invoiceReference", label: "Invoice", readOnly: true, linkHrefKey: "invoiceHref" },
 							{ key: "settlingDate", label: "Settling Date", format: "date", readOnly: true },
 							{ key: "observation", label: "Observation", nullable: true },
 						]}

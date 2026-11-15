@@ -11,7 +11,10 @@ import { settlementStatusBadgeClasses } from "@/app/_lib/status-colors";
 
 export const dynamic = "force-dynamic";
 
-export default async function ServiceSettlementPage() {
+export default async function ServiceSettlementPage({ searchParams }: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const { search } = await searchParams;
   const [rows, providers, serviceTypes] = await Promise.all([
     listServicesForSettlement(),
     listServiceProviders(),
@@ -36,9 +39,6 @@ export default async function ServiceSettlementPage() {
           rows={rows.map((row) => ({
             id: row.id,
             record: formatMedicalRecordReference(row.accidentType, row.recordReference),
-            clientCompany: row.clientCompany,
-            insuranceProvider: row.insuranceProvider,
-            victim: [row.victimFirstName, row.victimLastName].filter(Boolean).join(" "),
             serviceProviderId: row.serviceProviderId,
             serviceTypeId: row.serviceTypeId,
             serviceProvider: row.serviceProvider,
@@ -58,13 +58,10 @@ export default async function ServiceSettlementPage() {
           }))}
           columns={[
             { key: "record", label: "Medical Record", readOnly: true },
-            { key: "clientCompany", label: "Client Company", readOnly: true },
-            { key: "insuranceProvider", label: "Insurance Provider", readOnly: true },
-            { key: "victim", label: "Victim", readOnly: true },
+            { key: "invoiceReference", label: "Invoice", readOnly: true },
             { key: "serviceProviderId", label: "Service Provider", editor: "select", required: true, options: providers.map(({ id, label }) => ({ value: id, label })) },
             { key: "serviceTypeId", label: "Service Type", editor: "select", required: true, optionsBy: { dependencyKey: "serviceProviderId", values: serviceTypesByProvider }, defaultFieldsByOption: defaultServiceAmounts },
             { key: "date", label: "Date", editor: "date", format: "date", nullable: true },
-            { key: "observation", label: "Observation", nullable: true },
             { key: "settlementStatus", label: "Settlement Status", readOnly: true, options: [
               { value: "WAIT", label: "Waiting" }, { value: "BILL", label: "Billed" }, { value: "SETT", label: "Settled" },
             ], badgeClasses: settlementStatusBadgeClasses },
@@ -77,13 +74,14 @@ export default async function ServiceSettlementPage() {
               { value: null, label: "None" }, { value: "CHQ", label: "Check" }, { value: "VRM", label: "Transfer" }, { value: "CSH", label: "Cash" },
             ] },
             { key: "paymentReference", label: "Payment Reference", nullable: true },
-            { key: "invoiceReference", label: "Invoice", readOnly: true },
+            { key: "observation", label: "Observation", nullable: true },
           ]}
           onCreate={createSettlementMedicalService}
           onUpdate={updateSettlementMedicalService}
           onDelete={deleteMedicalService}
           canCreate={false}
           canDelete={false}
+          initialSearch={typeof search === "string" ? search : ""}
           selection={{
             key: "settlementStatus",
             selectableValues: ["WAIT"],

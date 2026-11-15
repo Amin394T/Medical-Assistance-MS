@@ -29,6 +29,7 @@ export type EntityColumn = {
   badgeClasses?: Record<string, string>;
   dialogTitle?: string;
   dialogValues?: EntityValue[];
+  linkHrefKey?: string;
 };
 
 type ReferencialDataGridProps<Row extends EntityRow, CreateValues extends object> = {
@@ -44,6 +45,7 @@ type ReferencialDataGridProps<Row extends EntityRow, CreateValues extends object
   detailsHrefPrefix?: string;
   createHref?: string;
   createLabel?: string;
+  initialSearch?: string;
   loadDialogItems?: (id: number) => Promise<string[]>;
   selection?: {
     key: string;
@@ -64,9 +66,9 @@ const features = tableFeatures({
 
 const columnHelper = createColumnHelper<typeof features, EntityRow>();
 
-export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends object = Omit<Row, "id">>({ title, rows, columns, onCreate, onUpdate, onDelete, readOnly = false, canCreate = true, canDelete = true, detailsHrefPrefix, createHref, createLabel = "New Record", loadDialogItems, selection }: ReferencialDataGridProps<Row, CreateValues>) {
+export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends object = Omit<Row, "id">>({ title, rows, columns, onCreate, onUpdate, onDelete, readOnly = false, canCreate = true, canDelete = true, detailsHrefPrefix, createHref, createLabel = "New Record", initialSearch = "", loadDialogItems, selection }: ReferencialDataGridProps<Row, CreateValues>) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialSearch);
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [drafts, setDrafts] = useState<Record<string, DraftRow>>({});
@@ -96,9 +98,13 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
         }
         const formatted = formatValue(value, { ...column, options: resolveOptions(column, row.original) });
         const badgeClass = value === null ? undefined : column.badgeClasses?.[String(value)];
-        return badgeClass
+        const content = badgeClass
           ? <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${badgeClass}`}>{formatted}</span>
           : formatted;
+        const href = column.linkHrefKey ? row.original[column.linkHrefKey] : null;
+        return typeof href === "string" && value !== null
+          ? <Link href={href} className="font-medium text-teal-700 hover:text-teal-900">{content}</Link>
+          : content;
       },
     }))),
     [columns],

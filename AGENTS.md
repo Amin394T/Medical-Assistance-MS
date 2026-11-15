@@ -55,8 +55,10 @@ Things to keep in mind:
 
 About form pages:
 - Forms should spread fields on a 3 columns grid ;
+- init-cap field labels ;
 
 About table pages:
+- init-cap table column labels ;
 - sorting is available for all columns ;
 - row filtering by default unless custom column filters are specified ;
 - a "reset grid" button should be on the opposite side of the row filter bar, used to reset sorting and filtering ;

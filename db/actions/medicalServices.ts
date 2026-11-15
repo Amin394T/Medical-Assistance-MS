@@ -3,11 +3,10 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "../index";
+import { touchMedicalRecord } from "./medicalRecordAudit";
 import {
   billingCashings,
   billingInvoices,
-  insurancePolicies,
-  insuranceProviders,
   medicalRecords,
   medicalServices,
   serviceProviders,
@@ -21,10 +20,12 @@ export async function listRecordMedicalServices(recordId: number) {
     .from(medicalServices)
     .innerJoin(serviceProviders, eq(medicalServices.serviceProviderId, serviceProviders.id))
     .innerJoin(serviceTypes, eq(medicalServices.serviceTypeId, serviceTypes.id))
+    .leftJoin(billingInvoices, eq(medicalServices.invoiceId, billingInvoices.id))
     .where(eq(medicalServices.medicalRecordId, recordId));
 
-  return rows.map(({ medical_services, service_providers, service_types }) => ({
+  return rows.map(({ medical_services, service_providers, service_types, billing_invoices }) => ({
     ...medical_services,
+    invoiceReference: billing_invoices?.reference ?? null,
     serviceProvider: service_providers.label,
     serviceType: service_types.label,
   }));
@@ -37,10 +38,6 @@ export async function listServicesForSettlement() {
       medicalRecordId: medicalServices.medicalRecordId,
       recordReference: medicalRecords.reference,
       accidentType: medicalRecords.accidentType,
-      victimFirstName: medicalRecords.victimFirstName,
-      victimLastName: medicalRecords.victimLastName,
-      clientCompany: insurancePolicies.clientCompany,
-      insuranceProvider: insuranceProviders.label,
       serviceProviderId: medicalServices.serviceProviderId,
       serviceTypeId: medicalServices.serviceTypeId,
       serviceProvider: serviceProviders.label,
@@ -60,8 +57,6 @@ export async function listServicesForSettlement() {
     })
     .from(medicalServices)
     .innerJoin(medicalRecords, eq(medicalServices.medicalRecordId, medicalRecords.id))
-    .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
-    .innerJoin(insuranceProviders, eq(insurancePolicies.insuranceCompanyId, insuranceProviders.id))
     .innerJoin(serviceProviders, eq(medicalServices.serviceProviderId, serviceProviders.id))
     .innerJoin(serviceTypes, eq(medicalServices.serviceTypeId, serviceTypes.id))
     .leftJoin(billingInvoices, eq(medicalServices.invoiceId, billingInvoices.id))
@@ -77,17 +72,22 @@ export async function createMedicalService(recordId: number, input: NewMedicalSe
   await ensureRecordExists(recordId);
   await validateInvoiceForRecord(input.invoiceId ?? null, recordId);
   validateAmounts(input.paymentAmount, input.billingAmount, input.taxRate);
-  const [record] = await db
-    .insert(medicalServices)
-    .values({
-      ...input,
-      medicalRecordId: recordId,
-      settlementStatus: input.invoiceId ? "BILL" : "WAIT",
-      settlingDate: null,
-      invoiceId: input.invoiceId ?? null,
-    })
-    .returning();
-  return record;
+  return db.transaction((tx) => {
+    const [record] = tx
+      .insert(medicalServices)
+      .values({
+        ...input,
+        medicalRecordId: recordId,
+        settlementStatus: input.invoiceId ? "BILL" : "WAIT",
+        settlingDate: null,
+        invoiceId: input.invoiceId ?? null,
+      })
+      .returning()
+      .all();
+    if (!record) throw new Error("The medical service could not be created.");
+    touchMedicalRecord(tx, recordId);
+    return record;
+  });
 }
 
 export async function createSettlementMedicalService(values: Record<string, unknown>) {
@@ -150,7 +150,10 @@ export async function updateMedicalService(id: number, input: MedicalService) {
       .where(eq(medicalServices.id, id))
       .returning()
       .all();
-    if (invoiceTotalsNeedUpdate) recalculateInvoiceTotals(tx, affectedInvoiceIds);
+    if (record) {
+      touchMedicalRecord(tx, existing.medicalRecordId);
+      if (invoiceTotalsNeedUpdate) recalculateInvoiceTotals(tx, affectedInvoiceIds);
+    }
     return record ?? null;
   });
 }

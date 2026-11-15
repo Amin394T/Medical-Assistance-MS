@@ -1,11 +1,12 @@
 "use server";
 
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
 import { db } from "../index";
 import { insurancePolicies, insurancePolicyEmployees, insuranceProviders } from "../schemas";
 import type { InsurancePolicy, NewInsurancePolicy } from "../schemas";
+import { normalizeEmployeeName } from "./policyEmployeeNames";
 
 export async function listInsurancePolicies() {
   const insuranceCompany = alias(insuranceProviders, "insuranceCompany");
@@ -37,10 +38,10 @@ export async function listInsurancePolicyEmployees(policyIdValue: number) {
   return rows.map(({ employee }) => employee);
 }
 
-export async function checkInsurancePolicyCoverage(policyIdValue: number, employeeValue: string) {
+export async function checkInsurancePolicyCoverage(policyIdValue: number, employeeNameValue: string) {
   const policyId = requiredId(policyIdValue, "Insurance policy");
-  if (typeof employeeValue !== "string") throw new Error("Employee ID must be text.");
-  const employee = employeeValue.trim();
+  if (typeof employeeNameValue !== "string") throw new Error("Employee name must be text.");
+  const employeeName = normalizeEmployeeName(employeeNameValue);
   const [policy] = await db
     .select({
       type: insurancePolicies.type,
@@ -54,15 +55,13 @@ export async function checkInsurancePolicyCoverage(policyIdValue: number, employ
   if (policy.status === "SUSP") statusReason = "SUS";
   else if (policy.status === "TERM") statusReason = "TER";
   else if (policy.type === "FIX") {
-    const [covered] = await db
-      .select({ id: insurancePolicyEmployees.id })
+    const coveredEmployees = await db
+      .select({ employee: insurancePolicyEmployees.employee })
       .from(insurancePolicyEmployees)
-      .where(and(
-        eq(insurancePolicyEmployees.policyId, policyId),
-        sql`lower(trim(${insurancePolicyEmployees.employee})) = lower(trim(${employee}))`,
-      ))
-      .limit(1);
-    if (!covered) statusReason = "COV";
+      .where(eq(insurancePolicyEmployees.policyId, policyId));
+    if (!coveredEmployees.some(({ employee }) => normalizeEmployeeName(employee) === employeeName)) {
+      statusReason = "COV";
+    }
   }
   return { status: statusReason ? "RJC" as const : "PRG" as const, statusReason };
 }

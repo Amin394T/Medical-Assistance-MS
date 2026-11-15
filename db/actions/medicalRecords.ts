@@ -6,6 +6,7 @@ import { alias } from "drizzle-orm/sqlite-core";
 import { db } from "../index";
 import { insurancePolicies, insurancePolicyEmployees, insuranceProviders, medicalRecords } from "../schemas";
 import type { NewMedicalRecord, SetMedicalRecord } from "../schemas";
+import { normalizeEmployeeName } from "./policyEmployeeNames";
 
 export async function listMedicalRecords() {
   const insuranceCompany = alias(insuranceProviders, "insuranceCompany");
@@ -84,7 +85,12 @@ export async function createMedicalRecord(input: NewMedicalRecord) {
         .all()
         .map(({ employee }) => employee)
       : [];
-    const statusReason = getPolicyStatusReason(coverage.type, coverage.status, input.victimNationalId, coveredEmployees);
+    const statusReason = getPolicyStatusReason(
+      coverage.type,
+      coverage.status,
+      [input.victimFirstName, input.victimLastName].filter(Boolean).join(" "),
+      coveredEmployees,
+    );
 
     const firstReference = Number(getCompactDate(input.accidentDate)) * 100;
     const lastReference = firstReference + 99;
@@ -150,7 +156,12 @@ export async function updateMedicalRecord(id: number, input: SetMedicalRecord) {
         .map(({ employee }) => employee)
       : [];
     const calculatedReason = input.status === "RJC"
-      ? getPolicyStatusReason(policy.type, policy.status, input.victimNationalId, coveredEmployees)
+      ? getPolicyStatusReason(
+        policy.type,
+        policy.status,
+        [input.victimFirstName, input.victimLastName].filter(Boolean).join(" "),
+        coveredEmployees,
+      )
       : null;
     const [record] = tx
       .update(medicalRecords)
@@ -209,17 +220,13 @@ function getCompactDate(date: Date) {
   return `${year}${month}${day}`;
 }
 
-function getPolicyStatusReason(type: "REV" | "FIX", status: "VALI" | "SUSP" | "TERM", employeeId: string, employees: string[]) {
+function getPolicyStatusReason(type: "REV" | "FIX", status: "VALI" | "SUSP" | "TERM", employeeName: string, employees: string[]) {
   if (status === "SUSP") return "SUS" as const;
   if (status === "TERM") return "TER" as const;
   if (type !== "FIX") return null;
 
-  const normalizedEmployeeId = normalizeEmployeeId(employeeId);
-  return employees.some((employee) => normalizeEmployeeId(employee) === normalizedEmployeeId)
+  const normalizedEmployeeName = normalizeEmployeeName(employeeName);
+  return employees.some((employee) => normalizeEmployeeName(employee) === normalizedEmployeeName)
     ? null
     : "COV" as const;
-}
-
-function normalizeEmployeeId(value: string) {
-  return value.trim().toLowerCase();
 }

@@ -71,9 +71,9 @@ const counts = db.transaction((tx) => {
   );
 
   tx.insert(insurancePolicyEmployees).values([
-    { policyId: getId(policyIds, "AM-2026-00972", "insurance policy"), employee: "9001000002" },
-    { policyId: getId(policyIds, "AM-2026-01550", "insurance policy"), employee: "9001000010" },
-    { policyId: getId(policyIds, "NS-2026-01005", "insurance policy"), employee: "9001000011" },
+    { policyId: getId(policyIds, "AM-2026-00972", "insurance policy"), employee: "Ava Turner" },
+    { policyId: getId(policyIds, "AM-2026-01550", "insurance policy"), employee: "Chloe Adams" },
+    { policyId: getId(policyIds, "NS-2026-01005", "insurance policy"), employee: "Morgan Ellis" },
   ]).run();
 
   const serviceTypeIds = new Map(

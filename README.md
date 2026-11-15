@@ -114,7 +114,7 @@
     + settlement status: required, read-only, list (waiting - WAIT, billed - BILL, settled - SETT), defaults to "WAIT" ;
     + settling date: date, read-only ;
     
-    // 2. payment data (hidden in "/assistance/records/:id"):
+    // 2. payment data :
     + invoice: selectable (from invoices. displays reference) ;
     + payment amount: required, number, defaults to calculated (service type's "payment amount") ;
     + billing amount: required, number, defaults to calculated (service type's "billing amount") ;
