@@ -1,5 +1,4 @@
 ## REMINDER
-- link medical records to its invoices
 - replace USER with logged-in user
 - user authentication
 - server-side pagination for long lists

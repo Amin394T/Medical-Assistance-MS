@@ -1,15 +1,64 @@
 "use server";
 
-import { and, desc, eq, gte, isNotNull, lte } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
 import { db } from "../index";
 import { insurancePolicies, insurancePolicyEmployees, insuranceProviders, medicalRecords } from "../schemas";
 import type { NewMedicalRecord, SetMedicalRecord } from "../schemas";
+import type { MedicalRecordListOptions, MedicalRecordSortKey } from "./medicalRecordListTypes";
 import { normalizeEmployeeName } from "./policyEmployeeNames";
 
-export async function listMedicalRecords() {
+const DEFAULT_PAGE_SIZE = 25;
+
+export async function listMedicalRecords(options: MedicalRecordListOptions = {}) {
   const insuranceCompany = alias(insuranceProviders, "insuranceCompany");
+  const filters = options.filters;
+  const conditions = [];
+  const policyFilter = filters?.policyNumber.trim();
+  const companyFilter = filters?.clientCompany.trim();
+  const referenceFilter = filters?.referenceNumber.trim();
+  const victimFilter = filters?.victimName.trim();
+  if (policyFilter) {
+    conditions.push(sql`instr(lower(${insurancePolicies.policyNumber}), lower(${policyFilter})) > 0`);
+  }
+  if (companyFilter) {
+    conditions.push(sql`instr(lower(${insurancePolicies.clientCompany}), lower(${companyFilter})) > 0`);
+  }
+  if (referenceFilter) {
+    const formattedReference = sql`upper(${medicalRecords.accidentType} || '-' || substr(printf('%08d', ${medicalRecords.reference}), 1, 6) || '-' || substr(printf('%08d', ${medicalRecords.reference}), 7, 2))`;
+    conditions.push(sql`instr(${formattedReference}, upper(${referenceFilter})) > 0`);
+  }
+  if (victimFilter) {
+    const victimName = sql`coalesce(${medicalRecords.victimFirstName}, '') || ' ' || coalesce(${medicalRecords.victimLastName}, '')`;
+    conditions.push(sql`instr(lower(${victimName}), lower(${victimFilter})) > 0`);
+  }
+  const status = getRecordStatusCode(filters?.recordStatus);
+  if (status) conditions.push(eq(medicalRecords.status, status));
+  const accidentFrom = parseDateBoundary(filters?.accidentFrom, "00:00:00");
+  const accidentTo = parseDateBoundary(filters?.accidentTo, "23:59:59.999");
+  if (accidentFrom) conditions.push(gte(medicalRecords.accidentDate, accidentFrom));
+  if (accidentTo) conditions.push(lte(medicalRecords.accidentDate, accidentTo));
+  const condition = and(...conditions);
+
+  const [countRow] = await db
+    .select({ total: count() })
+    .from(medicalRecords)
+    .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
+    .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceCompanyId, insuranceCompany.id))
+    .where(condition);
+  const totalCount = countRow?.total ?? 0;
+  const pageSize = options.pageSize && Number.isSafeInteger(options.pageSize) && options.pageSize > 0
+    ? Math.min(options.pageSize, 100)
+    : DEFAULT_PAGE_SIZE;
+  const requestedPage = options.page && Number.isSafeInteger(options.page) && options.page > 0
+    ? options.page
+    : 1;
+  const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
+  const page = Math.min(requestedPage, pageCount);
+  const sort = isMedicalRecordSortKey(options.sort) ? options.sort : "accidentDate";
+  const sortColumn = getMedicalRecordSortColumn(sort, insuranceCompany);
+  const orderBy = options.sortDesc === false ? asc(sortColumn) : desc(sortColumn);
   const rows = await db
     .select({
       id: medicalRecords.id,
@@ -30,13 +79,21 @@ export async function listMedicalRecords() {
     .from(medicalRecords)
     .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
     .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceCompanyId, insuranceCompany.id))
-    .orderBy(desc(medicalRecords.accidentDate));
+    .where(condition)
+    .orderBy(orderBy, asc(medicalRecords.id))
+    .limit(pageSize)
+    .offset((page - 1) * pageSize);
 
-  return rows.map((row) => ({
-    ...row,
-    victimName: [row.victimNameFirst, row.victimNameLast].filter(Boolean).join(" "),
-    status: getRecordStatusLabel(row.status),
-  }));
+  return {
+    records: rows.map((row) => ({
+      ...row,
+      victimName: [row.victimNameFirst, row.victimNameLast].filter(Boolean).join(" "),
+      status: getRecordStatusLabel(row.status),
+    })),
+    totalCount,
+    page,
+    pageSize,
+  };
 }
 
 export async function getMedicalRecord(id: number) {
@@ -211,6 +268,49 @@ function getRecordStatusLabel(status: SetMedicalRecord["status"]) {
     case "ABN": return "Abandoned";
     default: return status;
   }
+}
+
+function getRecordStatusCode(label: string | undefined) {
+  switch (label) {
+    case "In Progress": return "PRG" as const;
+    case "Disputed": return "DSP" as const;
+    case "Rejected": return "RJC" as const;
+    case "Closed": return "CLS" as const;
+    case "Abandoned": return "ABN" as const;
+    default: return undefined;
+  }
+}
+
+function isMedicalRecordSortKey(value: unknown): value is MedicalRecordSortKey {
+  return value === "reference" || value === "policy" || value === "clientCompany" ||
+    value === "insuranceCompany" || value === "victimName" || value === "accidentDate" ||
+    value === "status" || value === "manager";
+}
+
+function getMedicalRecordSortColumn(sort: MedicalRecordSortKey, insuranceCompany: ReturnType<typeof alias>) {
+  const victimName = sql`coalesce(${medicalRecords.victimFirstName}, '') || ' ' || coalesce(${medicalRecords.victimLastName}, '')`;
+  switch (sort) {
+    case "reference": return medicalRecords.reference;
+    case "policy": return insurancePolicies.policyNumber;
+    case "clientCompany": return insurancePolicies.clientCompany;
+    case "insuranceCompany": return insuranceCompany.label;
+    case "victimName": return victimName;
+    case "accidentDate": return medicalRecords.accidentDate;
+    case "status": return sql`case ${medicalRecords.status}
+      when 'PRG' then 'In Progress'
+      when 'DSP' then 'Disputed'
+      when 'RJC' then 'Rejected'
+      when 'CLS' then 'Closed'
+      when 'ABN' then 'Abandoned'
+    end`;
+    case "manager": return medicalRecords.manager;
+  }
+}
+
+function parseDateBoundary(value: string | undefined, time: string) {
+  if (!value) return null;
+  const date = new Date(`${value}T${time}`);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function getCompactDate(date: Date) {

@@ -1,26 +1,28 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   createColumnHelper,
-  createSortedRowModel,
   rowSortingFeature,
   sortFn_datetime,
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
+import type { SortingState } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ChevronsUpDown, RotateCcw } from "lucide-react";
 import { formatDateTime } from "@/app/_lib/date-format";
 import { formatMedicalRecordReference } from "@/app/_lib/medical-record-reference";
 
-import type { listMedicalRecords } from "@/db/actions/medicalRecords";
+import type { loadMedicalRecordList } from "@/app/_lib/medical-record-list";
+import type { MedicalRecordFilters } from "@/db/actions/medicalRecordListTypes";
 
-type MedicalRecordListItem = Awaited<ReturnType<typeof listMedicalRecords>>[number];
+type MedicalRecordListPage = Awaited<ReturnType<typeof loadMedicalRecordList>>;
+type MedicalRecordListItem = MedicalRecordListPage["records"][number];
 
 const features = tableFeatures({
   rowSortingFeature,
-  sortedRowModel: createSortedRowModel(),
   sortFns: {
     datetime: sortFn_datetime,
     text: (rowA, rowB, columnId) => String(rowA.getValue(columnId) ?? "").localeCompare(String(rowB.getValue(columnId) ?? "")),
@@ -40,19 +42,9 @@ const columns = columnHelper.columns([
   columnHelper.accessor("manager", { header: "Manager", sortFn: "text" }),
 ]);
 
-type MedicalRecordsTableProps = { records: MedicalRecordListItem[] };
+type MedicalRecordsTableProps = MedicalRecordListPage;
 
-type Filters = {
-  policyNumber: string;
-  clientCompany: string;
-  referenceNumber: string;
-  victimName: string;
-  recordStatus: string;
-  accidentFrom: string;
-  accidentTo: string;
-};
-
-const EMPTY_FILTERS: Filters = {
+const EMPTY_FILTERS: MedicalRecordFilters = {
   policyNumber: "",
   clientCompany: "",
   referenceNumber: "",
@@ -62,12 +54,45 @@ const EMPTY_FILTERS: Filters = {
   accidentTo: "",
 };
 
-export function MedicalRecordsTable({ records }: MedicalRecordsTableProps) {
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [sorting, setSorting] = useState([{ id: "accidentDate", desc: true }]);
-  const filteredRecords = useMemo(() => records.filter((record) => matchesFilters(record, filters)), [filters, records]);
-  const table = useTable({ features, columns, data: filteredRecords, state: { sorting }, onSortingChange: setSorting, getRowId: (record) => String(record.id) });
-  const updateFilter = (key: keyof Filters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
+export function MedicalRecordsTable({ records, totalCount, page, pageSize, filters: initialFilters, sort, sortDesc }: MedicalRecordsTableProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [filters, setFilters] = useState(initialFilters);
+  const [sorting, setSorting] = useState<SortingState>([{ id: sort, desc: sortDesc }]);
+  const sortBy = sorting[0]?.id ?? sort;
+  const sortDescending = sorting[0]?.desc ?? sortDesc;
+
+  useEffect(() => {
+    if (filtersEqual(filters, initialFilters)) return;
+    const timeout = window.setTimeout(() => {
+      router.replace(buildListHref(pathname, filters, 1, sortBy, sortDescending), { scroll: false });
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [filters, initialFilters, pathname, router, sortBy, sortDescending]);
+
+  const table = useTable({
+    features,
+    columns,
+    data: records,
+    state: { sorting },
+    manualSorting: true,
+    getRowId: (record) => String(record.id),
+  });
+  const updateFilter = (key: keyof MedicalRecordFilters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
+  const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
+  const firstRecord = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
+  const lastRecord = Math.min(page * pageSize, totalCount);
+  const resetTable = () => {
+    setFilters(EMPTY_FILTERS);
+    setSorting([{ id: "accidentDate", desc: true }]);
+    router.replace(buildListHref(pathname, EMPTY_FILTERS, 1, "accidentDate", true), { scroll: false });
+  };
+  const toggleSort = (columnId: string) => {
+    const current = sorting.find((entry) => entry.id === columnId);
+    const nextSort = { id: columnId, desc: current ? !current.desc : columnId === "accidentDate" };
+    setSorting([nextSort]);
+    router.replace(buildListHref(pathname, filters, 1, nextSort.id, nextSort.desc), { scroll: false });
+  };
 
   return (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -78,34 +103,58 @@ export function MedicalRecordsTable({ records }: MedicalRecordsTableProps) {
               <FilterInput label="Victim Name" value={filters.victimName} onChange={(value) => updateFilter("victimName", value)} />
               <label className="block"><span className="mb-1 block text-[11px] font-semibold text-slate-500">Status</span><select value={filters.recordStatus} onChange={(event) => updateFilter("recordStatus", event.target.value)} className={filterClass}><option value="">All statuses</option>{["In Progress", "Disputed", "Rejected", "Closed", "Abandoned"].map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
               <DateRange label="Date" from={filters.accidentFrom} to={filters.accidentTo} onFromChange={(value) => updateFilter("accidentFrom", value)} onToChange={(value) => updateFilter("accidentTo", value)} />
-              <div className="mt-5 flex justify-end"><button type="button" onClick={() => { setFilters(EMPTY_FILTERS); setSorting([{ id: "accidentDate", desc: true }]); }} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"><RotateCcw className="h-3.5 w-3.5"/>Reset Table</button></div>
+              <div className="mt-5 flex justify-end"><button type="button" onClick={resetTable} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"><RotateCcw className="h-3.5 w-3.5"/>Reset Table</button></div>
             </div>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-312.5 border-collapse text-left text-sm">
-              <thead className="bg-slate-50 border-y border-slate-200 text-xs uppercase tracking-wide text-slate-500">{table.getHeaderGroups().map((headerGroup) => <tr key={headerGroup.id}>{headerGroup.headers.map((header) => { const sorted = header.column.getIsSorted(); return <th key={header.id} scope="col" className="whitespace-nowrap px-5 py-3 font-semibold">{header.isPlaceholder ? null : <button type="button" onClick={header.column.getToggleSortingHandler()} className="inline-flex items-center gap-2 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"><table.FlexRender header={header} />{sorted === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : sorted === "desc" ? <ArrowDown className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5 text-slate-300" />}</button>}</th>; })}</tr>)}</thead>
+              <thead className="bg-slate-50 border-y border-slate-200 text-xs uppercase tracking-wide text-slate-500">{table.getHeaderGroups().map((headerGroup) => <tr key={headerGroup.id}>{headerGroup.headers.map((header) => { const sorted = header.column.getIsSorted(); return <th key={header.id} scope="col" className="whitespace-nowrap px-5 py-3 font-semibold">{header.isPlaceholder ? null : <button type="button" onClick={() => toggleSort(header.column.id)} className="inline-flex items-center gap-2 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"><table.FlexRender header={header} />{sorted === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : sorted === "desc" ? <ArrowDown className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5 text-slate-300" />}</button>}</th>; })}</tr>)}</thead>
               <tbody className="divide-y divide-slate-100">{table.getRowModel().rows.length === 0 ? <tr><td colSpan={columns.length} className="px-5 py-16 text-center text-sm text-slate-500">No Medical Records.</td></tr> : table.getRowModel().rows.map((row) => <tr key={row.id} className="transition-colors hover:bg-teal-50/40">{row.getAllCells().map((cell) => <td key={cell.id} className="whitespace-nowrap px-5 py-4"><table.FlexRender cell={cell} /></td>)}</tr>)}</tbody>
             </table>
+          </div>
+          <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+            <p>Showing {firstRecord}-{lastRecord} of {totalCount} medical records</p>
+            <div className="flex items-center gap-3">
+              {page > 1
+                ? <Link href={buildListHref(pathname, filters, page - 1, sortBy, sortDescending)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold hover:border-teal-300 hover:text-teal-700">Previous</Link>
+                : <span aria-disabled="true" className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-semibold text-slate-400">Previous</span>}
+              <span>Page {page} of {pageCount}</span>
+              {page < pageCount
+                ? <Link href={buildListHref(pathname, filters, page + 1, sortBy, sortDescending)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold hover:border-teal-300 hover:text-teal-700">Next</Link>
+                : <span aria-disabled="true" className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-semibold text-slate-400">Next</span>}
+            </div>
           </div>
         </div>
   );
 }
 
-function matchesFilters(record: MedicalRecordListItem, filters: Filters) {
-  const textMatches = (value: string | null | undefined, filter: string) => !filter || value?.toLowerCase().includes(filter.trim().toLowerCase());
-  const inDateRange = (value: Date, from: string, to: string) => {
-    const timestamp = value.getTime();
-    const fromTime = from ? new Date(`${from}T00:00:00`).getTime() : -Infinity;
-    const toTime = to ? new Date(`${to}T23:59:59.999`).getTime() : Infinity;
-    return timestamp >= fromTime && timestamp <= toTime;
-  };
-
-  return textMatches(record.policy, filters.policyNumber) && textMatches(record.clientCompany, filters.clientCompany) && textMatches(formatMedicalRecordReference(record.type, record.reference), filters.referenceNumber) && textMatches(record.victimName, filters.victimName) && (!filters.recordStatus || record.status === filters.recordStatus) && inDateRange(record.accidentDate, filters.accidentFrom, filters.accidentTo);
-}
-
 function FilterInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label className="block"><span className="mb-1 block text-[11px] font-semibold text-slate-500">{label}</span><input value={value} onChange={(event) => onChange(event.target.value)} className={filterClass} placeholder="Any" /></label>; }
 
 function DateRange({ label, from, to, onFromChange, onToChange }: { label: string; from: string; to: string; onFromChange: (value: string) => void; onToChange: (value: string) => void }) { return <div className="sm:col-span-2"><span className="mb-1 block text-[11px] font-semibold text-slate-500">{label} Range</span><div className="grid grid-cols-2 gap-2"><input type="date" value={from} onChange={(event) => onFromChange(event.target.value)} className={filterClass} /><input type="date" value={to} onChange={(event) => onToChange(event.target.value)} className={filterClass} /></div></div>; }
+
+function filtersEqual(left: MedicalRecordFilters, right: MedicalRecordFilters) {
+  return left.policyNumber === right.policyNumber &&
+    left.clientCompany === right.clientCompany &&
+    left.referenceNumber === right.referenceNumber &&
+    left.victimName === right.victimName &&
+    left.recordStatus === right.recordStatus &&
+    left.accidentFrom === right.accidentFrom &&
+    left.accidentTo === right.accidentTo;
+}
+
+function buildListHref(pathname: string, filters: MedicalRecordFilters, page: number, sort: string, sortDesc: boolean) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) params.set(key, value);
+  }
+  if (page > 1) params.set("page", String(page));
+  if (sort !== "accidentDate" || !sortDesc) {
+    params.set("sort", sort);
+    params.set("direction", sortDesc ? "desc" : "asc");
+  }
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
 
 function StatusBadge({ value }: { value: string }) {
   const colors: Record<string, string> = {
