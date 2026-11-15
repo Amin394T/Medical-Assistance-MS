@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createColumnHelper, createSortedRowModel, rowSelectionFeature, rowSortingFeature, tableFeatures, useTable } from "@tanstack/react-table";
 import type { RowSelectionState } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ChevronsUpDown, Eye, RotateCcw, Save, Search, SquarePen, SquarePlus, Trash2, X } from "lucide-react";
+import { formatDate, formatDateTime } from "@/app/_lib/date-format";
 
 type EntityValue = string | number | boolean | Date | null;
 type EntityRow = Record<string, EntityValue> & { id: number };
@@ -17,7 +18,7 @@ type EditorType = "text" | "date" | "number" | "checkbox" | "select" | "combo-bo
 export type EntityColumn = {
   key: string;
   label: string;
-  format?: "date" | "datetime" | "label" | "policyType" | "insuranceProviderType";
+  format?: "date" | "datetime" | "label" | "policyType";
   editor?: EditorType;
   options?: SelectOption[];
   optionsBy?: { dependencyKey: string; values: Record<string, SelectOption[]> };
@@ -381,13 +382,12 @@ function parseDraft(draft: DraftRow, columns: EntityColumn[]): Record<string, En
 }
 
 function formatValue(value: EntityValue, column: EntityColumn) {
-  if (column.options) return column.options.find((option) => option.value === value)?.label ?? (value === null ? "-" : String(value));
+  if (column.options?.length) return column.options.find((option) => option.value === value)?.label ?? (value === null ? "-" : String(value));
   if (value === null) return "-";
-  if (column.format === "date") return formatDate(value);
-  if (column.format === "datetime") return formatDateTime(value);
+  if (column.format === "date") return value instanceof Date || typeof value === "string" ? formatDate(value) : String(value);
+  if (column.format === "datetime") return value instanceof Date || typeof value === "string" ? formatDateTime(value) : String(value);
   if (column.format === "label") return formatLabel(value);
   if (column.format === "policyType") return ({ REV: "Revisable", FIX: "Fixed-rate" }[String(value)] ?? String(value));
-  if (column.format === "insuranceProviderType") return ({ CMP: "Company", AGT: "Agent", BRK: "Broker" }[String(value)] ?? String(value));
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (value instanceof Date) return formatDateTime(value);
   return String(value);
@@ -421,16 +421,6 @@ function updateDraft(draft: DraftRow, column: EntityColumn, value: DraftValue, c
     }
   }
   return updated;
-}
-
-function formatDateTime(value: EntityValue) {
-  if (!(value instanceof Date)) return value === null ? "-" : String(value);
-  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(value).replace(",", "");
-}
-
-function formatDate(value: EntityValue) {
-  if (!(value instanceof Date)) return value === null ? "-" : String(value);
-  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(value);
 }
 
 function toDateInputValue(value: Date) {

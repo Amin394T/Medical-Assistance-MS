@@ -1,7 +1,6 @@
 import { ClipboardPen } from "lucide-react";
 
 import { getMedicalRecord, listJobs } from "@/db/actions/medicalRecords";
-import { listInsurancePolicies } from "@/db/actions/insurancePolicies";
 import { createMedicalCertificate, deleteMedicalCertificate, listRecordMedicalCertificates, updateMedicalCertificate } from "@/db/actions/medicalCertificates";
 import { createRecordMedicalService, deleteMedicalService, listRecordMedicalServices, updateMedicalService } from "@/db/actions/medicalServices";
 import { listServiceProviders } from "@/db/actions/serviceProviders";
@@ -18,11 +17,10 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 	const recordId = Number(id);
 	if (!Number.isInteger(recordId) || recordId < 1) return <Message message="Record not found." />;
 
-	const [record, services, certificates, policies, providers, serviceTypes, jobs, invoices] = await Promise.all([
+	const [record, services, certificates, providers, serviceTypes, jobs, invoices] = await Promise.all([
 		getMedicalRecord(recordId),
 		listRecordMedicalServices(recordId),
 		listRecordMedicalCertificates(recordId),
-		listInsurancePolicies(),
 		listServiceProviders(),
 		listServiceTypes(),
 		listJobs(),
@@ -53,7 +51,6 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 
 				<MedicalRecordEditForm
 					record={record}
-					policies={policies.map(({ id, policyNumber, clientCompany, insuranceCompany, intermediary }) => ({ id, policyNumber, clientCompany, insuranceCompany, intermediary }))}
 					jobs={jobs.filter((job): job is string => job !== null)}
 				/>
 				<Section title="Medical Services">
@@ -82,25 +79,25 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 				</Section>
 				<Section title="Medical Certificates">
 					<ReferencialDataGrid
-					title="Medical Certificates"
-					rows={certificates.map(({ id, medicalRecordId, type, serviceProviderId, dayCount, startDate, endDate, observation }) => ({ id, medicalRecordId, type, serviceProviderId, dayCount, startDate, endDate, observation }))}
+						title="Medical Certificates"
+						rows={certificates.map(({ id, medicalRecordId, type, serviceProviderId, dayCount, startDate, endDate, observation }) => ({ id, medicalRecordId, type, serviceProviderId, dayCount, startDate, endDate, observation }))}
 						columns={[
-						{ key: "type", label: "Type", editor: "select", required: true, options: [
-							{ value: "INIT", label: "Initial" }, { value: "PROL", label: "Prolongation" }, { value: "RETU", label: "Return" },
-							{ value: "AGGR", label: "Aggravation" }, { value: "INSP", label: "Inspection" }, { value: "RECO", label: "Recovery" },
-						] },
-						{ key: "serviceProviderId", label: "Service Provider", editor: "select", nullable: true, options: [
-							{ value: null, label: "None" },
-							...providers.map(({ id, label }) => ({ value: id, label })),
-						] },
-						{ key: "dayCount", label: "Day Count", editor: "number", required: true },
-						{ key: "startDate", label: "Start Date", editor: "date", format: "date", nullable: true },
-						{ key: "endDate", label: "End Date", editor: "date", format: "date", nullable: true },
-						{ key: "observation", label: "Observation", nullable: true },
-					]}
-					onCreate={createMedicalCertificate.bind(null, recordId)}
-					onUpdate={updateMedicalCertificate}
-					onDelete={deleteMedicalCertificate}
+							{ key: "type", label: "Type", editor: "select", required: true, options: [
+								{ value: "INIT", label: "Initial" }, { value: "PROL", label: "Prolongation" }, { value: "RETU", label: "Return" },
+								{ value: "AGGR", label: "Aggravation" }, { value: "INSP", label: "Inspection" }, { value: "RECO", label: "Recovery" },
+							] },
+							{ key: "serviceProviderId", label: "Service Provider", editor: "select", nullable: true, options: [
+								{ value: null, label: "None" },
+								...providers.map(({ id, label }) => ({ value: id, label })),
+							] },
+							{ key: "dayCount", label: "Day Count", editor: "number", required: true },
+							{ key: "startDate", label: "Start Date", editor: "date", format: "date", nullable: true },
+							{ key: "endDate", label: "End Date", editor: "date", format: "date", nullable: true },
+							{ key: "observation", label: "Observation", nullable: true },
+						]}
+						onCreate={createMedicalCertificate.bind(null, recordId)}
+						onUpdate={updateMedicalCertificate}
+						onDelete={deleteMedicalCertificate}
 					/>
 				</Section>
 			</div>

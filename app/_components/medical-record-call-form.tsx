@@ -9,13 +9,13 @@ import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 import { createMedicalRecord } from "@/db/actions/medicalRecords";
 import { checkInsurancePolicyCoverage } from "@/db/actions/insurancePolicies";
+import { formatDateTime } from "@/app/_lib/date-format";
 
 type PolicyOption = {
   id: number;
   policyNumber: string;
   clientCompanyLabel: string;
   insuranceCompanyLabel: string;
-  intermediaryLabel: string | null;
   type: "REV" | "FIX";
   status: "VALI" | "SUSP" | "TERM";
 };
@@ -123,11 +123,11 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
                 const selectedPolicy = getSelectedPolicy(policyId, policies);
                 return <>
                   <ReadOnlyField label="Client Company" value={selectedPolicy?.clientCompanyLabel ?? "Select an insurance policy"} />
-                  <ReadOnlyField label="Insurance Provider" value={formatInsuranceProvider(selectedPolicy?.insuranceCompanyLabel, selectedPolicy?.intermediaryLabel)} />
+                  <ReadOnlyField label="Insurance Provider" value={selectedPolicy?.insuranceCompanyLabel ?? "Select an insurance policy"} />
                   <PolicyCoveragePreview policy={selectedPolicy} employeeId={victimNationalId} />
                 </>;
               }} />
-              <ReadOnlyField label="Reporting Date" value={formatDateTime(displayReportingDate)} />
+              <ReadOnlyField label="Reporting Date" value={formatDateTime(new Date(displayReportingDate))} />
               <Field form={form as unknown as FormRenderer} name="reporterName" label="Reporter Name" />
               <Field form={form as unknown as FormRenderer} name="reporterPhone" label="Reporter Phone" required type="tel" />
             </div>
@@ -233,18 +233,9 @@ function PolicyCoveragePreview({ policy, employeeId }: { policy: PolicyOption | 
   return <ReadOnlyField label="Policy Coverage" value={message} />;
 }
 
-function formatInsuranceProvider(insuranceCompany?: string, intermediary?: string | null) {
-  if (!insuranceCompany) return "Select an insurance policy";
-  return intermediary ? `${insuranceCompany} (${intermediary})` : insuranceCompany;
-}
-
 function formatReference(reference: number) {
   const value = String(reference);
   return `${value.slice(0, -2)}-${value.slice(-2)}`;
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(new Date(value)).replace(",", "");
 }
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {

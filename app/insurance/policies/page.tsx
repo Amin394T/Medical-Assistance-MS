@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function InsurancePoliciesPage() {
 	const [policies, providers] = await Promise.all([listInsurancePolicies(), listInsuranceProviders()]);
-	const rows = policies.map(({ id, policyNumber, clientCompany, clientActivity, clientAddress, clientCity, type, effectiveDate, status, insuranceCompanyId, intermediaryId, creationDate, lastUpdated }) => ({
+	const rows = policies.map(({ id, policyNumber, clientCompany, clientActivity, clientAddress, clientCity, type, effectiveDate, status, insuranceCompanyId, creationDate, lastUpdated }) => ({
 		id,
 		policyNumber,
 		clientCompany,
@@ -19,15 +19,10 @@ export default async function InsurancePoliciesPage() {
 		effectiveDate,
 		status,
 		insuranceCompanyId,
-		intermediaryId,
 		creationDate,
 		lastUpdated,
 	}));
-	const insuranceCompanyOptions = providers.filter((provider) => provider.type === "CMP").map((provider) => ({ value: provider.id, label: provider.label }));
-	const intermediaryOptions = [
-		{ value: null, label: "None" },
-		...providers.filter((provider) => provider.type === "AGT" || provider.type === "BRK").map((provider) => ({ value: provider.id, label: provider.label })),
-	];
+	const insuranceCompanyOptions = providers.map((provider) => ({ value: provider.id, label: provider.label }));
 
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
@@ -53,7 +48,6 @@ export default async function InsurancePoliciesPage() {
 							{ value: "TERM", label: "Terminated" },
 						] },
 						{ key: "insuranceCompanyId", label: "Insurance Company", readOnly: true, options: insuranceCompanyOptions },
-						{ key: "intermediaryId", label: "Intermediary", readOnly: true, options: intermediaryOptions },
 						{ key: "creationDate", label: "Creation Date", format: "datetime", readOnly: true },
 						{ key: "lastUpdated", label: "Last Updated", format: "datetime", readOnly: true },
 					]}

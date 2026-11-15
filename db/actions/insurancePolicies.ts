@@ -9,18 +9,15 @@ import type { InsurancePolicy, NewInsurancePolicy } from "../schemas";
 
 export async function listInsurancePolicies() {
   const insuranceCompany = alias(insuranceProviders, "insuranceCompany");
-  const intermediary = alias(insuranceProviders, "intermediary");
   const rows = await db
     .select()
     .from(insurancePolicies)
     .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceCompanyId, insuranceCompany.id))
-    .leftJoin(intermediary, eq(insurancePolicies.intermediaryId, intermediary.id))
     .orderBy(desc(insurancePolicies.creationDate));
 
-  return rows.map(({ insurance_policies, insuranceCompany, intermediary }) => ({
+  return rows.map(({ insurance_policies, insuranceCompany }) => ({
     ...insurance_policies,
     insuranceCompany: insuranceCompany.label,
-    intermediary: intermediary?.label ?? null,
   }));
 }
 
@@ -71,7 +68,7 @@ export async function checkInsurancePolicyCoverage(policyIdValue: number, employ
 }
 
 export async function createInsurancePolicy(input: NewInsurancePolicy) {
-  await validatePolicyProviders(input.insuranceCompanyId, input.intermediaryId ?? null);
+  await validateInsuranceCompany(input.insuranceCompanyId);
   validatePolicyStatus(input.status);
   validatePolicyType(input.type);
   const now = new Date();
@@ -83,7 +80,7 @@ export async function createInsurancePolicy(input: NewInsurancePolicy) {
 }
 
 export async function updateInsurancePolicy(id: number, input: InsurancePolicy) {
-  await validatePolicyProviders(input.insuranceCompanyId, input.intermediaryId ?? null);
+  await validateInsuranceCompany(input.insuranceCompanyId);
   validatePolicyStatus(input.status);
   validatePolicyType(input.type);
   const [existing] = await db.select().from(insurancePolicies).where(eq(insurancePolicies.id, id));
@@ -96,8 +93,7 @@ export async function updateInsurancePolicy(id: number, input: InsurancePolicy) 
     existing.type !== input.type ||
     existing.effectiveDate.getTime() !== input.effectiveDate.getTime() ||
     existing.status !== input.status ||
-    existing.insuranceCompanyId !== input.insuranceCompanyId ||
-    existing.intermediaryId !== (input.intermediaryId ?? null);
+    existing.insuranceCompanyId !== input.insuranceCompanyId;
   const [record] = await db
     .update(insurancePolicies)
     .set({
@@ -110,7 +106,6 @@ export async function updateInsurancePolicy(id: number, input: InsurancePolicy) 
       effectiveDate: input.effectiveDate,
       status: input.status,
       insuranceCompanyId: input.insuranceCompanyId,
-      intermediaryId: input.intermediaryId,
       ...(changed ? { lastUpdated: new Date() } : {}),
     })
     .where(eq(insurancePolicies.id, id))
@@ -146,18 +141,10 @@ function requiredId(value: unknown, label: string) {
   return number;
 }
 
-async function validatePolicyProviders(insuranceCompanyId: number, intermediaryId: number | null) {
+async function validateInsuranceCompany(insuranceCompanyId: number) {
   const [company] = await db
     .select()
     .from(insuranceProviders)
     .where(eq(insuranceProviders.id, insuranceCompanyId));
-  if (company?.type !== "CMP") throw new Error("Invalid insurance company.");
-
-  if (intermediaryId !== null) {
-    const [intermediary] = await db
-      .select()
-      .from(insuranceProviders)
-      .where(eq(insuranceProviders.id, intermediaryId));
-    if (intermediary?.type !== "AGT" && intermediary?.type !== "BRK") throw new Error("Invalid intermediary.");
-  }
+  if (!company) throw new Error("Invalid insurance company.");
 }

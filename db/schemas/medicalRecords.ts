@@ -49,7 +49,6 @@ export type NewMedicalRecord = {
 };
 
 export type SetMedicalRecord = {
-  policyId: number;
   reportingDate: Date;
   reporterName: string | null;
   reporterPhone: string;

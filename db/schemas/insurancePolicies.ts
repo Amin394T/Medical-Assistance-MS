@@ -13,7 +13,6 @@ export const insurancePolicies = sqliteTable("insurance_policies", {
   effectiveDate: integer("effective_date", { mode: "timestamp" }).notNull(),
   status: text("status", { enum: ["VALI", "SUSP", "TERM"] }).notNull(),
   insuranceCompanyId: integer("insurance_company_id").notNull().references(() => insuranceProviders.id),
-  intermediaryId: integer("intermediary_id").references(() => insuranceProviders.id),
   creationDate: integer("creation_date", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
   lastUpdated: integer("last_updated", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });

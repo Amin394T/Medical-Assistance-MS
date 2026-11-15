@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBillingCashing, updateBillingCashing } from "@/db/actions/billingCashings";
+import { formatDate } from "@/app/_lib/date-format";
 
 type InsuranceProviderOption = { id: number; label: string };
 type CashingInvoice = {
@@ -202,8 +203,4 @@ export function BillingCashingForm({
 function toDateInputValue(value: Date) {
   const localDate = new Date(value.getTime() - value.getTimezoneOffset() * 60_000);
   return localDate.toISOString().slice(0, 10);
-}
-
-function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(value);
 }

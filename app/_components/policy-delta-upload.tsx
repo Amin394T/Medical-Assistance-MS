@@ -53,7 +53,7 @@ export function PolicyDeltaUpload({ providers }: { providers: ProviderOption[] }
         <label className="block max-w-2xl">
           <span className="mb-2 block text-xs font-semibold text-slate-600">Policy delta workbook (.xlsx)</span>
           <input name="policyFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required className="block w-full rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-700 file:mr-4 file:border-0 file:bg-slate-100 file:px-4 file:py-2.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200" />
-          <span className="mt-2 block text-xs text-slate-500">Required columns: policy, client, type, effective date, and status. Client activity, address, city, and intermediary are optional. Maximum file size: 5 MB.</span>
+          <span className="mt-2 block text-xs text-slate-500">Required columns: policy, client, type, effective date, and status. Client activity, address, and city are optional. Maximum file size: 5 MB.</span>
         </label>
         <label className="block max-w-2xl">
           <span className="mb-2 block text-xs font-semibold text-slate-600">Covered-employee workbook (.xlsx)</span>

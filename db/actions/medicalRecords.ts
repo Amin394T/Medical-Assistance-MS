@@ -9,7 +9,6 @@ import type { NewMedicalRecord, SetMedicalRecord } from "../schemas";
 
 export async function listMedicalRecords() {
   const insuranceCompany = alias(insuranceProviders, "insuranceCompany");
-  const intermediary = alias(insuranceProviders, "intermediary");
   const rows = await db
     .select({
       id: medicalRecords.id,
@@ -19,7 +18,6 @@ export async function listMedicalRecords() {
       policy: insurancePolicies.policyNumber,
       clientCompany: insurancePolicies.clientCompany,
       insuranceCompany: insuranceCompany.label,
-      intermediary: intermediary.label,
       victimNameFirst: medicalRecords.victimFirstName,
       victimNameLast: medicalRecords.victimLastName,
       accidentDate: medicalRecords.accidentDate,
@@ -31,7 +29,6 @@ export async function listMedicalRecords() {
     .from(medicalRecords)
     .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
     .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceCompanyId, insuranceCompany.id))
-    .leftJoin(intermediary, eq(insurancePolicies.intermediaryId, intermediary.id))
     .orderBy(desc(medicalRecords.accidentDate));
 
   return rows.map((row) => ({
@@ -43,13 +40,11 @@ export async function listMedicalRecords() {
 
 export async function getMedicalRecord(id: number) {
   const insuranceCompany = alias(insuranceProviders, "insuranceCompany");
-  const intermediary = alias(insuranceProviders, "intermediary");
   const [row] = await db
     .select()
     .from(medicalRecords)
     .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
     .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceCompanyId, insuranceCompany.id))
-    .leftJoin(intermediary, eq(insurancePolicies.intermediaryId, intermediary.id))
     .where(eq(medicalRecords.id, id));
 
   if (!row) return null;
@@ -59,7 +54,6 @@ export async function getMedicalRecord(id: number) {
     policyNumber: row.insurance_policies.policyNumber,
     clientCompany: row.insurance_policies.clientCompany,
     insuranceCompany: row.insuranceCompany.label,
-    intermediary: row.intermediary?.label ?? null,
   };
 }
 
@@ -131,20 +125,27 @@ export async function updateMedicalRecord(id: number, input: SetMedicalRecord) {
     throw new Error("Invalid medical-record status reason.");
   }
   return db.transaction((tx) => {
+    const [existing] = tx
+      .select({ policyId: medicalRecords.policyId })
+      .from(medicalRecords)
+      .where(eq(medicalRecords.id, id))
+      .all();
+    if (!existing) return null;
+
     const [policy] = tx
       .select({
         type: insurancePolicies.type,
         status: insurancePolicies.status,
       })
       .from(insurancePolicies)
-      .where(eq(insurancePolicies.id, input.policyId))
+      .where(eq(insurancePolicies.id, existing.policyId))
       .all();
-    if (!policy) throw new Error("Insurance policy not found.");
+    if (!policy) throw new Error("The medical record's insurance policy was not found.");
 
     const coveredEmployees = input.status === "RJC" && policy.type === "FIX" && policy.status === "VALI"
       ? tx.select({ employee: insurancePolicyEmployees.employee })
         .from(insurancePolicyEmployees)
-        .where(eq(insurancePolicyEmployees.policyId, input.policyId))
+        .where(eq(insurancePolicyEmployees.policyId, existing.policyId))
         .all()
         .map(({ employee }) => employee)
       : [];
@@ -154,8 +155,24 @@ export async function updateMedicalRecord(id: number, input: SetMedicalRecord) {
     const [record] = tx
       .update(medicalRecords)
       .set({
-        ...input,
+        reportingDate: input.reportingDate,
+        reporterName: input.reporterName,
+        reporterPhone: input.reporterPhone,
+        accidentDate: input.accidentDate,
+        accidentType: input.accidentType,
+        accidentPlace: input.accidentPlace,
+        accidentCause: input.accidentCause,
+        accidentEvolution: input.accidentEvolution,
+        victimFirstName: input.victimFirstName,
+        victimLastName: input.victimLastName,
+        victimPhone: input.victimPhone,
+        victimNationalId: input.victimNationalId,
+        victimJob: input.victimJob,
+        status: input.status,
         statusReason: input.status === "RJC" ? input.statusReason ?? calculatedReason : null,
+        delegationDate: input.delegationDate,
+        regulatoryDoctor: input.regulatoryDoctor,
+        observation: input.observation,
         lastUpdated: new Date(),
         lastUpdater: "USER",
       })

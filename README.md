@@ -26,7 +26,7 @@
 
 - delta files loading:
     + insurance company periodically sends a spreadsheet of the latest client policies, and another containing an employee list for fixed-rate policies ;
-    + Excel file includes policy, client, effective date, insurer, intermediary, and status columns (intermediary may be blank) ;
+    + Excel file includes policy, client, effective date, insurance company, and status columns;
     + file is processed to create new policies and update exisiting policies' statuses.
 
 - rejected records revalidation :
@@ -57,7 +57,7 @@
 - issurance management :
     + client policies : list of insurance policies, row filter, read-only ;
         + covered employees : pop-up showing a list of employees covered by a selected insurance policy of type "fixed-rate", search bar in the top, shows when "fixed-rate" is clicked, read-only ;
-    + insurance providers: list of insurance companies, agents, brokers, and special clients, row filter, grid CRUD;
+    + insurance providers: list of insurance companies, row filter, grid CRUD;
     + policy update : upload screen for the 2 delta files, updates policies (new + status change) and covered employees (overwrite for selected insurance company), the concerned insurance company is to be selected before processing ;
 - service management :
     + healthcare providers : list of medical service providers, row filter, grid CRUD ;
@@ -74,7 +74,7 @@
     + reference: required, read-only, unique, defaults to calculated (accident date YYMMDD + daily 2-digits sequence) ;
     + insurance policy: required, selectable (list searchable by policy and client name) ;
     + client company: UI-only (from selected insurance policy) ;
-    + insurance provider: UI-only (from selected insurance policy, insurance company + intermediary between brackets if available) ;
+    + insurance provider: UI-only (from selected insurance policy) ;
     + reporting date: required, date-time, defaults to NOW ;
     + reporter name ;
     + reporter phone: required ;
@@ -135,7 +135,6 @@
 - insurance provider:
     + label: required, unique ;
     + corporate id ;
-    + type: required, list (company - CMP, agent - AGT, broker - BRK, special - SPC) ;
     + phone ;
     + email ;
 
@@ -152,7 +151,6 @@
     
     // 2. not in delta file:
     + insurance company: required, selectable (the company selected when applying the delta file) ;
-    + intermediary: selectable (from insurance provider where type is "AGT" or "BRK") ;
     + creation date: required, read-only, date-time, defaults to NOW ;
     + last updated: required, read-only, date-time, automatically updated at modification time IF something changed ;
 

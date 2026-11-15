@@ -29,7 +29,7 @@ export default async function BillingCashingsPage() {
           }))}
           columns={[
             { key: "insuranceProvider", label: "Insurance Provider", readOnly: true },
-            { key: "requestDate", label: "Request Date", format: "date", readOnly: true },
+            { key: "requestDate", label: "Request Date", format: "datetime", readOnly: true },
             { key: "totalAmount", label: "Total Amount", readOnly: true },
             { key: "invoiceCount", label: "Invoices", readOnly: true },
             { key: "bank", label: "Bank", readOnly: true },

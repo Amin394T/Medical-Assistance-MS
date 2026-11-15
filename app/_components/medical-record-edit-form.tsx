@@ -7,24 +7,19 @@ import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { updateMedicalRecord } from "@/db/actions/medicalRecords";
 import type { getMedicalRecord } from "@/db/actions/medicalRecords";
 import type { SetMedicalRecord } from "@/db/schemas";
+import { formatDateTime } from "@/app/_lib/date-format";
 
 type MedicalRecordDetails = NonNullable<Awaited<ReturnType<typeof getMedicalRecord>>>;
-type PolicyOption = { id: number; policyNumber: string; clientCompany: string; insuranceCompany: string; intermediary: string | null };
 
 type MedicalRecordEditFormProps = {
   record: MedicalRecordDetails;
-  policies: PolicyOption[];
   jobs: string[];
 };
 
-export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordEditFormProps) {
+export function MedicalRecordEditForm({ record, jobs }: MedicalRecordEditFormProps) {
   const router = useRouter();
-  const [policyId, setPolicyId] = useState(String(record.policyId));
-  const [policyQuery, setPolicyQuery] = useState(policies.find((policy) => policy.id === record.policyId)?.policyNumber ?? "");
-  const [isPolicyListOpen, setIsPolicyListOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState<{ tone: "error" | "success"; text: string } | null>(null);
-  const selectedPolicy = policies.find((policy) => String(policy.id) === policyId);
 
   return (
     <form className="mb-6 space-y-6" onSubmit={async (event) => {
@@ -33,14 +28,12 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
       setNotice(null);
       const data = new FormData(event.currentTarget);
       try {
-        if (!policyId) throw new Error("Select an insurance policy.");
         const parseDate = (name: string) => {
           const value = String(data.get(name) ?? "");
           return value ? new Date(value) : null;
         };
         const values: SetMedicalRecord = {
           accidentType: String(data.get("accidentType")) as SetMedicalRecord["accidentType"],
-          policyId: Number(data.get("policyId")),
           reportingDate: parseDate("reportingDate") ?? new Date(),
           reporterName: String(data.get("reporterName") ?? "") || null,
           reporterPhone: String(data.get("reporterPhone") ?? ""),
@@ -72,23 +65,18 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
       {notice ? <Notice tone={notice.tone}>{notice.text}</Notice> : null}
 
       <Section title="01 / Client Data">
-        <div className="grid gap-5 md:grid-cols-2">
-          <label className="relative block"><span className="mb-2 block text-sm font-semibold text-slate-700">Insurance Policy<span className="ml-1 text-teal-700">*</span></span><input value={policyQuery} onFocus={() => setIsPolicyListOpen(true)} onClick={() => setIsPolicyListOpen(true)} onChange={(event) => { setPolicyQuery(event.target.value); setPolicyId(""); setIsPolicyListOpen(true); }} className={inputClass} placeholder="Search policy number or client" role="combobox" aria-expanded={isPolicyListOpen} aria-controls="edit-policy-picker-options" aria-autocomplete="list" /><input type="hidden" name="policyId" value={policyId} />{isPolicyListOpen ? <div id="edit-policy-picker-options" role="listbox" className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto border border-slate-200 bg-white shadow-lg">{policies.filter((policy) => `${policy.policyNumber} ${policy.clientCompany}`.toLowerCase().includes(policyQuery.trim().toLowerCase())).slice(0, 8).map((policy) => <button key={policy.id} type="button" role="option" aria-selected={String(policy.id) === policyId} onMouseDown={(event) => event.preventDefault()} onClick={() => { setPolicyId(String(policy.id)); setPolicyQuery(policy.policyNumber); setIsPolicyListOpen(false); }} className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm hover:bg-teal-50"><span className="block font-semibold text-slate-900">{policy.policyNumber}</span><span className="block text-xs text-slate-500">{policy.clientCompany}</span></button>)}</div> : null}</label>
-          <ReadOnly label="Client Company" value={selectedPolicy?.clientCompany ?? null} />
-          <ReadOnly label="Insurance Provider" value={formatInsuranceProvider(selectedPolicy?.insuranceCompany, selectedPolicy?.intermediary)} />
-        </div>
-      </Section>
-
-      <Section title="02 / Reporter Data">
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-3">
+          <ReadOnly label="Insurance Policy" value={record.policyNumber} />
+          <ReadOnly label="Client Company" value={record.clientCompany} />
+          <ReadOnly label="Insurance Provider" value={record.insuranceCompany} />
           <DateTimeField name="reportingDate" label="Reporting Date" value={record.reportingDate} required />
           <TextField name="reporterName" label="Reporter Name" defaultValue={record.reporterName ?? ""} />
           <TextField name="reporterPhone" label="Reporter Phone" defaultValue={record.reporterPhone} required type="tel" />
         </div>
       </Section>
 
-      <Section title="03 / Accident Data">
-        <div className="grid gap-5 md:grid-cols-2">
+      <Section title="02 / Accident Data">
+        <div className="grid gap-5 md:grid-cols-3">
           <DateTimeField name="accidentDate" label="Accident Date" value={record.accidentDate} required />
           <SelectField name="accidentType" label="Accident Type" defaultValue={record.accidentType} required options={[
             ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VF", "Policy verification"], ["SS", "Special service"], ["PR", "Occupational disease"],
@@ -99,37 +87,32 @@ export function MedicalRecordEditForm({ record, policies, jobs }: MedicalRecordE
           <SelectField name="accidentPlace" label="Accident Place" defaultValue={record.accidentPlace} required options={[
             ["WS", "Workshop"], ["RT", "Route"], ["OF", "Office"], ["CT", "Construction"],
           ]} />
+          <SelectField name="accidentEvolution" label="Evolution" defaultValue={record.accidentEvolution} required options={[
+            ["INIT", "Initial"], ["RELP", "Relapse"], ["DEAT", "Death"], ["COMP", "Complement"],
+          ]} />
         </div>
       </Section>
 
-      <Section title="04 / Victim Data">
-        <div className="grid gap-5 md:grid-cols-2">
+      <Section title="03 / Victim Data">
+        <div className="grid gap-5 md:grid-cols-3">
           <TextField name="victimFirstName" label="Victim First Name" defaultValue={record.victimFirstName} required />
           <TextField name="victimLastName" label="Victim Last Name" defaultValue={record.victimLastName ?? ""} />
-          <TextField name="victimPhone" label="Victim Phone" defaultValue={record.victimPhone ?? ""} type="tel" />
           <TextField name="victimNationalId" label="Victim National ID" defaultValue={record.victimNationalId} required />
+          <TextField name="victimPhone" label="Victim Phone" defaultValue={record.victimPhone ?? ""} type="tel" />
           <TextField name="victimJob" label="Victim Job" defaultValue={record.victimJob ?? ""} options={jobs} />
         </div>
       </Section>
 
-      <Section title="05 / Status Data">
-        <div className="grid gap-5 md:grid-cols-2">
+      <Section title="04 / Status Data">
+        <div className="grid gap-5 md:grid-cols-3">
           <SelectField name="status" label="Record Status" defaultValue={record.status} required options={[
             ["PRG", "In progress"], ["DSP", "Disputed"], ["RJC", "Rejected"], ["CLS", "Closed"], ["ABN", "Abandoned"],
           ]} />
           <SelectField name="statusReason" label="Status Reason" defaultValue={record.statusReason ?? ""} options={[
             ["", "None"], ["SUS", "Policy suspended"], ["TER", "Policy terminated"], ["COV", "Coverage limited"],
           ]} />
-          <SelectField name="accidentEvolution" label="Evolution" defaultValue={record.accidentEvolution} required options={[
-            ["INIT", "Initial"], ["RELP", "Relapse"], ["DEAT", "Death"], ["COMP", "Complement"],
-          ]} />
           <DateTimeField name="delegationDate" label="Delegation Date" value={record.delegationDate} />
           <TextField name="regulatoryDoctor" label="Regulatory Doctor" defaultValue={record.regulatoryDoctor ?? ""} />
-        </div>
-      </Section>
-
-      <Section title="06 / Audit Data">
-        <div className="grid gap-5 md:grid-cols-2">
           <ReadOnly label="Manager" value={record.manager} />
           <TextField name="observation" label="Observation" defaultValue={record.observation ?? ""} />
           <ReadOnly label="Last Updated" value={formatDateTime(record.lastUpdated)} />
@@ -165,15 +148,6 @@ function DateTimeField({ name, label, value, required }: { name: string; label: 
 
 function ReadOnly({ label, value }: { label: string; value: string | number | null }) {
   return <div><span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span><div className="flex h-11 items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-600">{value ?? "-"}</div></div>;
-}
-
-function formatInsuranceProvider(insuranceCompany: string | undefined, intermediary: string | null | undefined) {
-  if (!insuranceCompany) return null;
-  return intermediary ? `${insuranceCompany} (${intermediary})` : insuranceCompany;
-}
-
-function formatDateTime(value: Date) {
-  return new Intl.DateTimeFormat("en-GB", { dateStyle: "short", timeStyle: "medium" }).format(value);
 }
 
 function Notice({ tone, children }: { tone: "error" | "success"; children: React.ReactNode }) {

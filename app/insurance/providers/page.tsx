@@ -15,9 +15,6 @@ export default async function InsuranceProvidersPage() {
 				<ReferencialDataGrid title="Insurance Providers" rows={providers} columns={[
 					{ key: "label", label: "Label", required: true },
 					{ key: "corporateId", label: "Corporate ID", nullable: true },
-					{ key: "type", label: "Type", editor: "select", required: true, options: [
-						{ value: "CMP", label: "Company" }, { value: "AGT", label: "Agent" }, { value: "BRK", label: "Broker" }, { value: "SPC", label: "Special" },
-					] },
 					{ key: "phone", label: "Phone", nullable: true },
 					{ key: "email", label: "Email", nullable: true },
 					{ key: "balance", label: "Balance", editor: "number", nullable: true },

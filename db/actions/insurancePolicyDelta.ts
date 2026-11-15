@@ -23,7 +23,6 @@ type PolicyDeltaRow = {
   insurer: string | null;
   type: PolicyType;
   effectiveDate: Date;
-  intermediary: string | null;
   status: PolicyStatus;
 };
 
@@ -61,10 +60,8 @@ export async function uploadPolicyDeltaFiles(formData: FormData): Promise<Policy
       .from(insuranceProviders)
       .where(eq(insuranceProviders.id, insuranceCompanyId))
       .all();
-    if (company?.type !== "CMP") throw new Error("Select a valid insurance company.");
+    if (!company) throw new Error("Select a valid insurance company.");
 
-    const providers = tx.select().from(insuranceProviders).all();
-    const providersByLabel = new Map(providers.map((provider) => [normalize(provider.label), provider]));
     const policies = tx.select().from(insurancePolicies).all();
     const policiesByNumber = new Map(policies.map((policy) => [normalize(policy.policyNumber), policy]));
     let policiesCreated = 0;
@@ -80,11 +77,6 @@ export async function uploadPolicyDeltaFiles(formData: FormData): Promise<Policy
         throw new Error(`Row ${row.rowNumber}: policy "${row.policyNumber}" belongs to a different insurance company.`);
       }
 
-      const intermediary = row.intermediary ? providersByLabel.get(normalize(row.intermediary)) : null;
-      if (row.intermediary && intermediary?.type !== "AGT" && intermediary?.type !== "BRK") {
-        throw new Error(`Row ${row.rowNumber}: intermediary "${row.intermediary}" is not a known agent or broker.`);
-      }
-
       if (!current) {
         const now = new Date();
         const [created] = tx.insert(insurancePolicies).values({
@@ -96,7 +88,6 @@ export async function uploadPolicyDeltaFiles(formData: FormData): Promise<Policy
           type: row.type,
           effectiveDate: row.effectiveDate,
           insuranceCompanyId,
-          intermediaryId: intermediary?.id ?? null,
           status: row.status,
           creationDate: now,
           lastUpdated: now,
@@ -182,7 +173,6 @@ function parsePolicyDeltaRows(worksheet: ExcelJS.Worksheet): PolicyDeltaRow[] {
     const effectiveDate = parseEffectiveDate(row, headers.get("effective date")!, rowNumber);
     const type = parsePolicyType(value("type"), rowNumber);
     const status = parsePolicyStatus(value("status"), rowNumber);
-    const intermediary = value("intermediary") || null;
     for (const [label, field] of [["policy", policyNumber], ["client", clientCompany]] as const) {
       if (!field) throw new Error(`Row ${rowNumber}: "${label}" is required.`);
     }
@@ -199,7 +189,6 @@ function parsePolicyDeltaRows(worksheet: ExcelJS.Worksheet): PolicyDeltaRow[] {
       insurer: value("insurer") || null,
       type,
       effectiveDate,
-      intermediary,
       status,
     });
   }
