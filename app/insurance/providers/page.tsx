@@ -17,7 +17,6 @@ export default async function InsuranceProvidersPage() {
 					{ key: "corporateId", label: "Corporate ID", nullable: true },
 					{ key: "phone", label: "Phone", nullable: true },
 					{ key: "email", label: "Email", nullable: true },
-					{ key: "balance", label: "Balance", editor: "number", nullable: true },
 				]} onCreate={createInsuranceProvider} onUpdate={updateInsuranceProvider} onDelete={deleteInsuranceProvider} />
 			</div>
 		</section>

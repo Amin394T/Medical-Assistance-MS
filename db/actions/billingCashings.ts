@@ -59,6 +59,7 @@ export async function getBillingCashing(idValue: number) {
       totalAmount: billingInvoices.totalAmount,
       medicalRecordId: billingInvoices.medicalRecordId,
       medicalRecordReference: medicalRecords.reference,
+      medicalRecordType: medicalRecords.accidentType,
     })
     .from(billingInvoices)
     .innerJoin(medicalRecords, eq(billingInvoices.medicalRecordId, medicalRecords.id))

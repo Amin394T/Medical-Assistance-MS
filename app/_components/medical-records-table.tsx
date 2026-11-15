@@ -12,6 +12,7 @@ import {
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ChevronsUpDown, RotateCcw } from "lucide-react";
 import { formatDateTime } from "@/app/_lib/date-format";
+import { formatMedicalRecordReference } from "@/app/_lib/medical-record-reference";
 
 import type { listMedicalRecords } from "@/db/actions/medicalRecords";
 
@@ -29,7 +30,7 @@ const features = tableFeatures({
 const columnHelper = createColumnHelper<typeof features, MedicalRecordListItem>();
 
 const columns = columnHelper.columns([
-  columnHelper.accessor("reference", { header: "Reference", cell: ({ row, getValue }) => <Link href={`/assistance/records/${row.original.id}`} className="font-semibold text-teal-800 hover:underline">{row.original.type}-{formatReference(getValue())}</Link> }),
+  columnHelper.accessor("reference", { header: "Reference", cell: ({ row, getValue }) => <Link href={`/assistance/records/${row.original.id}`} className="font-semibold text-teal-800 hover:underline">{formatMedicalRecordReference(row.original.type, getValue())}</Link> }),
   columnHelper.accessor("policy", { header: "Policy Number" }),
   columnHelper.accessor("clientCompany", { header: "Client Company" }),
   columnHelper.accessor("insuranceCompany", { header: "Insurance Company" }),
@@ -99,14 +100,12 @@ function matchesFilters(record: MedicalRecordListItem, filters: Filters) {
     return timestamp >= fromTime && timestamp <= toTime;
   };
 
-  return textMatches(record.policy, filters.policyNumber) && textMatches(record.clientCompany, filters.clientCompany) && textMatches(formatReference(record.reference), filters.referenceNumber) && textMatches(record.victimName, filters.victimName) && (!filters.recordStatus || record.status === filters.recordStatus) && inDateRange(record.accidentDate, filters.accidentFrom, filters.accidentTo);
+  return textMatches(record.policy, filters.policyNumber) && textMatches(record.clientCompany, filters.clientCompany) && textMatches(formatMedicalRecordReference(record.type, record.reference), filters.referenceNumber) && textMatches(record.victimName, filters.victimName) && (!filters.recordStatus || record.status === filters.recordStatus) && inDateRange(record.accidentDate, filters.accidentFrom, filters.accidentTo);
 }
 
 function FilterInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label className="block"><span className="mb-1 block text-[11px] font-semibold text-slate-500">{label}</span><input value={value} onChange={(event) => onChange(event.target.value)} className={filterClass} placeholder="Any" /></label>; }
 
 function DateRange({ label, from, to, onFromChange, onToChange }: { label: string; from: string; to: string; onFromChange: (value: string) => void; onToChange: (value: string) => void }) { return <div className="sm:col-span-2"><span className="mb-1 block text-[11px] font-semibold text-slate-500">{label} Range</span><div className="grid grid-cols-2 gap-2"><input type="date" value={from} onChange={(event) => onFromChange(event.target.value)} className={filterClass} /><input type="date" value={to} onChange={(event) => onToChange(event.target.value)} className={filterClass} /></div></div>; }
-
-function formatReference(value: number) { return String(value).slice(0, -2) + "-" + String(value).slice(-2); }
 
 function StatusBadge({ value }: { value: string }) {
   const colors: Record<string, string> = {

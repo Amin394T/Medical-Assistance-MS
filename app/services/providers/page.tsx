@@ -21,6 +21,8 @@ export default async function ServiceProvidersPage() {
 					{ key: "contactName", label: "Contact Name", nullable: true },
 					{ key: "phone", label: "Phone", required: true },
 					{ key: "email", label: "Email", nullable: true },
+					{ key: "bank", label: "Bank", editor: "combo-box", nullable: true },
+					{ key: "bankAccount", label: "Bank Account", nullable: true },
 				]} onCreate={createServiceProvider} onUpdate={updateServiceProvider} onDelete={deleteServiceProvider} />
 			</div>
 		</section>

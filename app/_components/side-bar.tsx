@@ -39,7 +39,7 @@ export function Sidebar() {
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-slate-200 shadow-md bg-white">
       <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5">
-        <Image src="/logo-icon.png" alt="Medical Assistance" width={30} height={30} />
+        <Image src="/logo-icon.png" alt="Medical Assistance" loading="eager" width={30} height={30} />
         <div className="text-lg font-semibold text-teal-800">Medical Assistance</div>
       </div>
 

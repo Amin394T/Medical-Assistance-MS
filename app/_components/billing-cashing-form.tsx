@@ -5,12 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBillingCashing, updateBillingCashing } from "@/db/actions/billingCashings";
 import { formatDate } from "@/app/_lib/date-format";
+import { formatMedicalRecordReference } from "@/app/_lib/medical-record-reference";
+import type { MedicalRecord } from "@/db/schemas/medicalRecords";
 
 type InsuranceProviderOption = { id: number; label: string };
 type CashingInvoice = {
   id: number;
   medicalRecordId: number;
   medicalRecordReference: string | number;
+  medicalRecordType: MedicalRecord["accidentType"];
   reference: string | number;
   issueDate: Date;
   totalAmount: number;
@@ -178,7 +181,7 @@ export function BillingCashingForm({
                     />
                   </td> : null}
                   <td className="px-4 py-3 font-medium text-slate-800">{invoice.reference}</td>
-                  <td className="px-4 py-3 text-slate-600">{invoice.medicalRecordReference}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatMedicalRecordReference(invoice.medicalRecordType, invoice.medicalRecordReference)}</td>
                   <td className="px-4 py-3 text-slate-600">{formatDate(invoice.issueDate)}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-slate-700">{invoice.totalAmount.toFixed(2)}</td>
                 </tr>

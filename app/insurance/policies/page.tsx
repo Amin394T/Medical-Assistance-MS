@@ -46,7 +46,11 @@ export default async function InsurancePoliciesPage() {
 							{ value: "VALI", label: "Valid" },
 							{ value: "SUSP", label: "Suspended" },
 							{ value: "TERM", label: "Terminated" },
-						] },
+						], badgeClasses: {
+							VALI: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+							SUSP: "bg-amber-50 text-amber-700 ring-amber-600/20",
+							TERM: "bg-rose-50 text-rose-700 ring-rose-600/20",
+						} },
 						{ key: "insuranceCompanyId", label: "Insurance Company", readOnly: true, options: insuranceCompanyOptions },
 						{ key: "creationDate", label: "Creation Date", format: "datetime", readOnly: true },
 						{ key: "lastUpdated", label: "Last Updated", format: "datetime", readOnly: true },

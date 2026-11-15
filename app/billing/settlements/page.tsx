@@ -6,6 +6,8 @@ import { createSettlementMedicalService, deleteMedicalService, listServicesForSe
 import { createBillingInvoicesForServices } from "@/db/actions/billingInvoices";
 import { ReferencialDataGrid } from "@/app/_components/referential-data-grid";
 import { PageHeader } from "@/app/_components/page-header";
+import { formatMedicalRecordReference } from "@/app/_lib/medical-record-reference";
+import { settlementStatusBadgeClasses } from "@/app/_lib/status-colors";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +35,7 @@ export default async function ServiceSettlementPage() {
           title="Service Settlement"
           rows={rows.map((row) => ({
             id: row.id,
-            record: `${row.accidentType}-${row.recordReference}`,
+            record: formatMedicalRecordReference(row.accidentType, row.recordReference),
             clientCompany: row.clientCompany,
             insuranceProvider: row.insuranceProvider,
             victim: [row.victimFirstName, row.victimLastName].filter(Boolean).join(" "),
@@ -65,7 +67,7 @@ export default async function ServiceSettlementPage() {
             { key: "observation", label: "Observation", nullable: true },
             { key: "settlementStatus", label: "Settlement Status", readOnly: true, options: [
               { value: "WAIT", label: "Waiting" }, { value: "BILL", label: "Billed" }, { value: "SETT", label: "Settled" },
-            ] },
+            ], badgeClasses: settlementStatusBadgeClasses },
             { key: "settlingDate", label: "Settling Date", format: "date", readOnly: true },
             { key: "paymentAmount", label: "Payment Amount", editor: "number", required: true },
             { key: "billingAmount", label: "Billing Amount", editor: "number", required: true },

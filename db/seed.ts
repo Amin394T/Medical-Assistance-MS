@@ -55,8 +55,8 @@ const counts = db.transaction((tx) => {
 
   const insuranceProviderIds = new Map(
     tx.insert(insuranceProviders).values([
-      { label: "Atlas Mutual Assurance", corporateId: "CMP-1001", phone: "+1 555 010 1100", email: "claims@atlas.example.test", balance: 0 },
-      { label: "Northstar Coverage", corporateId: "CMP-1002", phone: "+1 555 010 1200", email: "claims@northstar.example.test", balance: 0 },
+      { label: "Atlas Mutual Assurance", corporateId: "CMP-1001", phone: "+1 555 010 1100", email: "claims@atlas.example.test" },
+      { label: "Northstar Coverage", corporateId: "CMP-1002", phone: "+1 555 010 1200", email: "claims@northstar.example.test" },
     ]).returning().all().map(({ id, label }) => [label, id]),
   );
 

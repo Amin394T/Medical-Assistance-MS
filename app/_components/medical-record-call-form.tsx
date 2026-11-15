@@ -3,21 +3,17 @@
 /* TanStack Form's field API uses render functions through its children prop. */
 /* eslint-disable react/no-children-prop */
 
-import { startTransition, useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 import { createMedicalRecord } from "@/db/actions/medicalRecords";
-import { checkInsurancePolicyCoverage } from "@/db/actions/insurancePolicies";
-import { formatDateTime } from "@/app/_lib/date-format";
 
 type PolicyOption = {
   id: number;
   policyNumber: string;
   clientCompanyLabel: string;
   insuranceCompanyLabel: string;
-  type: "REV" | "FIX";
-  status: "VALI" | "SUSP" | "TERM";
 };
 type MedicalRecordCallFormProps = {
   policies: PolicyOption[];
@@ -26,7 +22,9 @@ type MedicalRecordCallFormProps = {
 };
 
 type CallFormValues = {
+  reportingDate: string;
   accidentDate: string;
+  accidentEvolution: "INIT" | "RELP" | "DEAT" | "COMP";
   policyId: string;
   type: "AT" | "MD" | "VF" | "SS" | "PR";
   reporterName: string;
@@ -55,7 +53,9 @@ type FormRenderer = {
 };
 
 const initialValues: CallFormValues = {
+  reportingDate: "",
   accidentDate: new Date().toISOString().slice(0, 16),
+  accidentEvolution: "INIT",
   policyId: "",
   type: "AT",
   reporterName: "",
@@ -73,7 +73,10 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
   const [submitError, setSubmitError] = useState("");
   const [createdReference, setCreatedReference] = useState("");
   const form = useForm({
-    defaultValues: initialValues,
+    defaultValues: {
+      ...initialValues,
+      reportingDate: toDateTimeInputValue(displayReportingDate),
+    },
     onSubmit: async ({ value }) => {
       setSubmitError("");
       setCreatedReference("");
@@ -82,13 +85,13 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
         const record = await createMedicalRecord({
           accidentType: value.type,
           policyId: Number(value.policyId),
-          reportingDate: new Date(displayReportingDate),
+          reportingDate: new Date(value.reportingDate),
           reporterName: value.reporterName || null,
           reporterPhone: value.reporterPhone,
           accidentPlace: value.accidentPlace,
           accidentDate: new Date(value.accidentDate),
           accidentCause: value.accidentCause || null,
-          accidentEvolution: "INIT",
+          accidentEvolution: value.accidentEvolution,
           victimFirstName: value.victimFirstName,
           victimLastName: value.victimLastName || null,
           victimNationalId: value.victimNationalId,
@@ -119,15 +122,14 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
           <FormSection title="01 / Client Data">
             <div className="grid gap-5 md:grid-cols-3">
               <form.Field key={createdReference} name="policyId" children={(field) => <PolicyPicker field={field as unknown as RenderableField} policies={policies} />} />
-              <form.Subscribe selector={(state) => ({ policyId: state.values.policyId, victimNationalId: state.values.victimNationalId })} children={({ policyId, victimNationalId }) => {
+              <form.Subscribe selector={(state) => state.values.policyId} children={(policyId) => {
                 const selectedPolicy = getSelectedPolicy(policyId, policies);
                 return <>
                   <ReadOnlyField label="Client Company" value={selectedPolicy?.clientCompanyLabel ?? "Select an insurance policy"} />
                   <ReadOnlyField label="Insurance Provider" value={selectedPolicy?.insuranceCompanyLabel ?? "Select an insurance policy"} />
-                  <PolicyCoveragePreview policy={selectedPolicy} employeeId={victimNationalId} />
                 </>;
               }} />
-              <ReadOnlyField label="Reporting Date" value={formatDateTime(new Date(displayReportingDate))} />
+              <Field form={form as unknown as FormRenderer} name="reportingDate" label="Reporting Date" required type="datetime-local" />
               <Field form={form as unknown as FormRenderer} name="reporterName" label="Reporter Name" />
               <Field form={form as unknown as FormRenderer} name="reporterPhone" label="Reporter Phone" required type="tel" />
             </div>
@@ -139,6 +141,7 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
               <form.Field name="type" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Type" required options={[{ value: "AT", label: "Workplace accident" }, { value: "MD", label: "Illness & pain" }, { value: "VF", label: "Policy verification" }, { value: "SS", label: "Special service" }, { value: "PR", label: "Occupational disease" }]} />} />
               <form.Field name="accidentCause" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Cause" options={[{ value: "FALL", label: "Falling or slipping" }, { value: "EQIP", label: "Machine or equipment" }, { value: "FATG", label: "Overexertion and fatigue" }, { value: "HAZD", label: "Hazardous substance" }, { value: "VIOL", label: "Workplace violence" }, { value: "OBJC", label: "Moving objects" }]} placeholder="Select a cause" />} />
               <form.Field name="accidentPlace" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Place" required options={[{ value: "WS", label: "Workshop" }, { value: "RT", label: "Route" }, { value: "OF", label: "Office" }, { value: "CT", label: "Construction" }]} />} />
+              <form.Field name="accidentEvolution" children={(field) => <SelectField field={field as unknown as RenderableField} label="Case Evolution" required options={[{ value: "INIT", label: "Initial" }, { value: "RELP", label: "Relapse" }, { value: "DEAT", label: "Death" }, { value: "COMP", label: "Complement" }]} />} />
             </div>
           </FormSection>
 
@@ -162,7 +165,7 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
 
 function Field({ form, name, label, required, type = "text", options }: { form: FormRenderer; name: keyof CallFormValues; label: string; required?: boolean; type?: string; options?: string[] }) {
   const listId = options?.length ? `${name}-options` : undefined;
-  return <form.Field name={name} validators={{ onBlur: ({ value }) => required && !String(value).trim() ? `${label} is required` : undefined }} children={(field) => <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">{label}{required ? <span className="ml-1 text-teal-700">*</span> : null}</span><input type={type} list={listId} value={String(field.state.value)} onBlur={field.handleBlur} onChange={(event) => field.handleChange(event.target.value)} className={inputClass} />{listId ? <datalist id={listId}>{options?.map((option) => <option key={option} value={option} />)}</datalist> : null}{field.state.meta.errors[0] ? <span className="mt-1 block text-xs text-rose-600">{String(field.state.meta.errors[0])}</span> : null}</label>} />;
+  return <form.Field name={name} validators={{ onBlur: ({ value }) => required && !String(value).trim() ? `${label} is required` : undefined }} children={(field) => <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">{label}{required ? <span className="ml-1 text-teal-700">*</span> : null}</span><input type={type} list={listId} value={String(field.state.value)} required={required} onBlur={field.handleBlur} onChange={(event) => field.handleChange(event.target.value)} className={inputClass} />{listId ? <datalist id={listId}>{options?.map((option) => <option key={option} value={option} />)}</datalist> : null}{field.state.meta.errors[0] ? <span className="mt-1 block text-xs text-rose-600">{String(field.state.meta.errors[0])}</span> : null}</label>} />;
 }
 
 function SelectField({ field, label, options, required, placeholder }: { field: RenderableField; label: string; options: { value: string; label: string }[]; required?: boolean; placeholder?: string }) {
@@ -181,56 +184,11 @@ function getSelectedPolicy(policyId: string, policies: PolicyOption[]) {
   return policies.find((policy) => policy.id === Number(policyId));
 }
 
-function PolicyCoveragePreview({ policy, employeeId }: { policy: PolicyOption | undefined; employeeId: string }) {
-  const [result, setResult] = useState<{ key: string; message: string } | null>(null);
-  const employee = employeeId.trim();
-  const key = `${policy?.id ?? ""}:${policy?.type ?? ""}:${policy?.status ?? ""}:${employee.toLowerCase()}`;
-
-  useEffect(() => {
-    if (!policy || policy.status !== "VALI" || policy.type !== "FIX" || !employee) return;
-
-    let active = true;
-    const timeout = window.setTimeout(() => {
-      startTransition(() => {
-        void checkInsurancePolicyCoverage(policy.id, employeeId)
-          .then(({ statusReason }) => {
-            if (!active) return;
-            setResult({
-              key,
-              message: statusReason === "COV"
-                ? "Rejected — victim is not on the covered-employee list"
-                : statusReason === "SUS"
-                  ? "Rejected — policy suspended"
-                  : statusReason === "TER"
-                    ? "Rejected — policy terminated"
-                    : "Eligible",
-            });
-          })
-          .catch((error: unknown) => {
-            if (!active) return;
-            setResult({
-              key,
-              message: error instanceof Error ? `Coverage check failed: ${error.message}` : "Coverage check failed.",
-            });
-          });
-      });
-    }, 250);
-    return () => {
-      active = false;
-      window.clearTimeout(timeout);
-    };
-  }, [employeeId, employee, key, policy]);
-
-  let message = "Select an insurance policy";
-  if (policy?.status === "SUSP") message = "Rejected — policy suspended";
-  else if (policy?.status === "TERM") message = "Rejected — policy terminated";
-  else if (policy?.type === "REV" && policy.status === "VALI") message = "Eligible";
-  else if (policy?.type === "FIX" && policy.status === "VALI" && !employee) {
-    message = "Enter the victim's national ID to check fixed-rate coverage";
-  } else if (policy?.type === "FIX" && policy.status === "VALI") {
-    message = result?.key === key ? result.message : "Checking fixed-rate coverage...";
-  }
-  return <ReadOnlyField label="Policy Coverage" value={message} />;
+function toDateTimeInputValue(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) throw new RangeError("Cannot initialize an invalid reporting date.");
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 16);
 }
 
 function formatReference(reference: number) {

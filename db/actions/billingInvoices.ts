@@ -50,6 +50,7 @@ export async function listAvailableBillingInvoices(cashingId?: number) {
       id: billingInvoices.id,
       medicalRecordId: billingInvoices.medicalRecordId,
       medicalRecordReference: medicalRecords.reference,
+      medicalRecordType: medicalRecords.accidentType,
       reference: billingInvoices.reference,
       issueDate: billingInvoices.issueDate,
       totalAmount: billingInvoices.totalAmount,

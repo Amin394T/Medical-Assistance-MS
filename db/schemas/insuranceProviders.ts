@@ -1,4 +1,4 @@
-import { sqliteTable, integer, real, text } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 
 export const insuranceProviders = sqliteTable("insurance_providers", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -6,7 +6,6 @@ export const insuranceProviders = sqliteTable("insurance_providers", {
   corporateId: text("corporate_id"),
   phone: text("phone"),
   email: text("email"),
-  balance: real("balance"),
 });
 
 export type InsuranceProvider = typeof insuranceProviders.$inferSelect;

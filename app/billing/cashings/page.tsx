@@ -37,7 +37,7 @@ export default async function BillingCashingsPage() {
               { value: "CHQ", label: "Check" }, { value: "VRM", label: "Transfer" }, { value: "CSH", label: "Cash" },
             ] },
             { key: "paymentReference", label: "Payment Reference", readOnly: true },
-            { key: "cashed", label: "Cashed", readOnly: true },
+            { key: "cashed", label: "Cashed", editor: "checkbox", readOnly: true },
             { key: "cashingDate", label: "Cashing Date", format: "date", readOnly: true },
           ]}
           readOnly

@@ -14,6 +14,9 @@ export default async function ServiceTypesPage() {
 				<PageHeader section="Services" title="Medical Services" icon={<Activity className="h-6 w-6" />} />
 				<ReferencialDataGrid title="Medical Services" rows={serviceTypes} columns={[
 					{ key: "label", label: "Label", required: true },
+					{ key: "paymentAmount", label: "Payment Amount", editor: "number", required: true },
+					{ key: "billingAmount", label: "Billing Amount", editor: "number", required: true },
+					{ key: "taxRate", label: "Tax Rate", editor: "number", required: true },
 					{ key: "targetProfile", label: "Target Profile", editor: "combo-box", options: profiles.filter((profile): profile is string => profile !== null).map((profile) => ({ value: profile, label: profile })), required: true },
 				]} onCreate={createServiceType} onUpdate={updateServiceType} onDelete={deleteServiceType} />
 			</div>

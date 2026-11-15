@@ -87,7 +87,7 @@ export function MedicalRecordEditForm({ record, jobs }: MedicalRecordEditFormPro
           <SelectField name="accidentPlace" label="Accident Place" defaultValue={record.accidentPlace} required options={[
             ["WS", "Workshop"], ["RT", "Route"], ["OF", "Office"], ["CT", "Construction"],
           ]} />
-          <SelectField name="accidentEvolution" label="Evolution" defaultValue={record.accidentEvolution} required options={[
+          <SelectField name="accidentEvolution" label="Case Evolution" defaultValue={record.accidentEvolution} required options={[
             ["INIT", "Initial"], ["RELP", "Relapse"], ["DEAT", "Death"], ["COMP", "Complement"],
           ]} />
         </div>

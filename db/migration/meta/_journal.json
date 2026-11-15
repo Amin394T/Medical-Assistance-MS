@@ -22,6 +22,13 @@
       "when": 1794699437784,
       "tag": "0002_quiet_arclight",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794745762184,
+      "tag": "0003_high_viper",
+      "breakpoints": true
     }
   ]
 }

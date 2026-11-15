@@ -26,6 +26,7 @@ export type EntityColumn = {
   required?: boolean;
   nullable?: boolean;
   readOnly?: boolean;
+  badgeClasses?: Record<string, string>;
   dialogTitle?: string;
   dialogValues?: EntityValue[];
 };
@@ -88,7 +89,17 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
       id: column.key,
       header: column.label,
       sortFn: "entity",
-      cell: ({ getValue, row }) => formatValue(getValue(), { ...column, options: resolveOptions(column, row.original) }),
+      cell: ({ getValue, row }) => {
+        const value = getValue();
+        if (column.editor === "checkbox" && column.readOnly) {
+          return <input type="checkbox" checked={value === true} disabled aria-label={column.label} className="h-4 w-4 accent-teal-700 disabled:opacity-100" />;
+        }
+        const formatted = formatValue(value, { ...column, options: resolveOptions(column, row.original) });
+        const badgeClass = value === null ? undefined : column.badgeClasses?.[String(value)];
+        return badgeClass
+          ? <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${badgeClass}`}>{formatted}</span>
+          : formatted;
+      },
     }))),
     [columns],
   );
@@ -280,7 +291,7 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
                       ? formatValue(original[column.key], { ...column, options: resolveOptions(column, original) })
                       : <GridEditor column={{ ...column, options: resolveOptions(column, draft) }} value={draft[column.key]} disabled={markedForDeletion || saving[key]} onChange={(value) => setDrafts((current) => ({ ...current, [key]: updateDraft(current[key], column, value, columns, false) }))} />
                       : canOpenDialog
-                        ? <button type="button" onClick={() => void openDialog(original, column)} className="font-medium text-teal-700 underline decoration-teal-300 underline-offset-2 hover:text-teal-900">{formatValue(original[column.key], column)}</button>
+                        ? <button type="button" onClick={() => void openDialog(original, column)} className="cursor-pointer font-medium text-teal-700 hover:text-teal-900">{formatValue(original[column.key], column)}</button>
                         : <table.FlexRender cell={cell} />}
                   </td>;
                 })}

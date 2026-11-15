@@ -1,0 +1,1 @@
+ALTER TABLE `insurance_providers` DROP COLUMN `balance`;
