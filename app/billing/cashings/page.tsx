@@ -2,7 +2,7 @@ import { FileText } from "lucide-react";
 
 import { PageHeader } from "@/app/_components/page-header";
 import { ReferencialDataGrid } from "@/app/_components/referential-data-grid";
-import { getBillingListQuery } from "@/app/_lib/billing-list-query";
+import { getGridListQuery } from "@/app/_lib/grid-list-query";
 import { listBillingCashings } from "@/db/actions/billingCashings";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function BillingCashingsPage({ searchParams }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const query = await getBillingListQuery(searchParams, "requestDate");
+  const query = await getGridListQuery(searchParams, "requestDate");
   const list = await listBillingCashings(query);
 
   return (

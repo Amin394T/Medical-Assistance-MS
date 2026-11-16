@@ -1,7 +1,3 @@
-export type BillingListOptions = {
-  page?: number;
-  pageSize?: number;
-  search?: string;
-  sort?: string;
-  sortDesc?: boolean;
-};
+import type { GridListOptions } from "./gridListTypes";
+
+export type BillingListOptions = GridListOptions;

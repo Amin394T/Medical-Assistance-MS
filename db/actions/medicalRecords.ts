@@ -4,12 +4,11 @@ import { and, asc, count, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm
 import { alias } from "drizzle-orm/sqlite-core";
 
 import { db } from "../index";
+import { getGridPage } from "./gridList";
 import { insurancePolicies, insurancePolicyEmployees, insuranceProviders, medicalRecords } from "../schemas";
 import type { NewMedicalRecord, SetMedicalRecord } from "../schemas";
 import type { MedicalRecordListOptions, MedicalRecordSortKey } from "./medicalRecordListTypes";
 import { normalizeEmployeeName } from "./policyEmployeeNames";
-
-const DEFAULT_PAGE_SIZE = 25;
 
 export async function listMedicalRecords(options: MedicalRecordListOptions = {}) {
   const insuranceCompany = alias(insuranceProviders, "insuranceCompany");
@@ -48,14 +47,7 @@ export async function listMedicalRecords(options: MedicalRecordListOptions = {})
     .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceCompanyId, insuranceCompany.id))
     .where(condition);
   const totalCount = countRow?.total ?? 0;
-  const pageSize = options.pageSize && Number.isSafeInteger(options.pageSize) && options.pageSize > 0
-    ? Math.min(options.pageSize, 100)
-    : DEFAULT_PAGE_SIZE;
-  const requestedPage = options.page && Number.isSafeInteger(options.page) && options.page > 0
-    ? options.page
-    : 1;
-  const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
-  const page = Math.min(requestedPage, pageCount);
+  const { page, pageSize, offset } = getGridPage(totalCount, options);
   const sort = isMedicalRecordSortKey(options.sort) ? options.sort : "accidentDate";
   const sortColumn = getMedicalRecordSortColumn(sort, insuranceCompany);
   const orderBy = options.sortDesc === false ? asc(sortColumn) : desc(sortColumn);
@@ -82,7 +74,7 @@ export async function listMedicalRecords(options: MedicalRecordListOptions = {})
     .where(condition)
     .orderBy(orderBy, asc(medicalRecords.id))
     .limit(pageSize)
-    .offset((page - 1) * pageSize);
+    .offset(offset);
 
   return {
     records: rows.map((row) => ({

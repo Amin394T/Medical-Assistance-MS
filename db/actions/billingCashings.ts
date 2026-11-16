@@ -4,6 +4,7 @@ import { and, asc, count, desc, eq, inArray, notInArray, or, sql } from "drizzle
 import type { SQL, SQLWrapper } from "drizzle-orm";
 
 import { db } from "../index";
+import { getGridPage } from "./gridList";
 import type { BillingListOptions } from "./billingListTypes";
 import {
   billingCashings,
@@ -36,8 +37,6 @@ const CASHING_SORT_KEYS = [
 ] as const;
 
 const DEFAULT_CASHING_SORT = "requestDate";
-const DEFAULT_BILLING_PAGE_SIZE = 25;
-
 export async function listBillingCashings(options: BillingListOptions = {}) {
   const search = options.search?.trim() ?? "";
   const paymentMode = sql`case ${billingCashings.paymentMode}
@@ -69,14 +68,7 @@ export async function listBillingCashings(options: BillingListOptions = {}) {
     .innerJoin(insuranceProviders, eq(billingCashings.insuranceProviderId, insuranceProviders.id))
     .where(condition);
   const totalCount = countRow?.total ?? 0;
-  const pageSize = options.pageSize && Number.isSafeInteger(options.pageSize) && options.pageSize > 0
-    ? Math.min(options.pageSize, 100)
-    : DEFAULT_BILLING_PAGE_SIZE;
-  const requestedPage = options.page && Number.isSafeInteger(options.page) && options.page > 0
-    ? options.page
-    : 1;
-  const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
-  const page = Math.min(requestedPage, pageCount);
+  const { page, pageSize, offset } = getGridPage(totalCount, options);
   const sort = isCashingSortKey(options.sort) ? options.sort : DEFAULT_CASHING_SORT;
   const sortDesc = options.sortDesc !== false;
   const sortColumn = getCashingSortColumn(sort, invoiceCount, paymentMode);
@@ -102,7 +94,7 @@ export async function listBillingCashings(options: BillingListOptions = {}) {
     .where(condition)
     .orderBy(orderBy, asc(billingCashings.id))
     .limit(pageSize)
-    .offset((page - 1) * pageSize);
+    .offset(offset);
   return { rows, totalCount, page, pageSize, search, sort, sortDesc };
 }
 

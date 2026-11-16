@@ -1,14 +1,18 @@
-import { listInsurancePolicies, listInsurancePolicyEmployees } from "@/db/actions/insurancePolicies";
+import { listInsurancePoliciesPage, listInsurancePolicyEmployees } from "@/db/actions/insurancePolicies";
 import { listInsuranceProviders } from "@/db/actions/insuranceProviders";
 import { ReferencialDataGrid } from "@/app/_components/referential-data-grid";
 import { PageHeader } from "@/app/_components/page-header";
+import { getGridListQuery } from "@/app/_lib/grid-list-query";
 import { ShieldHalf } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default async function InsurancePoliciesPage() {
-	const [policies, providers] = await Promise.all([listInsurancePolicies(), listInsuranceProviders()]);
-	const rows = policies.map(({ id, policyNumber, clientCompany, clientActivity, clientAddress, clientCity, type, effectiveDate, status, insuranceCompanyId, creationDate, lastUpdated }) => ({
+export default async function InsurancePoliciesPage({ searchParams }: {
+	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+	const query = await getGridListQuery(searchParams, "creationDate");
+	const [list, providers] = await Promise.all([listInsurancePoliciesPage(query), listInsuranceProviders()]);
+	const rows = list.rows.map(({ id, policyNumber, clientCompany, clientActivity, clientAddress, clientCity, type, effectiveDate, status, insuranceCompanyId, creationDate, lastUpdated }) => ({
 		id,
 		policyNumber,
 		clientCompany,
@@ -29,6 +33,7 @@ export default async function InsurancePoliciesPage() {
 			<div className="mx-auto max-w-375 space-y-8">
 				<PageHeader section="Insurance" title="Client Policies" icon={<ShieldHalf className="h-6 w-6" />} />
 				<ReferencialDataGrid
+					key={JSON.stringify([list.search, list.sort, list.sortDesc])}
 					title="Client Policies"
 					rows={rows}
 					loadDialogItems={listInsurancePolicyEmployees}
@@ -56,6 +61,16 @@ export default async function InsurancePoliciesPage() {
 						{ key: "lastUpdated", label: "Last Updated", format: "datetime", readOnly: true },
 					]}
 					readOnly
+					initialSearch={list.search}
+					serverPagination={{
+						page: list.page,
+						pageSize: list.pageSize,
+						totalCount: list.totalCount,
+						sort: list.sort,
+						sortDesc: list.sortDesc,
+						defaultSort: "creationDate",
+						defaultSortDesc: true,
+					}}
 				/>
 			</div>
 		</section>

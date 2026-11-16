@@ -1,3 +1,5 @@
+import type { GridListOptions } from "./gridListTypes";
+
 export type MedicalRecordFilters = {
   policyNumber: string;
   clientCompany: string;
@@ -18,10 +20,7 @@ export type MedicalRecordSortKey =
   | "status"
   | "manager";
 
-export type MedicalRecordListOptions = {
-  page?: number;
-  pageSize?: number;
+export type MedicalRecordListOptions = Omit<GridListOptions, "search"> & {
   filters?: MedicalRecordFilters;
   sort?: MedicalRecordSortKey;
-  sortDesc?: boolean;
 };

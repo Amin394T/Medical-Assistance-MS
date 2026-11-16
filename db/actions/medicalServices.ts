@@ -4,6 +4,7 @@ import { and, asc, count, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { SQL, SQLWrapper } from "drizzle-orm";
 
 import { db } from "../index";
+import { getGridPage } from "./gridList";
 import { touchMedicalRecord } from "./medicalRecordAudit";
 import {
   billingCashings,
@@ -51,8 +52,6 @@ const SETTLEMENT_SORT_KEYS = [
 ] as const;
 
 const DEFAULT_SETTLEMENT_SORT = "date";
-const DEFAULT_BILLING_PAGE_SIZE = 25;
-
 export async function listServicesForSettlement(options: BillingListOptions = {}) {
   const search = options.search?.trim() ?? "";
   const recordReference = sql`upper(${medicalRecords.accidentType} || '-' || substr(printf('%08d', ${medicalRecords.reference}), 1, 6) || '-' || substr(printf('%08d', ${medicalRecords.reference}), 7, 2))`;
@@ -97,14 +96,7 @@ export async function listServicesForSettlement(options: BillingListOptions = {}
     .leftJoin(billingInvoices, eq(medicalServices.invoiceId, billingInvoices.id))
     .where(condition);
   const totalCount = countRow?.total ?? 0;
-  const pageSize = options.pageSize && Number.isSafeInteger(options.pageSize) && options.pageSize > 0
-    ? Math.min(options.pageSize, 100)
-    : DEFAULT_BILLING_PAGE_SIZE;
-  const requestedPage = options.page && Number.isSafeInteger(options.page) && options.page > 0
-    ? options.page
-    : 1;
-  const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
-  const page = Math.min(requestedPage, pageCount);
+  const { page, pageSize, offset } = getGridPage(totalCount, options);
   const sort = isSettlementSortKey(options.sort) ? options.sort : DEFAULT_SETTLEMENT_SORT;
   const sortDesc = options.sortDesc !== false;
   const sortColumn = getSettlementSortColumn(sort, recordReference, settlementStatus, paymentMode);
@@ -140,7 +132,7 @@ export async function listServicesForSettlement(options: BillingListOptions = {}
     .where(condition)
     .orderBy(orderBy, asc(medicalServices.id))
     .limit(pageSize)
-    .offset((page - 1) * pageSize);
+    .offset(offset);
   return { rows, totalCount, page, pageSize, search, sort, sortDesc };
 }
 

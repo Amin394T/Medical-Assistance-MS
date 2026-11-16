@@ -8,14 +8,14 @@ import { ReferencialDataGrid } from "@/app/_components/referential-data-grid";
 import { PageHeader } from "@/app/_components/page-header";
 import { formatMedicalRecordReference } from "@/app/_lib/medical-record-reference";
 import { settlementStatusBadgeClasses } from "@/app/_lib/status-colors";
-import { getBillingListQuery } from "@/app/_lib/billing-list-query";
+import { getGridListQuery } from "@/app/_lib/grid-list-query";
 
 export const dynamic = "force-dynamic";
 
 export default async function ServiceSettlementPage({ searchParams }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const query = await getBillingListQuery(searchParams, "date");
+  const query = await getGridListQuery(searchParams, "date");
   const [list, providers, serviceTypes] = await Promise.all([
     listServicesForSettlement(query),
     listServiceProviders(),

@@ -1,5 +1,6 @@
 import { listMedicalRecords } from "@/db/actions/medicalRecords";
 import type { MedicalRecordFilters, MedicalRecordSortKey } from "@/db/actions/medicalRecordListTypes";
+import { getGridListQuery } from "@/app/_lib/grid-list-query";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -16,6 +17,7 @@ const SORT_KEYS: MedicalRecordSortKey[] = [
 
 export async function loadMedicalRecordList(searchParams: Promise<SearchParams>) {
   const params = await searchParams;
+  const query = await getGridListQuery(searchParams, "accidentDate");
   const filters: MedicalRecordFilters = {
     policyNumber: getParam(params.policyNumber),
     clientCompany: getParam(params.clientCompany),
@@ -25,13 +27,9 @@ export async function loadMedicalRecordList(searchParams: Promise<SearchParams>)
     accidentFrom: getParam(params.accidentFrom),
     accidentTo: getParam(params.accidentTo),
   };
-  const requestedSort = getParam(params.sort);
-  const sort = isMedicalRecordSortKey(requestedSort) ? requestedSort : "accidentDate";
-  const sortDesc = getParam(params.direction) !== "asc";
-  const parsedPage = Number(getParam(params.page));
-  const page = Number.isSafeInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
-  const result = await listMedicalRecords({ page, filters, sort, sortDesc });
-  return { ...result, filters, sort, sortDesc };
+  const sort = isMedicalRecordSortKey(query.sort) ? query.sort : "accidentDate";
+  const result = await listMedicalRecords({ page: query.page, filters, sort, sortDesc: query.sortDesc });
+  return { ...result, filters, sort, sortDesc: query.sortDesc };
 }
 
 function getParam(value: string | string[] | undefined) {
