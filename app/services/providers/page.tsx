@@ -21,16 +21,16 @@ export default async function ServiceProvidersPage({ searchParams }: {
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
 			<div className="mx-auto max-w-375">
-				<PageHeader section="Services" title="Healthcare Providers" icon={<Ambulance />} />
-				<ReferencialDataGrid key={JSON.stringify([list.search, list.sort, list.sortDesc])} title="Healthcare Providers" rows={list.rows} columns={[
-					{ key: "label", label: "Label", required: true },
-					{ key: "corporateName", label: "Corporate Name", nullable: true },
-					{ key: "profile", label: "Profile", format: "label", editor: "select", required: true, options: profiles.map((profile) => ({ value: profile, label: formatProfile(profile) })) },
-					{ key: "contactName", label: "Contact Name", nullable: true },
-					{ key: "phone", label: "Phone", required: true },
-					{ key: "email", label: "Email", nullable: true },
-					{ key: "bank", label: "Bank", editor: "combo-box", nullable: true, options: banks.map((bank) => ({ value: bank, label: bank })) },
-					{ key: "bankAccount", label: "Bank Account", nullable: true },
+				<PageHeader section="Services" title="Prestataires de Soins" icon={<Ambulance />} />
+				<ReferencialDataGrid key={JSON.stringify([list.search, list.sort, list.sortDesc])} title="Prestataires de Soins" rows={list.rows} columns={[
+					{ key: "label", label: "Nom", required: true },
+					{ key: "corporateName", label: "Raison Sociale", nullable: true },
+					{ key: "profile", label: "Profil", format: "label", editor: "select", required: true, options: profiles.map((profile) => ({ value: profile, label: formatProfile(profile) })) },
+					{ key: "contactName", label: "Nom du Contact", nullable: true },
+					{ key: "phone", label: "Téléphone", required: true },
+					{ key: "email", label: "E-mail", nullable: true },
+					{ key: "bank", label: "Banque", editor: "combo-box", nullable: true, options: banks.map((bank) => ({ value: bank, label: bank })) },
+					{ key: "bankAccount", label: "Compte Bancaire", nullable: true },
 				]} onCreate={createServiceProvider} onUpdate={updateServiceProvider} onDelete={deleteServiceProvider} initialSearch={list.search} serverPagination={{
 					page: list.page,
 					pageSize: list.pageSize,

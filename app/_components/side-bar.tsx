@@ -7,39 +7,39 @@ const navigation = [
   {
     category: "Assistance",
     items: [
-      { label: "Emergency Call", href: "/assistance/call", icon: Headset },
-      { label: "Medical Records", href: "/assistance/records", icon: ClipboardList },
+      { label: "Appel d’Urgence", href: "/assistance/call", icon: Headset },
+      { label: "Dossiers Médicaux", href: "/assistance/records", icon: ClipboardList },
     ],
   },
   {
-    category: "Insurance",
+    category: "Assurance",
     items: [
-      { label: "Client Policies", href: "/insurance/policies", icon: ShieldHalf },
-      { label: "Insurance Providers", href: "/insurance/providers", icon: Building2 },
-      { label: "Policy Update", href: "/insurance/delta", icon: Triangle },
+      { label: "Polices des Clients", href: "/insurance/policies", icon: ShieldHalf },
+      { label: "Compagnies d’Assurance", href: "/insurance/providers", icon: Building2 },
+      { label: "Charger les Fichiers Delta", href: "/insurance/delta", icon: Triangle },
     ],
   },
   {
     category: "Services",
     items: [
-      { label: "Healthcare Providers", href: "/services/providers", icon: Ambulance },
-      { label: "Medical Services", href: "/services/definition", icon: Activity },
+      { label: "Prestataires de Soins", href: "/services/providers", icon: Ambulance },
+      { label: "Services Médicaux", href: "/services/definition", icon: Activity },
     ],
   },
   {
-    category: "Billing",
+    category: "Facturation",
     items: [
-      { label: "Service Settlement", href: "/billing/settlements", icon: HandCoins },
-      { label: "Invoice Cashing", href: "/billing/cashings", icon: FileText },
+      { label: "Règlement des Prestations", href: "/billing/settlements", icon: HandCoins },
+      { label: "Encaissement des Factures", href: "/billing/cashings", icon: FileText },
     ],
   },
 ];
 
 export function Sidebar() {
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-slate-200 shadow-md bg-white">
+    <aside className="flex h-screen w-67.5 shrink-0 flex-col border-r border-slate-200 shadow-md bg-white">
       <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5">
-        <Image src="/logo-icon.png" alt="Medical Assistance" loading="eager" width={30} height={30} />
+        <Image src="/logo-icon.png" alt="Assistance Médicale" loading="eager" width={30} height={30} />
         <div className="text-lg font-semibold text-teal-800">Medical Assistance</div>
       </div>
 
@@ -74,9 +74,9 @@ export function Sidebar() {
             <User className="text-gray-400" />
           </div>
 
-          <div className="min-w-0 flex-1 truncate text-md font-medium text-gray-700">User Name</div>
+          <div className="min-w-0 flex-1 truncate text-md font-medium text-gray-700">Nom d’Utilisateur</div>
 
-          <button type="button" title="Logout" className="rounded-md p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700">
+          <button type="button" title="Déconnexion" className="rounded-md p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700">
             <LogOut className="h-4 w-4" />
           </button>
         </div>

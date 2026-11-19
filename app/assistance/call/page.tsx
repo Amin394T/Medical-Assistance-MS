@@ -13,7 +13,7 @@ export default async function CallPage() {
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
 			<div className="mx-auto max-w-6xl">
-				<PageHeader section="Assistance" title="Emergency Call" icon={<Headset className="h-6 w-6" />} />
+				<PageHeader section="Assistance" title="Appel d’Urgence" icon={<Headset className="h-6 w-6" />} />
 				<MedicalRecordCallForm
 			policies={policies.map(({ id, policyNumber, clientCompany, insuranceCompany }) => ({
 				id,

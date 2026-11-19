@@ -33,10 +33,10 @@ type CashingValues = {
 };
 
 const paymentModes = [
-  { value: "", label: "Select a payment mode" },
-  { value: "CHQ", label: "Check" },
-  { value: "VRM", label: "Transfer" },
-  { value: "CSH", label: "Cash" },
+  { value: "", label: "Sélectionnez un Mode de Paiement" },
+  { value: "CHQ", label: "Chèque" },
+  { value: "VRM", label: "Virement" },
+  { value: "CSH", label: "Espèces" },
 ] as const;
 
 export function BillingCashingForm({
@@ -112,7 +112,7 @@ export function BillingCashingForm({
       {error ? <p role="alert" className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p> : null}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         <label className="space-y-1.5 text-sm font-medium text-slate-700">
-          <span>Insurance Provider</span>
+          <span>Compagnie d’Assurance</span>
           <select
             required
             value={insuranceProviderId}
@@ -123,52 +123,51 @@ export function BillingCashingForm({
             }}
             className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 disabled:bg-slate-50"
           >
-            <option value="">Select an insurance provider</option>
+            <option value="">Sélectionnez une Compagnie d’Assurance</option>
             {providers.map((provider) => <option key={provider.id} value={provider.id}>{provider.label}</option>)}
           </select>
         </label>
         <label className="space-y-1.5 text-sm font-medium text-slate-700">
-          <span>Bank</span>
+          <span>Banque</span>
           <input list="billing-cashing-banks" value={bank} onChange={(event) => setBank(event.target.value)} className="h-10 w-full rounded-lg border border-slate-200 px-3 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100" />
           <datalist id="billing-cashing-banks">{bankOptions.map((option) => <option key={option} value={option} />)}</datalist>
         </label>
         <label className="space-y-1.5 text-sm font-medium text-slate-700">
-          <span>Payment Mode</span>
+          <span>Mode de Paiement</span>
           <select value={paymentMode} onChange={(event) => setPaymentMode(event.target.value as typeof paymentMode)} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100">
             {paymentModes.map((mode) => <option key={mode.value} value={mode.value}>{mode.label}</option>)}
           </select>
         </label>
         <label className="space-y-1.5 text-sm font-medium text-slate-700">
-          <span>Payment Reference</span>
+          <span>Référence de Paiement</span>
           <input value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} className="h-10 w-full rounded-lg border border-slate-200 px-3 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100" />
         </label>
         <label className="space-y-1.5 text-sm font-medium text-slate-700">
-          <span>Cashing Date</span>
+          <span>Date d’Encaissement</span>
           <input type="date" value={cashingDate} disabled={!cashed} onChange={(event) => setCashingDate(event.target.value)} className="h-10 w-full rounded-lg border border-slate-200 px-3 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" />
         </label>
         <label className="flex items-center gap-2 self-end pb-2 text-sm font-medium text-slate-700">
           <input type="checkbox" checked={cashed} disabled={Boolean(cashing?.cashed)} onChange={(event) => setCashed(event.target.checked)} className="h-4 w-4 accent-teal-700 disabled:opacity-50" />
-          Cashed
+          Encaissée
         </label>
       </div>
 
       <section>
         <div className="mb-3 flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Invoices</h2>
-            <p className="text-sm text-slate-500">{isEditing ? "Invoices linked to this cashing are read-only." : "Select non-cashed invoices for this insurance provider."}</p>
+            <h2 className="text-lg font-semibold text-slate-900">Factures</h2>
           </div>
-          <p className="whitespace-nowrap text-sm font-semibold text-slate-700">Total: {totalAmount.toFixed(2)}</p>
+          <p className="whitespace-nowrap text-sm font-semibold text-slate-700">Total : {totalAmount.toFixed(2)}</p>
         </div>
         <div className="overflow-x-auto rounded-lg border border-slate-200">
           <table className="w-full min-w-160 text-left text-sm">
             <thead className="bg-slate-50 border-b border-slate-200 text-xs tracking-wide text-slate-500">
               <tr>
-                {!isEditing ? <th className="w-12 px-4 py-3"><span className="sr-only">Select</span></th> : null}
-                <th className="px-4 py-3">Invoice</th>
-                <th className="px-4 py-3">Record</th>
-                <th className="px-4 py-3">Issue Date</th>
-                <th className="px-4 py-3 text-right">Amount</th>
+                {!isEditing ? <th className="w-12 px-4 py-3"><span className="sr-only">Sélectionner</span></th> : null}
+                <th className="px-4 py-3">Facture</th>
+                <th className="px-4 py-3">Dossier</th>
+                <th className="px-4 py-3">Date d’Émission</th>
+                <th className="px-4 py-3 text-right">Montant</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -177,7 +176,7 @@ export function BillingCashingForm({
                   {!isEditing ? <td className="px-4 py-3">
                     <input
                       type="checkbox"
-                      aria-label={`Select invoice ${invoice.reference}`}
+                      aria-label={`Sélectionner la Facture ${invoice.reference}`}
                       checked={invoiceIds.includes(invoice.id)}
                       onChange={(event) => toggleInvoice(invoice.id, event.target.checked)}
                       className="h-4 w-4 accent-teal-700"
@@ -197,9 +196,9 @@ export function BillingCashingForm({
       </section>
 
       <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
-        <Link href="/billing/cashings" className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</Link>
+        <Link href="/billing/cashings" className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Annuler</Link>
         <button type="submit" disabled={pending || !invoiceIds.length} className="rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50">
-          {pending ? "Saving..." : isEditing ? "Save Changes" : "Create Cashing"}
+          {pending ? "Enregistrement..." : isEditing ? "Enregistrer les Modifications" : "Créer l’Encaissement"}
         </button>
       </div>
     </form>

@@ -14,7 +14,7 @@ export default async function Records({ searchParams }: {
   return (
     <section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
       <div className="mx-auto max-w-375">
-        <PageHeader section="Assistance" title="Medical Records" icon={<ClipboardList className="h-6 w-6" />} />
+        <PageHeader section="Assistance" title="Dossiers Médicaux" icon={<ClipboardList className="h-6 w-6" />} />
         <MedicalRecordsTable key={JSON.stringify([list.page, list.filters, list.sort, list.sortDesc])} {...list} />
       </div>
     </section>

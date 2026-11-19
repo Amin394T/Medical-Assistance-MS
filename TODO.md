@@ -9,6 +9,8 @@
 - document printing from tables
 - make error messages appear as popup notification
 - move-off of full row search
+- remove all accessibility stuff
+- remove invoice selection mesage
 
 
 ## NEEDS

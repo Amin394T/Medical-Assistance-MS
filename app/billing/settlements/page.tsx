@@ -34,10 +34,10 @@ export default async function ServiceSettlementPage({ searchParams }: {
   return (
     <section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
       <div className="mx-auto max-w-375">
-        <PageHeader section="Billing" title="Service Settlement" icon={<HandCoins className="h-6 w-6" />} />
+        <PageHeader section="Facturation" title="Règlement des Prestations" icon={<HandCoins className="h-6 w-6" />} />
         <ReferencialDataGrid
           key={JSON.stringify([list.search, list.sort, list.sortDesc])}
-          title="Service Settlement"
+          title="Règlement des Prestations"
           rows={list.rows.map((row) => ({
             id: row.id,
             record: formatMedicalRecordReference(row.accidentType, row.recordReference),
@@ -59,23 +59,23 @@ export default async function ServiceSettlementPage({ searchParams }: {
             invoiceReference: row.invoiceReference,
           }))}
           columns={[
-            { key: "record", label: "Medical Record", readOnly: true },
-            { key: "invoiceReference", label: "Invoice", readOnly: true },
-            { key: "serviceTypeId", label: "Service Type", editor: "select", required: true, options: serviceTypes.map(({ id, label }) => ({ value: id, label })), defaultFieldsByOption: defaultServiceAmounts },
-            { key: "serviceProviderId", label: "Service Provider", editor: "select", required: true, optionsBy: { dependencyKey: "serviceTypeId", values: providersByServiceType } },
+            { key: "record", label: "Dossier Médical", readOnly: true },
+            { key: "invoiceReference", label: "Facture", readOnly: true },
+            { key: "serviceTypeId", label: "Type de Prestation", editor: "select", required: true, options: serviceTypes.map(({ id, label }) => ({ value: id, label })), defaultFieldsByOption: defaultServiceAmounts },
+            { key: "serviceProviderId", label: "Prestataire de Soins", editor: "select", required: true, optionsBy: { dependencyKey: "serviceTypeId", values: providersByServiceType } },
             { key: "date", label: "Date", editor: "date", format: "date", nullable: true },
-            { key: "settlementStatus", label: "Settlement Status", readOnly: true, options: [
-              { value: "WAIT", label: "Waiting" }, { value: "BILL", label: "Billed" }, { value: "SETT", label: "Settled" },
+            { key: "settlementStatus", label: "Statut du Règlement", readOnly: true, options: [
+              { value: "WAIT", label: "En Attente" }, { value: "BILL", label: "Facturée" }, { value: "SETT", label: "Réglée" },
             ], badgeClasses: settlementStatusBadgeClasses },
-            { key: "settlingDate", label: "Settling Date", format: "date", readOnly: true },
-            { key: "paymentAmount", label: "Payment Amount", editor: "number", required: true },
-            { key: "billingAmount", label: "Billing Amount", editor: "number", required: true },
-            { key: "taxRate", label: "Tax Rate", editor: "number", required: true },
-            { key: "bank", label: "Bank", nullable: true },
-            { key: "paymentMode", label: "Payment Mode", editor: "select", nullable: true, options: [
-              { value: null, label: "None" }, { value: "CHQ", label: "Check" }, { value: "VRM", label: "Transfer" }, { value: "CSH", label: "Cash" },
+            { key: "settlingDate", label: "Date de Règlement", format: "date", readOnly: true },
+            { key: "paymentAmount", label: "Montant à Payer", editor: "number", required: true },
+            { key: "billingAmount", label: "Montant à Facturer", editor: "number", required: true },
+            { key: "taxRate", label: "Taux de Taxe", editor: "number", required: true },
+            { key: "bank", label: "Banque", nullable: true },
+            { key: "paymentMode", label: "Mode de Paiement", editor: "select", nullable: true, options: [
+              { value: null, label: "Aucun" }, { value: "CHQ", label: "Chèque" }, { value: "VRM", label: "Virement" }, { value: "CSH", label: "Espèces" },
             ] },
-            { key: "paymentReference", label: "Payment Reference", nullable: true },
+            { key: "paymentReference", label: "Référence de Paiement", nullable: true },
             { key: "observation", label: "Observation", nullable: true },
           ]}
           onCreate={createSettlementMedicalService}
@@ -96,7 +96,7 @@ export default async function ServiceSettlementPage({ searchParams }: {
           selection={{
             key: "settlementStatus",
             selectableValues: ["WAIT"],
-            actionLabel: "Create Invoice",
+            actionLabel: "Créer une Facture",
             onAction: createBillingInvoicesForServices,
           }}
         />

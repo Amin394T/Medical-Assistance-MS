@@ -74,65 +74,65 @@ export function MedicalRecordEditForm({ record, jobs, created }: MedicalRecordEd
       {created ? <div role="status" className="mb-6 flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"><span>Record {formatMedicalRecordReference(record.accidentType, record.reference)} was created successfully.</span></div> : null}
       {notice ? <Notice tone={notice.tone}>{notice.text}</Notice> : null}
 
-      <Section title="01 / Client Data">
+      <Section title="01 / Informations sur le Client">
         <div className="grid gap-5 md:grid-cols-3">
-          <ReadOnly label="Insurance Policy" value={record.policyNumber} />
-          <ReadOnly label="Client Company" value={record.clientCompany} />
-          <ReadOnly label="Insurance Provider" value={record.insuranceCompany} />
-          <DateTimeField name="reportingDate" label="Reporting Date" value={record.reportingDate} required />
-          <TextField name="reporterName" label="Reporter Name" defaultValue={record.reporterName ?? ""} />
-          <TextField name="reporterPhone" label="Reporter Phone" defaultValue={record.reporterPhone} required type="tel" />
+          <ReadOnly label="Police d’Assurance" value={record.policyNumber} />
+          <ReadOnly label="Entreprise Cliente" value={record.clientCompany} />
+          <ReadOnly label="Compagnie d’Assurance" value={record.insuranceCompany} />
+          <DateTimeField name="reportingDate" label="Date de Déclaration" value={record.reportingDate} required />
+          <TextField name="reporterName" label="Nom du Déclarant" defaultValue={record.reporterName ?? ""} />
+          <TextField name="reporterPhone" label="Téléphone du Déclarant" defaultValue={record.reporterPhone} required type="tel" />
         </div>
       </Section>
 
-      <Section title="02 / Accident Data">
+      <Section title="02 / Informations sur l’Accident">
         <div className="grid gap-5 md:grid-cols-3">
-          <DateTimeField name="accidentDate" label="Accident Date" value={record.accidentDate} required />
-          <SelectField name="accidentType" label="Accident Type" defaultValue={record.accidentType} required options={[
-            ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VF", "Policy verification"], ["SS", "Special service"], ["PR", "Occupational disease"],
+          <DateTimeField name="accidentDate" label="Date de l’Accident" value={record.accidentDate} required />
+          <SelectField name="accidentType" label="Type d’Accident" defaultValue={record.accidentType} required options={[
+            ["AT", "Accident du Travail"], ["MD", "Maladie et Douleur"], ["VF", "Vérification de la Police"], ["SS", "Prestation Spéciale"], ["PR", "Maladie Professionnelle"],
           ]} />
-          <SelectField name="accidentCause" label="Accident Cause" defaultValue={record.accidentCause ?? ""} options={[
-            ["", "Not specified"], ["FALL", "Falling or slipping"], ["EQIP", "Machine or equipment"], ["FATG", "Overexertion and fatigue"], ["HAZD", "Hazardous substance"], ["VIOL", "Workplace violence"], ["OBJC", "Moving objects"],
+          <SelectField name="accidentCause" label="Cause de l’Accident" defaultValue={record.accidentCause ?? ""} options={[
+            ["", "Non Précisée"], ["FALL", "Chute ou Glissade"], ["EQIP", "Machine ou Équipement"], ["FATG", "Surmenage et Fatigue"], ["HAZD", "Substance Dangereuse"], ["VIOL", "Violence au Travail"], ["OBJC", "Objets en Mouvement"],
           ]} />
-          <SelectField name="accidentPlace" label="Accident Place" defaultValue={record.accidentPlace} required options={[
-            ["WS", "Workshop"], ["RT", "Route"], ["OF", "Office"], ["CT", "Construction"],
+          <SelectField name="accidentPlace" label="Lieu de l’Accident" defaultValue={record.accidentPlace} required options={[
+            ["WS", "Atelier"], ["RT", "Route"], ["OF", "Bureau"], ["CT", "Chantier"],
           ]} />
-          <SelectField name="accidentEvolution" label="Case Evolution" defaultValue={record.accidentEvolution} required options={[
-            ["INIT", "Initial"], ["RELP", "Relapse"], ["DEAT", "Death"], ["COMP", "Complement"],
+          <SelectField name="accidentEvolution" label="Évolution du Cas" defaultValue={record.accidentEvolution} required options={[
+            ["INIT", "Initiale"], ["RELP", "Rechute"], ["DEAT", "Décès"], ["COMP", "Complément"],
           ]} />
         </div>
       </Section>
 
-      <Section title="03 / Victim Data">
+      <Section title="03 / Informations sur la Victime">
         <div className="grid gap-5 md:grid-cols-3">
-          <TextField name="victimFirstName" label="Victim First Name" defaultValue={record.victimFirstName} required />
-          <TextField name="victimLastName" label="Victim Last Name" defaultValue={record.victimLastName ?? ""} />
-          <TextField name="victimNationalId" label="Victim National ID" defaultValue={record.victimNationalId} required />
-          <TextField name="victimPhone" label="Victim Phone" defaultValue={record.victimPhone ?? ""} type="tel" />
-          <TextField name="victimJob" label="Victim Job" defaultValue={record.victimJob ?? ""} options={jobs} />
+          <TextField name="victimFirstName" label="Prénom de la Victime" defaultValue={record.victimFirstName} required />
+          <TextField name="victimLastName" label="Nom de la Victime" defaultValue={record.victimLastName ?? ""} />
+          <TextField name="victimNationalId" label="Numéro d’Identité de la Victime" defaultValue={record.victimNationalId} required />
+          <TextField name="victimPhone" label="Téléphone de la Victime" defaultValue={record.victimPhone ?? ""} type="tel" />
+          <TextField name="victimJob" label="Profession de la Victime" defaultValue={record.victimJob ?? ""} options={jobs} />
         </div>
       </Section>
 
-      <Section title="04 / Status Data">
+      <Section title="04 / Statut">
         <div className="grid gap-5 md:grid-cols-3">
-          <SelectField name="status" label="Record Status" defaultValue={record.status} required options={[
-            ["PRG", "In progress"], ["DSP", "Disputed"], ["RJC", "Rejected"], ["CLS", "Closed"], ["ABN", "Abandoned"],
+          <SelectField name="status" label="Statut du Dossier" defaultValue={record.status} required options={[
+            ["PRG", "En Cours"], ["DSP", "Contesté"], ["RJC", "Rejeté"], ["CLS", "Clôturé"], ["ABN", "Abandonné"],
           ]} />
-          <ReadOnly label="Status Reason" value={getStatusReasonLabel(record.statusReason)} />
-          <DateTimeField name="delegationDate" label="Delegation Date" value={record.delegationDate} />
-          <TextField name="regulatoryDoctor" label="Regulatory Doctor" defaultValue={record.regulatoryDoctor ?? ""} />
-          <ReadOnly label="Manager" value={record.manager} />
+          <ReadOnly label="Motif du Statut" value={getStatusReasonLabel(record.statusReason)} />
+          <DateTimeField name="delegationDate" label="Date de Délégation" value={record.delegationDate} />
+          <TextField name="regulatoryDoctor" label="Médecin-Conseil" defaultValue={record.regulatoryDoctor ?? ""} />
+          <ReadOnly label="Gestionnaire" value={record.manager} />
           <TextField name="observation" label="Observation" defaultValue={record.observation ?? ""} />
         </div>
       </Section>
 
       <div className="mb-12 flex items-end justify-between border-t border-slate-200 pt-6">
         <div className="space-y-1 text-xs text-slate-500">
-          <p>Last updated: {formatDateTime(record.lastUpdated)}</p>
-          <p>Last updater: {record.lastUpdater}</p>
+          <p>Dernière Modification : {formatDateTime(record.lastUpdated)}</p>
+          <p>Dernier Modificateur : {record.lastUpdater}</p>
         </div>
         <button type="submit" disabled={pending} className="rounded-lg bg-teal-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300">
-          {pending ? "Saving..." : "Save Changes"}
+          {pending ? "Enregistrement..." : "Enregistrer les Modifications"}
         </button>
       </div>
     </form>

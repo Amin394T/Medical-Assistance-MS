@@ -15,13 +15,13 @@ export default async function ServiceTypesPage({ searchParams }: {
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
 			<div className="mx-auto max-w-375">
-				<PageHeader section="Services" title="Medical Services" icon={<Activity className="h-6 w-6" />} />
-				<ReferencialDataGrid key={JSON.stringify([list.search, list.sort, list.sortDesc])} title="Medical Services" rows={list.rows} columns={[
-					{ key: "label", label: "Label", required: true },
-					{ key: "paymentAmount", label: "Payment Amount", editor: "number", required: true },
-					{ key: "billingAmount", label: "Billing Amount", editor: "number", required: true },
-					{ key: "taxRate", label: "Tax Rate", editor: "number", required: true },
-					{ key: "targetProfile", label: "Target Profile", editor: "combo-box", options: profiles.filter((profile): profile is string => profile !== null).map((profile) => ({ value: profile, label: profile })), required: true },
+				<PageHeader section="Services" title="Services Médicaux" icon={<Activity className="h-6 w-6" />} />
+				<ReferencialDataGrid key={JSON.stringify([list.search, list.sort, list.sortDesc])} title="Services Médicaux" rows={list.rows} columns={[
+					{ key: "label", label: "Nom", required: true },
+					{ key: "paymentAmount", label: "Montant à Payer", editor: "number", required: true },
+					{ key: "billingAmount", label: "Montant à Facturer", editor: "number", required: true },
+					{ key: "taxRate", label: "Taux de Taxe", editor: "number", required: true },
+					{ key: "targetProfile", label: "Profil Cible", editor: "combo-box", options: profiles.filter((profile): profile is string => profile !== null).map((profile) => ({ value: profile, label: profile })), required: true },
 				]} onCreate={createServiceType} onUpdate={updateServiceType} onDelete={deleteServiceType} initialSearch={list.search} serverPagination={{
 					page: list.page,
 					pageSize: list.pageSize,

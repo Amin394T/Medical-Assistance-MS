@@ -31,34 +31,34 @@ export default async function InsurancePoliciesPage({ searchParams }: {
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
 			<div className="mx-auto max-w-375 space-y-8">
-				<PageHeader section="Insurance" title="Client Policies" icon={<ShieldHalf className="h-6 w-6" />} />
+				<PageHeader section="Assurance" title="Polices des Clients" icon={<ShieldHalf className="h-6 w-6" />} />
 				<ReferencialDataGrid
 					key={JSON.stringify([list.search, list.sort, list.sortDesc])}
-					title="Client Policies"
+					title="Polices des Clients"
 					rows={rows}
 					loadDialogItems={listInsurancePolicyEmployees}
 					columns={[
-						{ key: "policyNumber", label: "Policy Number", required: true, readOnly: true },
-						{ key: "clientCompany", label: "Client Company", required: true, readOnly: true },
-						{ key: "clientActivity", label: "Client Activity", readOnly: true },
-						{ key: "clientAddress", label: "Client Address", readOnly: true },
-						{ key: "clientCity", label: "Client City", readOnly: true },
-						{ key: "type", label: "Policy Type", readOnly: true, options: [
-							{ value: "REV", label: "Revisable" }, { value: "FIX", label: "Fixed-rate" },
-						], dialogTitle: "Covered Employees", dialogValues: ["FIX"] },
-						{ key: "effectiveDate", label: "Effective Date", format: "date", readOnly: true },
-						{ key: "status", label: "Status", readOnly: true, options: [
-							{ value: "VALI", label: "Valid" },
-							{ value: "SUSP", label: "Suspended" },
-							{ value: "TERM", label: "Terminated" },
+						{ key: "policyNumber", label: "Numéro de Police", required: true, readOnly: true },
+						{ key: "clientCompany", label: "Entreprise Cliente", required: true, readOnly: true },
+						{ key: "clientActivity", label: "Activité du Client", readOnly: true },
+						{ key: "clientAddress", label: "Adresse du Client", readOnly: true },
+						{ key: "clientCity", label: "Ville du Client", readOnly: true },
+						{ key: "type", label: "Type de Police", readOnly: true, options: [
+							{ value: "REV", label: "Révisable" }, { value: "FIX", label: "Forfaitaire" },
+						], dialogTitle: "Employés Couverts", dialogValues: ["FIX"] },
+						{ key: "effectiveDate", label: "Date d’Effet", format: "date", readOnly: true },
+						{ key: "status", label: "Statut", readOnly: true, options: [
+							{ value: "VALI", label: "Valide" },
+							{ value: "SUSP", label: "Suspendue" },
+							{ value: "TERM", label: "Résiliée" },
 						], badgeClasses: {
 							VALI: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
 							SUSP: "bg-amber-50 text-amber-700 ring-amber-600/20",
 							TERM: "bg-rose-50 text-rose-700 ring-rose-600/20",
 						} },
-						{ key: "insuranceCompanyId", label: "Insurance Company", readOnly: true, options: insuranceCompanyOptions },
-						{ key: "creationDate", label: "Creation Date", format: "datetime", readOnly: true },
-						{ key: "lastUpdated", label: "Last Updated", format: "datetime", readOnly: true },
+						{ key: "insuranceCompanyId", label: "Compagnie d’Assurance", readOnly: true, options: insuranceCompanyOptions },
+						{ key: "creationDate", label: "Date de Création", format: "datetime", readOnly: true },
+						{ key: "lastUpdated", label: "Dernière Modification", format: "datetime", readOnly: true },
 					]}
 					readOnly
 					initialSearch={list.search}

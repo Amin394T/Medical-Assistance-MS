@@ -15,12 +15,12 @@ export default async function InsuranceProvidersPage({ searchParams }: {
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
 			<div className="mx-auto max-w-375">
-				<PageHeader section="Insurance" title="Insurance Providers" icon={<Building2 className="h-6 w-6" />} />
-				<ReferencialDataGrid key={JSON.stringify([list.search, list.sort, list.sortDesc])} title="Insurance Providers" rows={list.rows} columns={[
-					{ key: "label", label: "Label", required: true },
-					{ key: "corporateId", label: "Corporate ID", nullable: true },
-					{ key: "phone", label: "Phone", nullable: true },
-					{ key: "email", label: "Email", nullable: true },
+				<PageHeader section="Assurance" title="Compagnies d’Assurance" icon={<Building2 className="h-6 w-6" />} />
+				<ReferencialDataGrid key={JSON.stringify([list.search, list.sort, list.sortDesc])} title="Compagnies d’Assurance" rows={list.rows} columns={[
+					{ key: "label", label: "Nom", required: true },
+					{ key: "corporateId", label: "Identifiant de l’Entreprise", nullable: true },
+					{ key: "phone", label: "Téléphone", nullable: true },
+					{ key: "email", label: "E-mail", nullable: true },
 				]} onCreate={createInsuranceProvider} onUpdate={updateInsuranceProvider} onDelete={deleteInsuranceProvider} initialSearch={list.search} serverPagination={{
 					page: list.page,
 					pageSize: list.pageSize,

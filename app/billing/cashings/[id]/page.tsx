@@ -23,7 +23,7 @@ export default async function BillingCashingDetailsPage({ params }: { params: Pr
   return (
     <section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
       <div className="mx-auto max-w-6xl">
-        <PageHeader section="Billing" title={`Cashing #${cashing.id}`} icon={<HandCoins className="h-6 w-6" />} />
+        <PageHeader section="Facturation" title={`Encaissement n° ${cashing.id}`} icon={<HandCoins className="h-6 w-6" />} />
         <BillingCashingForm
           providers={providers.map(({ id: providerId, label }) => ({ id: providerId, label }))}
           availableInvoices={[]}

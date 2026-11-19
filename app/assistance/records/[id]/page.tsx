@@ -40,16 +40,16 @@ export default async function MedicalRecordDetailsPage({ params, searchParams }:
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
 			<div className="mx-auto max-w-6xl">
-				<PageHeader section="Medical record" title={reference} icon={<ClipboardPen />} />
+				<PageHeader section="Dossier Médical" title={reference} icon={<ClipboardPen />} />
 
 				<MedicalRecordEditForm
 					record={record}
 					jobs={jobs.filter((job): job is string => job !== null)}
 					created={query.created === "1"}
 				/>
-				<Section title="Medical Services">
+				<Section title="Services Médicaux">
 					<ReferencialDataGrid
-						title="Medical Services"
+						title="Services Médicaux"
 						rows={services.map(({ id, medicalRecordId, serviceProviderId, serviceTypeId, date, paymentAmount, billingAmount, taxRate, settlementStatus, settlingDate, bank, paymentMode, paymentReference, invoiceId, invoiceReference, observation }) => ({
 							id,
 							medicalRecordId,
@@ -70,12 +70,12 @@ export default async function MedicalRecordDetailsPage({ params, searchParams }:
 							observation,
 						}))}
 						columns={[
-							{ key: "serviceTypeId", label: "Service Type", editor: "select", required: true, options: serviceTypes.map(({ id, label }) => ({ value: id, label })) },
-							{ key: "serviceProviderId", label: "Provider", editor: "select", required: true, optionsBy: { dependencyKey: "serviceTypeId", values: providersByServiceType } },
-							{ key: "date", label: "Service Date", editor: "date", format: "date", nullable: true },
-							{ key: "settlementStatus", label: "Settlement Status", readOnly: true, options: [{ value: "WAIT", label: "Waiting" }, { value: "BILL", label: "Billed" }, { value: "SETT", label: "Settled" }], badgeClasses: settlementStatusBadgeClasses },
-							{ key: "invoiceReference", label: "Invoice", readOnly: true, linkHrefKey: "invoiceHref" },
-							{ key: "settlingDate", label: "Settling Date", format: "date", readOnly: true },
+							{ key: "serviceTypeId", label: "Type de Prestation", editor: "select", required: true, options: serviceTypes.map(({ id, label }) => ({ value: id, label })) },
+							{ key: "serviceProviderId", label: "Prestataire", editor: "select", required: true, optionsBy: { dependencyKey: "serviceTypeId", values: providersByServiceType } },
+							{ key: "date", label: "Date de la Prestation", editor: "date", format: "date", nullable: true },
+							{ key: "settlementStatus", label: "Statut du Règlement", readOnly: true, options: [{ value: "WAIT", label: "En Attente" }, { value: "BILL", label: "Facturée" }, { value: "SETT", label: "Réglée" }], badgeClasses: settlementStatusBadgeClasses },
+							{ key: "invoiceReference", label: "Facture", readOnly: true, linkHrefKey: "invoiceHref" },
+							{ key: "settlingDate", label: "Date de Règlement", format: "date", readOnly: true },
 							{ key: "observation", label: "Observation", nullable: true },
 						]}
 						onCreate={createRecordMedicalService.bind(null, recordId)}
@@ -83,22 +83,22 @@ export default async function MedicalRecordDetailsPage({ params, searchParams }:
 						onDelete={deleteMedicalService}
 					/>
 				</Section>
-				<Section title="Medical Certificates">
+				<Section title="Certificats Médicaux">
 					<ReferencialDataGrid
-						title="Medical Certificates"
+						title="Certificats Médicaux"
 						rows={certificates.map(({ id, medicalRecordId, type, serviceProviderId, dayCount, startDate, endDate, observation }) => ({ id, medicalRecordId, type, serviceProviderId, dayCount, startDate, endDate, observation }))}
 						columns={[
 							{ key: "type", label: "Type", editor: "select", required: true, options: [
-								{ value: "INIT", label: "Initial" }, { value: "PROL", label: "Prolongation" }, { value: "RETU", label: "Return" },
-								{ value: "AGGR", label: "Aggravation" }, { value: "INSP", label: "Inspection" }, { value: "RECO", label: "Recovery" },
+								{ value: "INIT", label: "Initial" }, { value: "PROL", label: "Prolongation" }, { value: "RETU", label: "Reprise" },
+								{ value: "AGGR", label: "Aggravation" }, { value: "INSP", label: "Contrôle" }, { value: "RECO", label: "Guérison" },
 							] },
-							{ key: "serviceProviderId", label: "Service Provider", editor: "select", nullable: true, options: [
-								{ value: null, label: "None" },
+							{ key: "serviceProviderId", label: "Prestataire de Soins", editor: "select", nullable: true, options: [
+								{ value: null, label: "Aucun" },
 								...providers.map(({ id, label }) => ({ value: id, label })),
 							] },
-							{ key: "dayCount", label: "Day Count", editor: "number", required: true },
-							{ key: "startDate", label: "Start Date", editor: "date", format: "date", nullable: true },
-							{ key: "endDate", label: "End Date", editor: "date", format: "date", nullable: true },
+							{ key: "dayCount", label: "Nombre de Jours", editor: "number", required: true },
+							{ key: "startDate", label: "Date de Début", editor: "date", format: "date", nullable: true },
+							{ key: "endDate", label: "Date de Fin", editor: "date", format: "date", nullable: true },
 							{ key: "observation", label: "Observation", nullable: true },
 						]}
 						onCreate={createMedicalCertificate.bind(null, recordId)}
