@@ -354,7 +354,7 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
                 {row.getAllCells().map((cell, index) => {
                   const column = columns[index];
                   const canOpenDialog = Boolean(column.dialogTitle && column.dialogValues?.includes(original[column.key]) && loadDialogItems);
-                  return <td key={cell.id} className={`max-w-xs whitespace-nowrap px-5 py-4 ${markedForDeletion ? "bg-rose-50 text-rose-800 line-through" : "text-slate-700"}`}>
+                  return <td key={cell.id} className={`max-w-xs whitespace-nowrap px-5 py-4 ${markedForDeletion ? "bg-rose-50 text-rose-800" : "text-slate-700"}`}>
                     {draft && !readOnly ? column.readOnly
                       ? formatValue(original[column.key], { ...column, options: resolveOptions(column, original) })
                       : <GridEditor column={{ ...column, options: resolveOptions(column, draft) }} value={draft[column.key]} disabled={markedForDeletion || saving[key]} onChange={(value) => setDrafts((current) => ({ ...current, [key]: updateDraft(current[key], column, value, columns, false) }))} />

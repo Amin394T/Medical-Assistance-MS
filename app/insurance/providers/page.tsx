@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function InsuranceProvidersPage({ searchParams }: {
 	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-	const query = await getGridListQuery(searchParams, "id", false);
+	const query = await getGridListQuery(searchParams, "label", false);
 	const list = await listInsuranceProvidersPage(query);
 
 	return (
@@ -27,7 +27,7 @@ export default async function InsuranceProvidersPage({ searchParams }: {
 					totalCount: list.totalCount,
 					sort: list.sort,
 					sortDesc: list.sortDesc,
-					defaultSort: "id",
+					defaultSort: "label",
 					defaultSortDesc: false,
 				}} />
 			</div>

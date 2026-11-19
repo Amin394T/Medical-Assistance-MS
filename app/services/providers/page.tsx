@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function ServiceProvidersPage({ searchParams }: {
 	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-	const query = await getGridListQuery(searchParams, "id", false);
+	const query = await getGridListQuery(searchParams, "label", false);
 	const [list, profiles, banks] = await Promise.all([
 		listServiceProvidersPage(query),
 		listProfiles(),
@@ -37,7 +37,7 @@ export default async function ServiceProvidersPage({ searchParams }: {
 					totalCount: list.totalCount,
 					sort: list.sort,
 					sortDesc: list.sortDesc,
-					defaultSort: "id",
+					defaultSort: "label",
 					defaultSortDesc: false,
 				}} />
 			</div>
