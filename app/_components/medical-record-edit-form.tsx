@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 import { updateMedicalRecord } from "@/db/actions/medicalRecords";
 import type { getMedicalRecord } from "@/db/actions/medicalRecords";
@@ -21,14 +21,16 @@ type MedicalRecordEditFormProps = {
 export function MedicalRecordEditForm({ record, jobs, created }: MedicalRecordEditFormProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ tone: "error" | "success"; text: string } | null>(null);
 
   return (
     <form className="mb-6 space-y-6" onSubmit={async (event) => {
       event.preventDefault();
+      const form = event.currentTarget;
+      const scrollContainer = form.closest("main");
       setPending(true);
       setNotice(null);
-      const data = new FormData(event.currentTarget);
+      const data = new FormData(form);
       try {
         const parseDate = (name: string) => {
           const value = String(data.get(name) ?? "");
@@ -56,17 +58,21 @@ export function MedicalRecordEditForm({ record, jobs, created }: MedicalRecordEd
         };
         const updated = await updateMedicalRecord(record.id, values);
         if (!updated) throw new Error("Medical record not found.");
-        setNotice(null);
+        setNotice({ tone: "success", text: "Changes saved." });
         router.refresh();
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (scrollContainer) {
+          scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
       } catch (error) {
-        setNotice(error instanceof Error ? error.message : "Unable to save changes.");
+        setNotice({ tone: "error", text: error instanceof Error ? error.message : "Unable to save changes." });
       } finally {
         setPending(false);
       }
     }}>
       {created ? <div role="status" className="mb-6 flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"><span>Record {formatMedicalRecordReference(record.accidentType, record.reference)} was created successfully.</span></div> : null}
-      {notice ? <Notice>{notice}</Notice> : null}
+      {notice ? <Notice tone={notice.tone}>{notice.text}</Notice> : null}
 
       <Section title="01 / Client Data">
         <div className="grid gap-5 md:grid-cols-3">
@@ -154,8 +160,10 @@ function ReadOnly({ label, value }: { label: string; value: string | number | nu
   return <div><span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span><div className="flex h-11 items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-600">{value ?? "-"}</div></div>;
 }
 
-function Notice({ children }: { children: React.ReactNode }) {
-  return <div role="alert" className="mb-6 flex items-center gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800"><AlertCircle className="h-5 w-5" /><span>{children}</span></div>;
+function Notice({ tone, children }: { tone: "error" | "success"; children: React.ReactNode }) {
+  const success = tone === "success";
+  const Icon = success ? CheckCircle2 : AlertCircle;
+  return <div role={success ? "status" : "alert"} className={`mb-6 flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold ${success ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-rose-200 bg-rose-50 text-rose-800"}`}><Icon className="h-5 w-5" /><span>{children}</span></div>;
 }
 
 function getStatusReasonLabel(reason: MedicalRecordDetails["statusReason"]) {

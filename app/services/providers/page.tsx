@@ -1,6 +1,6 @@
 import { Ambulance } from "lucide-react";
 
-import { createServiceProvider, deleteServiceProvider, listServiceProvidersPage, updateServiceProvider } from "@/db/actions/serviceProviders";
+import { createServiceProvider, deleteServiceProvider, listServiceProviderBanks, listServiceProvidersPage, updateServiceProvider } from "@/db/actions/serviceProviders";
 import { listProfiles } from "@/db/actions/serviceTypes";
 import { ReferencialDataGrid } from "@/app/_components/referential-data-grid";
 import { PageHeader } from "@/app/_components/page-header";
@@ -12,7 +12,11 @@ export default async function ServiceProvidersPage({ searchParams }: {
 	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
 	const query = await getGridListQuery(searchParams, "id", false);
-	const [list, profiles] = await Promise.all([listServiceProvidersPage(query), listProfiles()]);
+	const [list, profiles, banks] = await Promise.all([
+		listServiceProvidersPage(query),
+		listProfiles(),
+		listServiceProviderBanks(),
+	]);
 
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
@@ -25,7 +29,7 @@ export default async function ServiceProvidersPage({ searchParams }: {
 					{ key: "contactName", label: "Contact Name", nullable: true },
 					{ key: "phone", label: "Phone", required: true },
 					{ key: "email", label: "Email", nullable: true },
-					{ key: "bank", label: "Bank", editor: "combo-box", nullable: true },
+					{ key: "bank", label: "Bank", editor: "combo-box", nullable: true, options: banks.map((bank) => ({ value: bank, label: bank })) },
 					{ key: "bankAccount", label: "Bank Account", nullable: true },
 				]} onCreate={createServiceProvider} onUpdate={updateServiceProvider} onDelete={deleteServiceProvider} initialSearch={list.search} serverPagination={{
 					page: list.page,

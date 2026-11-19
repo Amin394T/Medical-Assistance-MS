@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, count, desc, eq, inArray, notInArray, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNotNull, notInArray, or, sql } from "drizzle-orm";
 import type { SQL, SQLWrapper } from "drizzle-orm";
 
 import { db } from "../index";
@@ -12,6 +12,7 @@ import {
   insurancePolicies,
   insuranceProviders,
   medicalRecords,
+  medicalServices,
 } from "../schemas";
 
 type BillingCashingInput = {
@@ -37,6 +38,16 @@ const CASHING_SORT_KEYS = [
 ] as const;
 
 const DEFAULT_CASHING_SORT = "requestDate";
+
+export async function listBillingCashingBanks() {
+  const rows = await db
+    .selectDistinct({ bank: billingCashings.bank })
+    .from(billingCashings)
+    .where(isNotNull(billingCashings.bank))
+    .orderBy(asc(billingCashings.bank));
+  return rows.flatMap(({ bank }) => bank?.trim() ? [bank.trim()] : []);
+}
+
 export async function listBillingCashings(options: BillingListOptions = {}) {
   const search = options.search?.trim() ?? "";
   const paymentMode = sql`case ${billingCashings.paymentMode}
@@ -174,6 +185,7 @@ export async function createBillingCashing(input: BillingCashingInput) {
       .set({ cashingId: cashing.id })
       .where(inArray(billingInvoices.id, parsed.invoiceIds))
       .run();
+    if (parsed.cashed) settleInvoicedServices(tx, parsed.invoiceIds, parsed.cashingDate);
 
     return cashing;
   });
@@ -235,6 +247,7 @@ export async function updateBillingCashing(idValue: number, input: BillingCashin
       .set({ cashingId: id })
       .where(inArray(billingInvoices.id, parsed.invoiceIds))
       .run();
+    if (parsed.cashed) settleInvoicedServices(tx, parsed.invoiceIds, parsed.cashingDate);
 
     return updated;
   });
@@ -333,6 +346,17 @@ function releaseInvoicesFromOpenCashings(
       .where(eq(billingCashings.id, sourceId))
       .run();
   }
+}
+
+function settleInvoicedServices(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  invoiceIds: number[],
+  settlingDate: Date | null,
+) {
+  tx.update(medicalServices)
+    .set({ settlementStatus: "SETT", settlingDate })
+    .where(inArray(medicalServices.invoiceId, invoiceIds))
+    .run();
 }
 
 function parseInput(input: BillingCashingInput) {

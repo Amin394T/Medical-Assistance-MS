@@ -43,16 +43,21 @@ export type PolicyDeltaImportResult = {
 export async function uploadPolicyDeltaFiles(formData: FormData): Promise<PolicyDeltaImportResult> {
   const insuranceCompanyId = requiredId(formData.get("insuranceCompanyId"), "Insurance company");
   const policyFile = formData.get("policyFile");
-  const employeeFile = formData.get("employeeFile");
+  const employeeFileValue = formData.get("employeeFile");
   if (!(policyFile instanceof File)) throw new Error("Choose an Excel policy delta file.");
-  if (!(employeeFile instanceof File)) throw new Error("Choose an Excel covered-employee file.");
+  if (employeeFileValue !== null && !(employeeFileValue instanceof File)) {
+    throw new Error("Choose a valid Excel covered-employee file.");
+  }
+  const employeeFile = employeeFileValue instanceof File && employeeFileValue.size > 0
+    ? employeeFileValue
+    : null;
 
   const [policyWorksheet, employeeWorksheet] = await Promise.all([
     readWorksheet(policyFile, "policy delta"),
-    readWorksheet(employeeFile, "covered-employee"),
+    employeeFile ? readWorksheet(employeeFile, "covered-employee") : Promise.resolve(null),
   ]);
   const policyRows = parsePolicyDeltaRows(policyWorksheet);
-  const employeeRows = parseEmployeeDeltaRows(employeeWorksheet);
+  const employeeRows = employeeWorksheet ? parseEmployeeDeltaRows(employeeWorksheet) : [];
   if (policyRows.length === 0) throw new Error("The policy workbook does not contain any policy rows.");
 
   return db.transaction((tx) => {
@@ -123,19 +128,20 @@ export async function uploadPolicyDeltaFiles(formData: FormData): Promise<Policy
       employeesByPolicy.set(policy.id, employees);
     }
 
-    const fixedPolicyIds = [...policiesByNumber.values()]
-      .filter((policy) => policy.insuranceCompanyId === insuranceCompanyId && policy.type === "FIX")
-      .map((policy) => policy.id);
-    if (fixedPolicyIds.length) {
-      tx.delete(insurancePolicyEmployees)
-        .where(inArray(insurancePolicyEmployees.policyId, fixedPolicyIds))
-        .run();
-    }
-
     const employeeRecords = [...employeesByPolicy].flatMap(([policyId, employees]) =>
       [...employees.values()].map((employee) => ({ policyId, employee })),
     );
-    if (employeeRecords.length) tx.insert(insurancePolicyEmployees).values(employeeRecords).run();
+    if (employeeFile) {
+      const fixedPolicyIds = [...policiesByNumber.values()]
+        .filter((policy) => policy.insuranceCompanyId === insuranceCompanyId && policy.type === "FIX")
+        .map((policy) => policy.id);
+      if (fixedPolicyIds.length) {
+        tx.delete(insurancePolicyEmployees)
+          .where(inArray(insurancePolicyEmployees.policyId, fixedPolicyIds))
+          .run();
+      }
+      if (employeeRecords.length) tx.insert(insurancePolicyEmployees).values(employeeRecords).run();
+    }
 
     return {
       policiesCreated,

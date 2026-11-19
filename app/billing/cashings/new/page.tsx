@@ -4,13 +4,15 @@ import { BillingCashingForm } from "@/app/_components/billing-cashing-form";
 import { PageHeader } from "@/app/_components/page-header";
 import { listAvailableBillingInvoices } from "@/db/actions/billingInvoices";
 import { listInsuranceProviders } from "@/db/actions/insuranceProviders";
+import { listBillingCashingBanks } from "@/db/actions/billingCashings";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewBillingCashingPage() {
-  const [providers, invoices] = await Promise.all([
+  const [providers, invoices, banks] = await Promise.all([
     listInsuranceProviders(),
     listAvailableBillingInvoices(),
+    listBillingCashingBanks(),
   ]);
 
   return (
@@ -20,6 +22,7 @@ export default async function NewBillingCashingPage() {
         <BillingCashingForm
           providers={providers.map(({ id, label }) => ({ id, label }))}
           availableInvoices={invoices}
+          bankOptions={banks}
         />
       </div>
     </section>

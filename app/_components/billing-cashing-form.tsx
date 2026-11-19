@@ -43,10 +43,12 @@ export function BillingCashingForm({
   providers,
   availableInvoices,
   cashing,
+  bankOptions,
 }: {
   providers: InsuranceProviderOption[];
   availableInvoices: InvoiceOption[];
   cashing?: CashingValues;
+  bankOptions: string[];
 }) {
   const router = useRouter();
   const [insuranceProviderId, setInsuranceProviderId] = useState(String(cashing?.insuranceProviderId ?? ""));
@@ -127,7 +129,8 @@ export function BillingCashingForm({
         </label>
         <label className="space-y-1.5 text-sm font-medium text-slate-700">
           <span>Bank</span>
-          <input value={bank} onChange={(event) => setBank(event.target.value)} className="h-10 w-full rounded-lg border border-slate-200 px-3 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100" />
+          <input list="billing-cashing-banks" value={bank} onChange={(event) => setBank(event.target.value)} className="h-10 w-full rounded-lg border border-slate-200 px-3 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100" />
+          <datalist id="billing-cashing-banks">{bankOptions.map((option) => <option key={option} value={option} />)}</datalist>
         </label>
         <label className="space-y-1.5 text-sm font-medium text-slate-700">
           <span>Payment Mode</span>
@@ -141,7 +144,7 @@ export function BillingCashingForm({
         </label>
         <label className="space-y-1.5 text-sm font-medium text-slate-700">
           <span>Cashing Date</span>
-          <input type="date" value={cashingDate} onChange={(event) => setCashingDate(event.target.value)} className="h-10 w-full rounded-lg border border-slate-200 px-3 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100" />
+          <input type="date" value={cashingDate} disabled={!cashed} onChange={(event) => setCashingDate(event.target.value)} className="h-10 w-full rounded-lg border border-slate-200 px-3 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" />
         </label>
         <label className="flex items-center gap-2 self-end pb-2 text-sm font-medium text-slate-700">
           <input type="checkbox" checked={cashed} disabled={Boolean(cashing?.cashed)} onChange={(event) => setCashed(event.target.checked)} className="h-4 w-4 accent-teal-700 disabled:opacity-50" />
@@ -158,8 +161,8 @@ export function BillingCashingForm({
           <p className="whitespace-nowrap text-sm font-semibold text-slate-700">Total: {totalAmount.toFixed(2)}</p>
         </div>
         <div className="overflow-x-auto rounded-lg border border-slate-200">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+          <table className="w-full min-w-160 text-left text-sm">
+            <thead className="bg-slate-50 border-b border-slate-200 text-xs tracking-wide text-slate-500">
               <tr>
                 {!isEditing ? <th className="w-12 px-4 py-3"><span className="sr-only">Select</span></th> : null}
                 <th className="px-4 py-3">Invoice</th>

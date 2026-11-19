@@ -56,6 +56,7 @@ Things to keep in mind:
 About form pages:
 - Forms should spread fields on a 3 columns grid ;
 - init-cap field labels ;
+- required fields are marked with a green asterisk right of the label ;
 
 About table pages:
 - init-cap table column labels ;

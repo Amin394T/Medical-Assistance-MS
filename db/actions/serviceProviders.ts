@@ -1,6 +1,6 @@
 "use server";
 
-import { asc, count, desc, eq, or, sql } from "drizzle-orm";
+import { asc, count, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import type { SQLWrapper } from "drizzle-orm";
 
 import { db } from "../index";
@@ -13,6 +13,15 @@ export async function listServiceProviders() {
   return db
     .select()
     .from(serviceProviders);
+}
+
+export async function listServiceProviderBanks() {
+  const rows = await db
+    .selectDistinct({ bank: serviceProviders.bank })
+    .from(serviceProviders)
+    .where(isNotNull(serviceProviders.bank))
+    .orderBy(asc(serviceProviders.bank));
+  return rows.flatMap(({ bank }) => bank?.trim() ? [bank.trim()] : []);
 }
 
 const SERVICE_PROVIDER_SORT_KEYS = [

@@ -25,7 +25,7 @@
     + if the policy is invalid, a notification e-mail is sent to the insurance provider.
 
 - delta files loading:
-    + insurance company periodically sends a spreadsheet of the latest client policies, and another containing an employee list for fixed-rate policies ;
+    + insurance company periodically sends a spreadsheet of the latest client policies, and may send another containing an employee list for fixed-rate policies ;
     + Excel file includes policy, client, effective date, insurance company, and status columns;
     + file is processed to create new policies and update exisiting policies' statuses.
 
@@ -58,14 +58,14 @@
     + client policies : list of insurance policies, row filter, read-only ;
         + covered employees : pop-up showing a list of employees covered by a selected insurance policy of type "fixed-rate", search bar in the top, shows when "fixed-rate" is clicked, read-only ;
     + insurance providers: list of insurance companies, row filter, grid CRUD;
-    + policy update : upload screen for the 2 delta files, updates policies (new + status change) and covered employees (overwrite for selected insurance company), the concerned insurance company is to be selected before processing ;
+    + policy update : upload screen for the required policy delta file and an optional employee delta file; updates policies (new + status change), and overwrites covered employees for the selected insurance company only when an employee file is provided ;
 - service management :
     + healthcare providers : list of medical service providers, row filter, grid CRUD ;
     + medical services : list of medical services, row filter, grid CRUD ;
 - billing management :
-    + service settlement : list of billable medical services from valid records (with "in progress" status) and those that have already been billed,  row filter, edit-only, check-box with each row + button that creates an invoice per record (groups services from same record) for selected services ;
+    + service settlement : list of waiting medical services from in-progress records and all billed or settled services, row filter, edit-only, check-box with each row + button that creates an invoice per record (groups services from same record) for selected services ;
     + invoice cashing : list of cashings, row filter, read-only ;
-        + cashing details : form used display, create, and edit a cashing of invoices, includes a list of invoices which, during creation, displays all non-cashed invoices for selection, while during edit, displays invoices that are linked to this cashing, read-only in both cases.
+        + cashing details : form used display, create, and edit a cashing of invoices, includes a list of invoices which, during creation, displays all non-cashed invoices for selection, while during edit, displays invoices that are linked to this cashing, read-only in both cases; cashing date is enabled only when "cashed" is checked.
 
 
 ## DATA STRUCTURE

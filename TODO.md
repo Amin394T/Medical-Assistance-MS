@@ -1,27 +1,19 @@
 ## REMINDER
-- employee file is not required
-- add required marker on insurance company and delta file
-- sort by label
-- bank in service provider and new cashing should be combo-box
-- show that "table record is used" instead of foreign key error
+- add reference to cachings
+- invoice cancelling
 
-- invoice cahsing table lacks bottom line
-- cashing date should be disabled until cashed is checked
-- add reference to caching
+- show that "table record is used" instead of foreign key error
+- sort by label
 - date selectors lack a confirm button
-- cashing invoices doesn't update invoiced services status to "settled"
 - no strikethrough on deleted records, red highlith is enough
 - add padding to the right of the dropdown list arrow
-- billed services don't appear in settlement
 
+- verify if search, sorting, filtering happen server-side
 - replace USER with logged-in user
 - user authentication
-- server-side pagination for long lists
 - server-side input validation
 - document printing from tables
 - make error messages appear as popup notification
-- verify if search, sorting, filtering happen server-side
-- invoice cancelling
 
 
 ## NEEDS

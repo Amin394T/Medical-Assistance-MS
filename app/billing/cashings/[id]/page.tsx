@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { BillingCashingForm } from "@/app/_components/billing-cashing-form";
 import { PageHeader } from "@/app/_components/page-header";
-import { getBillingCashing } from "@/db/actions/billingCashings";
+import { getBillingCashing, listBillingCashingBanks } from "@/db/actions/billingCashings";
 import { listInsuranceProviders } from "@/db/actions/insuranceProviders";
 
 export const dynamic = "force-dynamic";
@@ -13,9 +13,10 @@ export default async function BillingCashingDetailsPage({ params }: { params: Pr
   const id = Number(idValue);
   if (!Number.isInteger(id) || id < 1) notFound();
 
-  const [cashing, providers] = await Promise.all([
+  const [cashing, providers, banks] = await Promise.all([
     getBillingCashing(id),
     listInsuranceProviders(),
+    listBillingCashingBanks(),
   ]);
   if (!cashing) notFound();
 
@@ -27,6 +28,7 @@ export default async function BillingCashingDetailsPage({ params }: { params: Pr
           providers={providers.map(({ id: providerId, label }) => ({ id: providerId, label }))}
           availableInvoices={[]}
           cashing={cashing}
+          bankOptions={banks}
         />
       </div>
     </section>

@@ -32,8 +32,11 @@ export function PolicyDeltaUpload({ providers }: { providers: ProviderOption[] }
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm w-max m-auto">
       <form onSubmit={submit} className="space-y-5 px-5 py-5 sm:px-6">
+        {error ? <div role="alert" className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{error}</span></div> : null}
+        {result ? <div role="status" className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /><span>Import complete: {result.policiesCreated} policies created, {result.statusesUpdated} policy statuses updated, {result.unchangedPolicies} existing policies unchanged, and {result.coveredEmployeesReplaced} covered employees imported.</span></div> : null}
+
         <label className="block max-w-2xl">
-          <span className="mb-2 block text-xs font-semibold text-slate-600">Insurance Company</span>
+          <span className="mb-2 block text-xs font-semibold text-slate-600">Insurance Company<span className="ml-1 text-teal-700">*</span></span>
           <select name="insuranceCompanyId" required defaultValue="" className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100">
             <option value="" disabled>Select the insurance company</option>
             {providers.map((provider) => <option key={provider.id} value={provider.id}>{provider.label}</option>)}
@@ -42,13 +45,13 @@ export function PolicyDeltaUpload({ providers }: { providers: ProviderOption[] }
         </label>
 
         <label className="block max-w-2xl">
-          <span className="mb-2 block text-xs font-semibold text-slate-600">Policy File</span>
+          <span className="mb-2 block text-xs font-semibold text-slate-600">Policy File<span className="ml-1 text-teal-700">*</span></span>
           <input name="policyFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required className="block w-full rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-700 file:mr-4 file:border-0 file:bg-slate-100 file:px-4 file:py-2.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200" />
           <span className="mt-2 block text-xs text-slate-500">Columns format: policy, client, activity, address, city, type, guarantee, status, date.</span>
         </label>
         <label className="block max-w-2xl">
           <span className="mb-2 block text-xs font-semibold text-slate-600">Employee File</span>
-          <input name="employeeFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required className="block w-full rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-700 file:mr-4 file:border-0 file:bg-slate-100 file:px-4 file:py-2.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200" />
+          <input name="employeeFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="block w-full rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-700 file:mr-4 file:border-0 file:bg-slate-100 file:px-4 file:py-2.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200" />
           <span className="mt-2 block text-xs text-slate-500">Columns format: policy, employee.</span>
         </label>
 
@@ -57,8 +60,6 @@ export function PolicyDeltaUpload({ providers }: { providers: ProviderOption[] }
           {pending ? "Importing workbooks..." : "Import Files"}
         </button>
 
-        {error ? <div role="alert" className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{error}</span></div> : null}
-        {result ? <div role="status" className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /><span>Import complete: {result.policiesCreated} policies created, {result.statusesUpdated} policy statuses updated, {result.unchangedPolicies} existing policies unchanged, and {result.coveredEmployeesReplaced} covered employees imported.</span></div> : null}
       </form>
     </section>
   );

@@ -68,8 +68,10 @@ export async function listServicesForSettlement(options: BillingListOptions = {}
   end`;
   const contains = (value: SQLWrapper) => sql`instr(lower(coalesce(cast(${value} as text), '-')), lower(${search})) > 0`;
   const condition = and(
-    eq(medicalRecords.status, "PRG"),
-    inArray(medicalServices.settlementStatus, ["WAIT", "BILL"]),
+    or(
+      eq(medicalRecords.status, "PRG"),
+      inArray(medicalServices.settlementStatus, ["BILL", "SETT"]),
+    ),
     search ? or(
       contains(recordReference),
       contains(billingInvoices.reference),
