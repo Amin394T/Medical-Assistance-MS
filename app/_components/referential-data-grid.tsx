@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createColumnHelper, createSortedRowModel, rowSelectionFeature, rowSortingFeature, tableFeatures, useTable } from "@tanstack/react-table";
 import type { RowSelectionState } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, Eye, RotateCcw, Save, Search, SquarePen, SquarePlus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsUpDown, Eye, RotateCcw, Save, Search, SquarePen, SquarePlus, Trash2, X } from "lucide-react";
 import { formatDate, formatDateTime } from "@/app/_lib/date-format";
 
 type EntityValue = string | number | boolean | Date | null;
@@ -368,16 +368,15 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
           </tbody>
         </table>
       </div>
-      {serverPagination ? <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-        <p>Showing {serverPagination.totalCount === 0 ? 0 : (serverPagination.page - 1) * serverPagination.pageSize + 1}-{Math.min(serverPagination.page * serverPagination.pageSize, serverPagination.totalCount)} of {serverPagination.totalCount}</p>
+      {serverPagination ? <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-end">
         <div className="flex items-center gap-3">
           {serverPagination.page > 1
             ? <Link href={buildGridHref(pathname, query, serverPagination.page - 1, sorting[0]?.id ?? serverPagination.sort, sorting[0]?.desc ?? serverPagination.sortDesc)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold hover:border-teal-300 hover:text-teal-700">Previous</Link>
-            : <span aria-disabled="true" className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-semibold text-slate-400">Previous</span>}
-          <span>Page {serverPagination.page} of {Math.max(1, Math.ceil(serverPagination.totalCount / serverPagination.pageSize))}</span>
+            : <span aria-disabled="true" className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-semibold text-slate-400"><ChevronLeft className="h-4 w-4" /></span>}
+          <span>Page {serverPagination.page} / {Math.max(1, Math.ceil(serverPagination.totalCount / serverPagination.pageSize))}</span>
           {serverPagination.page * serverPagination.pageSize < serverPagination.totalCount
             ? <Link href={buildGridHref(pathname, query, serverPagination.page + 1, sorting[0]?.id ?? serverPagination.sort, sorting[0]?.desc ?? serverPagination.sortDesc)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold hover:border-teal-300 hover:text-teal-700">Next</Link>
-            : <span aria-disabled="true" className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-semibold text-slate-400">Next</span>}
+            : <span aria-disabled="true" className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-semibold text-slate-400"><ChevronRight className="h-4 w-4" /></span>}
         </div>
       </div> : null}
       {dialog ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" onMouseDown={(event) => {

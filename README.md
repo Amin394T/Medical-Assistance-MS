@@ -109,7 +109,7 @@
     // 1. service data:
     + service provider: required, selectable (displays service provider name and profile) ;
     + service type: required, selectable (from service type, those corresponding to the selected service provider's profile) ;
-    + date: date ;
+    + date: date, defaults to NOW ;
     + observation ;
     + settlement status: required, read-only, list (waiting - WAIT, billed - BILL, settled - SETT), defaults to "WAIT" ;
     + settling date: date, read-only ;

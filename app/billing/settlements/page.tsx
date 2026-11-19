@@ -21,9 +21,9 @@ export default async function ServiceSettlementPage({ searchParams }: {
     listServiceProviders(),
     listServiceTypes(),
   ]);
-  const serviceTypesByProvider = Object.fromEntries(providers.map((provider) => [
-    String(provider.id),
-    serviceTypes.filter(({ targetProfile }) => targetProfile === provider.profile).map(({ id, label }) => ({ value: id, label })),
+  const providersByServiceType = Object.fromEntries(serviceTypes.map((serviceType) => [
+    String(serviceType.id),
+    providers.filter(({ profile }) => profile === serviceType.targetProfile).map(({ id, label }) => ({ value: id, label })),
   ]));
   const defaultServiceAmounts = [
     { fieldKey: "paymentAmount", values: Object.fromEntries(serviceTypes.map(({ id, paymentAmount }) => [String(id), paymentAmount])) },
@@ -61,8 +61,8 @@ export default async function ServiceSettlementPage({ searchParams }: {
           columns={[
             { key: "record", label: "Medical Record", readOnly: true },
             { key: "invoiceReference", label: "Invoice", readOnly: true },
-            { key: "serviceProviderId", label: "Service Provider", editor: "select", required: true, options: providers.map(({ id, label }) => ({ value: id, label })) },
-            { key: "serviceTypeId", label: "Service Type", editor: "select", required: true, optionsBy: { dependencyKey: "serviceProviderId", values: serviceTypesByProvider }, defaultFieldsByOption: defaultServiceAmounts },
+            { key: "serviceTypeId", label: "Service Type", editor: "select", required: true, options: serviceTypes.map(({ id, label }) => ({ value: id, label })), defaultFieldsByOption: defaultServiceAmounts },
+            { key: "serviceProviderId", label: "Service Provider", editor: "select", required: true, optionsBy: { dependencyKey: "serviceTypeId", values: providersByServiceType } },
             { key: "date", label: "Date", editor: "date", format: "date", nullable: true },
             { key: "settlementStatus", label: "Settlement Status", readOnly: true, options: [
               { value: "WAIT", label: "Waiting" }, { value: "BILL", label: "Billed" }, { value: "SETT", label: "Settled" },

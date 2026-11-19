@@ -5,7 +5,8 @@
 
 import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { createMedicalRecord } from "@/db/actions/medicalRecords";
 
@@ -70,8 +71,8 @@ const initialValues: CallFormValues = {
 };
 
 export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: MedicalRecordCallFormProps) {
+  const router = useRouter();
   const [submitError, setSubmitError] = useState("");
-  const [createdReference, setCreatedReference] = useState("");
   const form = useForm({
     defaultValues: {
       ...initialValues,
@@ -79,7 +80,6 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
     },
     onSubmit: async ({ value }) => {
       setSubmitError("");
-      setCreatedReference("");
 
       try {
         const record = await createMedicalRecord({
@@ -98,8 +98,7 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
           victimPhone: value.victimPhone || null,
           victimJob: value.victimJob || null,
         });
-        setCreatedReference(formatReference(record.reference));
-        form.reset();
+        router.push(`/assistance/records/${record.id}?created=1`);
       } catch (error) {
         setSubmitError(error instanceof Error ? error.message : "Unable to create the medical record.");
       }
@@ -108,7 +107,6 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
 
   return (
     <>
-        {createdReference ? <Notice icon={<CheckCircle2 className="h-5 w-5" />} tone="success">Record {createdReference} was created successfully.</Notice> : null}
         {submitError ? <Notice icon={<AlertCircle className="h-5 w-5" />} tone="error">{submitError}</Notice> : null}
 
         <form
@@ -121,7 +119,7 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
         >
           <FormSection title="01 / Client Data">
             <div className="grid gap-5 md:grid-cols-3">
-              <form.Field key={createdReference} name="policyId" children={(field) => <PolicyPicker field={field as unknown as RenderableField} policies={policies} />} />
+              <form.Field name="policyId" children={(field) => <PolicyPicker field={field as unknown as RenderableField} policies={policies} />} />
               <form.Subscribe selector={(state) => state.values.policyId} children={(policyId) => {
                 const selectedPolicy = getSelectedPolicy(policyId, policies);
                 return <>
@@ -189,11 +187,6 @@ function toDateTimeInputValue(value: string) {
   if (Number.isNaN(date.getTime())) throw new RangeError("Cannot initialize an invalid reporting date.");
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
   return localDate.toISOString().slice(0, 16);
-}
-
-function formatReference(reference: number) {
-  const value = String(reference);
-  return `${value.slice(0, -2)}-${value.slice(-2)}`;
 }
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {

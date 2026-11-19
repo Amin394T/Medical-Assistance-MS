@@ -11,7 +11,7 @@ import {
   useTable,
 } from "@tanstack/react-table";
 import type { SortingState } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, RotateCcw } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsUpDown, RotateCcw } from "lucide-react";
 import { formatDateTime } from "@/app/_lib/date-format";
 import { formatMedicalRecordReference } from "@/app/_lib/medical-record-reference";
 
@@ -80,8 +80,6 @@ export function MedicalRecordsTable({ records, totalCount, page, pageSize, filte
   });
   const updateFilter = (key: keyof MedicalRecordFilters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
   const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
-  const firstRecord = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
-  const lastRecord = Math.min(page * pageSize, totalCount);
   const resetTable = () => {
     setFilters(EMPTY_FILTERS);
     setSorting([{ id: "accidentDate", desc: true }]);
@@ -112,16 +110,15 @@ export function MedicalRecordsTable({ records, totalCount, page, pageSize, filte
               <tbody className="divide-y divide-slate-100">{table.getRowModel().rows.length === 0 ? <tr><td colSpan={columns.length} className="px-5 py-16 text-center text-sm text-slate-500">No Medical Records.</td></tr> : table.getRowModel().rows.map((row) => <tr key={row.id} className="transition-colors hover:bg-teal-50/40">{row.getAllCells().map((cell) => <td key={cell.id} className="whitespace-nowrap px-5 py-4"><table.FlexRender cell={cell} /></td>)}</tr>)}</tbody>
             </table>
           </div>
-          <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-            <p>Showing {firstRecord}-{lastRecord} of {totalCount} medical records</p>
+          <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-end">
             <div className="flex items-center gap-3">
               {page > 1
                 ? <Link href={buildListHref(pathname, filters, page - 1, sortBy, sortDescending)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold hover:border-teal-300 hover:text-teal-700">Previous</Link>
-                : <span aria-disabled="true" className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-semibold text-slate-400">Previous</span>}
-              <span>Page {page} of {pageCount}</span>
+                : <span aria-disabled="true" className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-semibold text-slate-400"><ChevronLeft className="h-4 w-4" /></span>}
+              <span>Page {page} / {pageCount}</span>
               {page < pageCount
                 ? <Link href={buildListHref(pathname, filters, page + 1, sortBy, sortDescending)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold hover:border-teal-300 hover:text-teal-700">Next</Link>
-                : <span aria-disabled="true" className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-semibold text-slate-400">Next</span>}
+                : <span aria-disabled="true" className="rounded-lg border border-slate-100 px-3 py-2 text-xs font-semibold text-slate-400"><ChevronRight className="h-4 w-4" /></span>}
             </div>
           </div>
         </div>

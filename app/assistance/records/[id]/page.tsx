@@ -13,8 +13,12 @@ import { settlementStatusBadgeClasses } from "@/app/_lib/status-colors";
 
 export const dynamic = "force-dynamic";
 
-export default async function MedicalRecordDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function MedicalRecordDetailsPage({ params, searchParams }: {
+	params: Promise<{ id: string }>;
+	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
 	const { id } = await params;
+	const query = await searchParams;
 	const recordId = Number(id);
 	if (!Number.isInteger(recordId) || recordId < 1) return <Message message="Record not found." />;
 
@@ -29,9 +33,9 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 	if (!record) return <Message message="Record Not Found." />;
 
 	const reference = formatMedicalRecordReference(record.accidentType, record.reference);
-	const serviceTypesByProvider = Object.fromEntries(providers.map((provider) => [
-		String(provider.id),
-		serviceTypes.filter(({ targetProfile }) => targetProfile === provider.profile).map(({ id, label }) => ({ value: id, label })),
+	const providersByServiceType = Object.fromEntries(serviceTypes.map((serviceType) => [
+		String(serviceType.id),
+		providers.filter(({ profile }) => profile === serviceType.targetProfile).map(({ id, label }) => ({ value: id, label })),
 	]));
 	return (
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
@@ -41,6 +45,7 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 				<MedicalRecordEditForm
 					record={record}
 					jobs={jobs.filter((job): job is string => job !== null)}
+					created={query.created === "1"}
 				/>
 				<Section title="Medical Services">
 					<ReferencialDataGrid
@@ -61,12 +66,12 @@ export default async function MedicalRecordDetailsPage({ params }: { params: Pro
 							paymentReference,
 							invoiceId,
 							invoiceReference,
-							invoiceHref: invoiceReference === null ? null : `/billing/settlements?search=${encodeURIComponent(reference)}`,
+							invoiceHref: invoiceReference === null ? null : `/billing/settlements?search=${encodeURIComponent(String(invoiceReference))}`,
 							observation,
 						}))}
 						columns={[
-							{ key: "serviceTypeId", label: "Service Type", editor: "select", required: true, optionsBy: { dependencyKey: "serviceProviderId", values: serviceTypesByProvider } },
-							{ key: "serviceProviderId", label: "Provider", editor: "select", required: true, options: providers.map(({ id, label }) => ({ value: id, label })) },
+							{ key: "serviceTypeId", label: "Service Type", editor: "select", required: true, options: serviceTypes.map(({ id, label }) => ({ value: id, label })) },
+							{ key: "serviceProviderId", label: "Provider", editor: "select", required: true, optionsBy: { dependencyKey: "serviceTypeId", values: providersByServiceType } },
 							{ key: "date", label: "Service Date", editor: "date", format: "date", nullable: true },
 							{ key: "settlementStatus", label: "Settlement Status", readOnly: true, options: [{ value: "WAIT", label: "Waiting" }, { value: "BILL", label: "Billed" }, { value: "SETT", label: "Settled" }], badgeClasses: settlementStatusBadgeClasses },
 							{ key: "invoiceReference", label: "Invoice", readOnly: true, linkHrefKey: "invoiceHref" },

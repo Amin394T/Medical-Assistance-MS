@@ -2,24 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 import { updateMedicalRecord } from "@/db/actions/medicalRecords";
 import type { getMedicalRecord } from "@/db/actions/medicalRecords";
 import type { SetMedicalRecord } from "@/db/schemas";
 import { formatDateTime } from "@/app/_lib/date-format";
+import { formatMedicalRecordReference } from "@/app/_lib/medical-record-reference";
 
 type MedicalRecordDetails = NonNullable<Awaited<ReturnType<typeof getMedicalRecord>>>;
 
 type MedicalRecordEditFormProps = {
   record: MedicalRecordDetails;
   jobs: string[];
+  created: boolean;
 };
 
-export function MedicalRecordEditForm({ record, jobs }: MedicalRecordEditFormProps) {
+export function MedicalRecordEditForm({ record, jobs, created }: MedicalRecordEditFormProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
-  const [notice, setNotice] = useState<{ tone: "error" | "success"; text: string } | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   return (
     <form className="mb-6 space-y-6" onSubmit={async (event) => {
@@ -49,20 +51,22 @@ export function MedicalRecordEditForm({ record, jobs }: MedicalRecordEditFormPro
           delegationDate: parseDate("delegationDate"),
           regulatoryDoctor: String(data.get("regulatoryDoctor") ?? "") || null,
           status: String(data.get("status")) as SetMedicalRecord["status"],
-          statusReason: (String(data.get("statusReason") ?? "") || null) as SetMedicalRecord["statusReason"],
+          statusReason: record.statusReason,
           observation: String(data.get("observation") ?? "") || null,
         };
         const updated = await updateMedicalRecord(record.id, values);
         if (!updated) throw new Error("Medical record not found.");
-        setNotice({ tone: "success", text: "Changes saved." });
+        setNotice(null);
         router.refresh();
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (error) {
-        setNotice({ tone: "error", text: error instanceof Error ? error.message : "Unable to save changes." });
+        setNotice(error instanceof Error ? error.message : "Unable to save changes.");
       } finally {
         setPending(false);
       }
     }}>
-      {notice ? <Notice tone={notice.tone}>{notice.text}</Notice> : null}
+      {created ? <div role="status" className="mb-6 flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"><span>Record {formatMedicalRecordReference(record.accidentType, record.reference)} was created successfully.</span></div> : null}
+      {notice ? <Notice>{notice}</Notice> : null}
 
       <Section title="01 / Client Data">
         <div className="grid gap-5 md:grid-cols-3">
@@ -108,19 +112,19 @@ export function MedicalRecordEditForm({ record, jobs }: MedicalRecordEditFormPro
           <SelectField name="status" label="Record Status" defaultValue={record.status} required options={[
             ["PRG", "In progress"], ["DSP", "Disputed"], ["RJC", "Rejected"], ["CLS", "Closed"], ["ABN", "Abandoned"],
           ]} />
-          <SelectField name="statusReason" label="Status Reason" defaultValue={record.statusReason ?? ""} options={[
-            ["", "None"], ["SUS", "Policy suspended"], ["TER", "Policy terminated"], ["COV", "Coverage limited"],
-          ]} />
+          <ReadOnly label="Status Reason" value={getStatusReasonLabel(record.statusReason)} />
           <DateTimeField name="delegationDate" label="Delegation Date" value={record.delegationDate} />
           <TextField name="regulatoryDoctor" label="Regulatory Doctor" defaultValue={record.regulatoryDoctor ?? ""} />
           <ReadOnly label="Manager" value={record.manager} />
           <TextField name="observation" label="Observation" defaultValue={record.observation ?? ""} />
-          <ReadOnly label="Last Updated" value={formatDateTime(record.lastUpdated)} />
-          <ReadOnly label="Last Updater" value={record.lastUpdater} />
         </div>
       </Section>
 
-      <div className="flex justify-end border-t border-slate-200 pt-6 mb-12">
+      <div className="mb-12 flex items-end justify-between border-t border-slate-200 pt-6">
+        <div className="space-y-1 text-xs text-slate-500">
+          <p>Last updated: {formatDateTime(record.lastUpdated)}</p>
+          <p>Last updater: {record.lastUpdater}</p>
+        </div>
         <button type="submit" disabled={pending} className="rounded-lg bg-teal-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300">
           {pending ? "Saving..." : "Save Changes"}
         </button>
@@ -150,9 +154,17 @@ function ReadOnly({ label, value }: { label: string; value: string | number | nu
   return <div><span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span><div className="flex h-11 items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-600">{value ?? "-"}</div></div>;
 }
 
-function Notice({ tone, children }: { tone: "error" | "success"; children: React.ReactNode }) {
-  const Icon = tone === "success" ? CheckCircle2 : AlertCircle;
-  return <div role="status" className={`mb-6 flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold ${tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-rose-200 bg-rose-50 text-rose-800"}`}><Icon className="h-5 w-5" /><span>{children}</span></div>;
+function Notice({ children }: { children: React.ReactNode }) {
+  return <div role="alert" className="mb-6 flex items-center gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800"><AlertCircle className="h-5 w-5" /><span>{children}</span></div>;
+}
+
+function getStatusReasonLabel(reason: MedicalRecordDetails["statusReason"]) {
+  switch (reason) {
+    case "SUS": return "Policy suspended";
+    case "TER": return "Policy terminated";
+    case "COV": return "Coverage limited";
+    default: return "-";
+  }
 }
 
 function toLocalDateTime(value: Date) {
