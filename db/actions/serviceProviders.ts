@@ -1,6 +1,6 @@
 "use server";
 
-import { asc, count, desc, eq, isNotNull, or, sql } from "drizzle-orm";
+import { asc, count, desc, eq, or, sql } from "drizzle-orm";
 import type { SQLWrapper } from "drizzle-orm";
 
 import { db } from "../index";
@@ -15,25 +15,12 @@ export async function listServiceProviders() {
     .from(serviceProviders);
 }
 
-export async function listServiceProviderBanks() {
-  const rows = await db
-    .selectDistinct({ bank: serviceProviders.bank })
-    .from(serviceProviders)
-    .where(isNotNull(serviceProviders.bank))
-    .orderBy(asc(serviceProviders.bank));
-  return rows.flatMap(({ bank }) => bank?.trim() ? [bank.trim()] : []);
-}
-
 const SERVICE_PROVIDER_SORT_KEYS = [
-  "id",
   "label",
-  "corporateName",
   "profile",
   "contactName",
   "phone",
   "email",
-  "bank",
-  "bankAccount",
 ] as const;
 
 export async function listServiceProvidersPage(options: GridListOptions = {}) {
@@ -42,20 +29,20 @@ export async function listServiceProvidersPage(options: GridListOptions = {}) {
   const condition = search
     ? or(
       contains(serviceProviders.label),
-      contains(serviceProviders.corporateName),
       contains(serviceProviders.profile),
       contains(serviceProviders.contactName),
       contains(serviceProviders.phone),
       contains(serviceProviders.email),
-      contains(serviceProviders.bank),
-      contains(serviceProviders.bankAccount),
     )
     : undefined;
   const [countRow] = await db.select({ total: count() }).from(serviceProviders).where(condition);
   const totalCount = countRow?.total ?? 0;
   const { page, pageSize, offset } = getGridPage(totalCount, options);
   const sort = isServiceProviderSortKey(options.sort) ? options.sort : "label";
-  const sortColumn = serviceProviders[sort];
+  const sortColumn = sort === "label" ? serviceProviders.label
+    : sort === "profile" ? serviceProviders.profile
+      : sort === "contactName" ? serviceProviders.contactName
+        : sort === "phone" ? serviceProviders.phone : serviceProviders.email;
   const rows = await db
     .select()
     .from(serviceProviders)

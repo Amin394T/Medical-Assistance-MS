@@ -1,22 +1,19 @@
-## WORKFLOWS
+## BUSINESS FLOWS
 - workplace accident declaration :
-    1. medical record is created:
-        + emergency phone call received from a client company ;
-        + caller provides a valid insurance policy for the victim ;
-        + initial data about the accident, company, and victim are recorded ;
-    2. medical intervention is sent:
-        + service providers (ambulances, doctors...) are called and directed to the accident place ;
-        + intervention service data are added to the medical record ;
-    3. medical documents are generated:
-        + medical record report is printed and added to a physical record ;
-        + medical coverages are sent to relevant service providers (hospitals, pharmacies...), then printed and added to the physical record.
+    + emergency phone call received from a client company ;
+    + caller provides a valid insurance policy for the victim ;
+    + initial data about the accident, company, and victim are recorded ;
+    + service providers (ambulances, doctors...) are called and directed to the accident place ;
+    + intervention service data are added to the medical record ;
+    + medical record file is printed and added to a physical record ;
+    + medical coverage documents are sent to relevant service providers (hospitals, pharmacies...), then printed and added to the physical record.
 
 - medical case follow-up :
     + follow-up e-mails and phone calls are made with the client company and service providers ;
     + subsequent medical services (medicines, treatments, check-ups...) are added to the medical record ;
     + new medical coverages are generated, sent, and printed ;
     + medical certificates (initial, prolongation, aggravation, healing ...) received from hospitals or regulatory physician are added to the medical record ;
-    + medical record is closed when settled or abandonned.
+    + follow-up ends when the medical record is closed or abandonned.
 
 - policy verification :
     + hospital calls and provides a client's insurance policy number ;
@@ -25,8 +22,8 @@
     + if the policy is invalid, a notification e-mail is sent to the insurance provider.
 
 - delta files loading:
-    + insurance company periodically sends a spreadsheet of the latest client policies, and may send another containing an employee list for fixed-rate policies ;
-    + Excel file includes policy, client, effective date, insurance company, and status columns;
+    + insurance company periodically sends a spreadsheet of the latest client policies, and may send another containing an employee list for nominative policies ;
+    + Excel file includes policy, client, effective date, insurance company, and status columns ;
     + file is processed to create new policies and update exisiting policies' statuses.
 
 - rejected records revalidation :
@@ -36,158 +33,255 @@
     + medical record is revalidated and its processing is resumed ;
     + new policy status is received in newer delta files.
 
-- service billing:
+- legal procedure:
+    + victim challenges an insurance decision in court (generally disability compensation) ;
+    + concerned mediacl record' status becomes "in dispute".
+
+- medical service billing:
     + batch of physical files is periodically provided to the billing manager ;
     + costs for services are added to each medical record ;
-    + records that are ready are selected for billing ;
-    + invoices are generated and printed for each record, including medical record creation fee ;
-    + financial settlements are processed with the service providers ;
-    + payments are then collected from the insurance companies.
+    + invoices are generated and printed for each record, including newly billed services ;
+    + medical record creation fee is added if it's the first record invoice ;
+    + invoices are sent to concerned insurance providers ;
+    + outgoing invoices payments are then collected.
 
-- legal procedure:
-    + victim challenges an insurance decision in court (generally disability compensation);
-    + concerned mediacl record' status becomes "in dispute", and is excluded from the list of billable records until the dispute is resolved.
+- service provider invoice settlement:
+    + incoming invoices are received from service providers ;
+    + invoices are entered into the system ;
+    + once paid, corresponding services are marked as "settled".
 
 
-## SCREENS
-- record management :
-    + emergency call : form used to collect data from calls, creates medical records ;
-    + medical records : list of medical records, sorted by date, column filters (reference, policy, company, victim, status, date), read-only ;
-        + record details : form used to displays and edit a record full details, includes editable lists for sevices and certificates ;
-- issurance management :
-    + client policies : list of insurance policies, row filter, read-only ;
-        + covered employees : pop-up showing a list of employees covered by a selected insurance policy of type "fixed-rate", search bar in the top, shows when "fixed-rate" is clicked, read-only ;
-    + insurance providers: list of insurance companies, row filter, grid CRUD;
-    + policy update : upload screen for the required policy delta file and an optional employee delta file; updates policies (new + status change), and overwrites covered employees for the selected insurance company only when an employee file is provided ;
-- service management :
-    + healthcare providers : list of medical service providers, row filter, grid CRUD ;
-    + medical services : list of medical services, row filter, grid CRUD ;
-- billing management :
-    + service settlement : list of waiting medical services from in-progress records and all billed or settled services, row filter, edit-only, check-box with each row + button that creates an invoice per record (groups services from same record) for selected services ;
-    + invoice cashing : list of cashings, row filter, read-only ;
-        + cashing details : form used display, create, and edit a cashing of invoices, includes a list of invoices which, during creation, displays all non-cashed invoices for selection, while during edit, displays invoices that are linked to this cashing, read-only in both cases; cashing date is enabled only when "cashed" is checked.
+## SCREEN DESCRIPTION
+- emergency call :
+    + domain: record management ;
+    + content type: form for medical record, used for creation ;
+    + displayed fields: only client data, accident data, victim data (as set out in DATA STRUCTURE), no status data, insurance policy drop-down list is searchable by policy number and client company ;
+    + behavior: creation should redirect to the record details screen ;
+
+- medical records :
+    + domain: record management ;
+    + content type: table of medical records, sorted by date, read-only ;
+    + displayed columns: reference (formatted), insurance policy (as policy number), client company, insurance company, victim name (first and last name concatenated), victim national ID, accident date, status (color-coded), manager ;
+    + filter: reference, policy number, client company, victim name, victim national ID, status (dropdown list), accident date (date range) ;
+    + behavior: clicking on reference redirects to record details page ;
+
+- record details :
+    + domain: record management ;
+    + content type:
+        1. form for medical record, used for display and update ;
+        2. table of services, filtered by medical record, sorted by date, editable, no filters ;
+        3. table of medical certificates, filtered by medical record, sorted by date, editable, no filters ;
+    + displayed fields / columns:
+        1. for medical record: all, reference is displayed as the header title, last updater and last updated displayed inline under the form as "Modified by ... at ..." ;
+        2. for services: all except record, payment amount, billing amount, and tax rate, service type drop-down list is searchable by type and profile ;
+        3. for medical certificates: all except record;
+    + behavior: update should scroll the page to the top, without any redirect ;
+    
+- client policies :
+    + domain: issurance management ;
+    + content type: table of insurance policies, sorted by status date, read-only ;
+    + displayed columns: all, status color-coded ;
+    + filters: policy number, client company, status (dropdown list) ;
+    + behavior: clicking on type value "nominative" displays a dialog containing a list of employees covered by the selected insurance policy with a search bar in the top ;
+
+- insurance providers :
+    + domain: insurance management ;
+    + content type: table of insurance providers, sorted by label, editable ;
+    + displayed columns: all ;
+    + filters: label ;
+    + behavior: clicking on record fees value displays a dialog containing a list of all the record types and the record fee for each, the fees being editable ;
+
+- policy update :
+    + domain: insurance management ;
+    + content type: form used for delta file upload ;
+    + displayed fields: insurance provider (dropdown list displays the label), policy file upload, employee file upload, the first 2 are required ;
+    + behavior: for the selected insurance provider, updates policies (new + status change), and overwrites covered employees for the selected insurance company only when an employee file is provided, no redirect ;
+
+- healthcare providers :
+    + domain: service management ;
+    + content type: table of service providers, sorted by label, editable ;
+    + displayed columns: all ;
+    + filters: label, profile ;
+
+- medical services :
+    + domain: service management ;
+    + content type: table of service types, sorted by target profile, editable ;
+    + displayed columns: all ;
+    + filters: label, tagert profile ;
+
+- record billing :
+    + domain: billing management ;
+    + content type: table of invoices, with a creation button, read-only;
+    + displayed columns: all ;
+    + filters: reference, record, cashed ;
+    + behavior: clicking on new invoice redirects to invoice creation ;
+
+- invoice creation :
+    + domain: billing management ;
+    + content type: table of services with no invoice attached, belonging to a medical record selected from a searchable dropdown list above the table, with a confirm button that creates and invoice for selected record, the columns payment amount, billing amount, and tax rate are editable ;
+    + displayed columns: service type, provider, date, payment amount, billing amount, tax rate ;
+    + behavior: clicking on confirm redirects to record billing ;
+
+- service settlement :
+    + domain: billing management ;
+    + content type: list invoice settlements, with a creation button, read-only ;
+    + displayed columns: all ;
+    + filters: reference, service provider, reception date (date range), settled ;
+    + behavior: clicking on new settlement or on the reference value redirects to settlement details ;
+
+- settlement details:
+    + domain: billing management ;
+    + content type:
+        1. form for invoice settlement, used for creation and update ;
+        2. list of services, read-only, in creation mode display services belonging to settlement, in update mode display all services that do not belong to any settlement, ordered by date, with a checkbox on each row for selection ;
+    + displayed fields / columns:
+        1. for settlement form: all ;
+        2. for service list: service type, provider, date, payment amount, billing amount, tax rate ;
+    + filters: medical record's reference, provider ;
+    + behavior: clicking on create creates the settlement and attach selected services to it, no redirect in both creation and update ;
+
+- invoice collection :
+    + domain: billing management ;
+    + content type: list of invoice collections, with a creation button ;
+    + displayed columns: all ;
+    + filters: reference, insurance provider, request date (date range), collected ;
+    + behavior: clicking on new collection or on the reference value redirects to collection details ;
+
+- collection details :
+    + domain: billing management ;
+    + content type:
+        1. form for invoice collection, used for creation and update ;
+        2. list of invoices, read-only, in creation mode display invoices belonging to collection, in update mode display all invoices that do not belong to any collection, ordered by date, with a checkbox on each row for selection ;
+    + displayed fields / columns:
+        1. for collection form: all ;
+        2. for invoice list: all ;
+    + filters: medical record's reference ;
+    + behavior: clicking on create creates the collection and attach selected invoices to it, no redirect in both creation and update ;
 
 
 ## DATA STRUCTURE
-- medical record:
+- medical record :
     // 1. client data:
-    + reference: required, read-only, unique, defaults to calculated (accident date YYMMDD + daily 2-digits sequence) ;
-    + insurance policy: required, selectable (list searchable by policy and client name) ;
-    + client company: UI-only (from selected insurance policy) ;
-    + insurance provider: UI-only (from selected insurance policy) ;
+    + reference: required, read-only, unique, defaults to (accident date YYMMDD + daily 2-digits sequence) ;
+    + insurance policy: required, selectable (display "policy number") ;
+    + client company: UI-only (inferred from selected insurance policy) ;
+    + insurance provider: UI-only (inferred from selected insurance policy) ;
     + reporting date: required, date-time, defaults to NOW ;
     + reporter name ;
-    + reporter phone: required ;
+    + reporter phone ;
 
     // 2. accident data:
+    + accident type: required, list (workplace accident - AT, illness & pain - MD, policy verification - VP, special service - SS, occupational disease - MP), defaults to "AT" ;
     + accident date: required, date-time, defaults to NOW ;
-    + accident type: required, list (workplace accident - AT, illness & pain - MD, policy verification - VF, special service - SS, occupational disease - PR), defaults to "AT" ;
-    + accident place: required, list (workshop - WS, route - RT, office - OF, construction - CT) ;
-    + accident cause: list (falling or slipping - FALL, machine or equipment - EQIP, overexertion and fatigue - FATG, hazardous substance - HAZD, workplace violence - VIOL, moving objects - OBJC) ;
-    + accident evolution: required, list (initial - INIT, relapse - RELP, death - DEAT, complement - COMP), defaults to "INIT" ;
+    + accident place: list (workshop - WKS, route - RUT, office - OFC, construction - CST) ;
+    + accident cause: list (falling or slipping - FAL, machine or equipment - EQP, overexertion and fatigue - FTG, hazardous substance - HZD, workplace violence - VLC, moving objects - OBJ) ;
+    + accident evolution: required, list (initial - INT, relapse - RLP, death - DTH, complement - CMP), defaults to "INT" ;
 
     // 3. victim data:
-    + victim first name: required ;
+    + victim first name ;
     + victim last name ;
     + victim phone ;
-    + victim national ID: required ;
+    + victim national ID ;
     + victim job ;
 
-    // 4. status data (hidden in "/assistance/call"):
-    + status: required, list (in progress - PRG, disputed - DSP, rejected - RJC, closed - CLS, abandoned - ABN), defaults to calculated (if policy is not valid or policy is of fixed-rate type but victim is not in the covered employees list, then "RJC", esle "PRG") ;
-    + status reason: list (policy suspended - SUS, policy terminated - TER, coverage limited - COV), defaults to calculated (depends of the policy status or the victim's absence from the covered employees list if the policy os fixed-rate) ;
-    + delegation date: date-time ;
+    // 4. status data:
+    + status: required, list (in progress - PRG, disputed - DSP, rejected - RJC, closed - CLS, abandoned - ABN), defaults to (if policy is not valid or is of nominative type but victim is not in the employees list, then "RJC", esle "PRG") ;
+    + status reason: list (policy suspended - SPD, policy terminated - TRM, coverage limited - LMT), defaults to (depends on the policy status or if it's nominative the victim's absence from the employees list) ;
     + regulatory doctor ;
     + manager: required, read-only, defaults to USER ;
     + observation ;
-    + last updated: required, read-only, date-time, defaults to NOW, automatically updated at modification time ;
-    + last updater: required, read-only, defaults to USER ;
+    + last updated: required, read-only, date-time, defaults to NOW, audit ;
+    + last updater: required, read-only, defaults to USER, audit ;
 
-- medical service:
-    + record: required, selectable (displays accident type - reference) ;
-
-    // 1. service data:
-    + service provider: required, selectable (displays service provider name and profile) ;
-    + service type: required, selectable (from service type, those corresponding to the selected service provider's profile) ;
-    + date: date, defaults to NOW ;
-    + observation ;
-    + settlement status: required, read-only, list (waiting - WAIT, billed - BILL, settled - SETT), defaults to "WAIT" ;
-    + settling date: date, read-only ;
-    
-    // 2. payment data :
-    + invoice: selectable (from invoices. displays reference) ;
-    + payment amount: required, number, defaults to calculated (service type's "payment amount") ;
-    + billing amount: required, number, defaults to calculated (service type's "billing amount") ;
-    + tax rate: required, number, defaults to calculated (service type's "tax rate") ;
-    + bank: combo-box ;
-    + payment mode: list (check - CHQ, transfer - VRM, cash - CSH) ;
-    + payment reference ;
-
-- medical certificate:
-    + record: required, selectable, hidden ;
-    + type: required, list (initial - INIT, prolongation - PROL, return - RETU, aggravation - AGGR, inspection - INSP, recovery - RECO) ;
-    + service provider: selectable (displays service provider name) ;
+- medical certificate :
+    + record: required, selectable (from medical records), hidden ;
+    + type: required, list (initial - INIT, prolongation - PROL, aggravation - AGGR, ablation - ABLA, recovery - RECO, return - WORK, relapse - RELA) ;
+    + service provider: selectable (displays "label") ;
+    + compensation rate: number ;
     + day count: required, number ;
     + start date: date ;
     + end date: date ;
     + observation ;
 
-- insurance provider:
+- insurance provider :
     + label: required, unique ;
-    + corporate id ;
+    + record fees: UI-only (inferred from corresponding insurance provider fee where "record type" is "AT") ;
     + phone ;
     + email ;
 
-- insurance policy (entirely read-only):
-    // 1. shows in delta file (in order):
+- insurance commission :
+    + provider: required, selectable (from insurance provider, displays "label"), hidden ;
+    + record type: required, list (workplace accident - AT, illness & pain - MD, policy verification - VP, special service - SS, occupational disease - MP), unique (per provider) ;
+    + commission: number, required ;
+
+- insurance policy (read-only) :
     + policy number: required, unique ;
     + client company: required ;
     + client activity ;
     + client address ;
     + client city ;
-    + type: required, list (revisable - REV, fixed-rate - FIX) ;
-    + status: required, list (valid - VALI, suspended - SUSP, terminated - TERM) ;
-    + effective date: required, date ;
-    
-    // 2. not in delta file:
-    + insurance company: required, selectable (the company selected when applying the delta file) ;
-    + creation date: required, read-only, date-time, defaults to NOW ;
-    + last updated: required, read-only, date-time, automatically updated at modification time IF something changed ;
+    + type: required, list (global - GLB, nominative - NMT) ;
+    + status: required, list (valid - VLD, suspended - SPD, terminated - TRM) ;
+    + status date: required, date ;
+    + upload date: required, date-time, defaults to NOW ;
+    + insurance company: required, selectable (displays "label") ;
 
-- insurance policy employee (entirely read-only):
-    + policy: required, selectable ;
-    + employee : required ;
+- insurance coverage (read-only) :
+    + policy: required, selectable (from insurance policy, displays "policy number"), hidden ;
+    + employee: required ;
 
-- service type:
+- service :
+    + record: required, selectable, hidden;
+    + service type: required, selectable (displays "label") ;
+    + provider: required, selectable (from service providers, only those corresponding to the selected service type's "target profile") ;
+    + date: required, date, defaults to NOW ;
+    + place ;
+    + observation ;
+    + payment amount: required, number, defaults to (service type's "payment amount") ;
+    + billing amount: required, number, defaults to (service type's "billing amount") ;
+    + tax rate: required, number, defaults to (service type's "tax rate") ;
+    + invoice: selectable (from invoices, displays "reference") ;
+    + settlement: selectable (from invoice settlement, displays "settled") ;
+
+- service type :
     + label: required, unique ;
     + payment amount: required, number, defaults to 0 ;
     + billing amount: required, number, defaults to 0 ;
     + tax rate: required, number, defaults to 0 ;
     + target profile: required, combo-box ;
 
-- service provider:
+- service provider :
     + label: required, unique ;
-    + corporate name ;
-    + profile: required, selectable (distinct values of column "target profile" from "service type") ;
+    + profile: required, selectable (from service type, distinct values of "target profile") ;
     + contact name ;
     + phone: required ;
     + email ;
-    + bank: combo-box ;
-    + bank account ;
 
-- billing invoice :
-    + record: required, selectable ;
-    + reference: required, read-only, unique, defaults to calculated (current year date YYMM + yearly 6-digits sequence) ;
+- invoice :
+    + reference: required, read-only, unique, defaults to (current year date YYMM + yearly 6-digits sequence) ;
+    + record: required, selectable (from medical record, displays reference) ;
     + issue date: required, read-only, date, defaults to NOW ;
     + total amount: required, number ;
-    + cashing: optional, selectable ;
+    + collection: selectable (from invoice collection, displays "collected") ;
 
-- billing invoice cashing :
-    + insurance provider: required, selectable ;
-    + request date: required, read-only, date, defaults to NOW ;
+- invoice settlement :
+    + reference: required, read-only, unique, defaults to (current year date YYMM + yearly 4-digits sequence) ;
+    + service provider: required, selectable (displays "label") ;
+    - reception date: date, defaults to NOW ;
     + total amount: required, number ;
-    + bank: combo-box ;
     + payment mode: list (check - CHQ, transfer - VRM, cash - CSH) ;
     + payment reference ;
-    + cashed: boolean ;
-    + cashing date: date ;
+    + bank: combo-box ;
+    + settled: boolean ;
+    + settlement date: date ;
+
+- invoice collection :
+    + reference: required, read-only, unique, defaults to (current year date YYMM + yearly 4-digits sequence) ;
+    + insurance provider: required, selectable (displays "label") ;
+    + request date: date, defaults to NOW ;
+    + total amount: required, number ;
+    + payment mode: list (check - CHQ, transfer - VRM, cash - CSH) ;
+    + payment reference ;
+    + bank: combo-box ;
+    + collected: boolean ;
+    + collection date: date ;

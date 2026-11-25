@@ -5,7 +5,7 @@ import { alias } from "drizzle-orm/sqlite-core";
 
 import { db } from "../index";
 import { getGridPage } from "./gridList";
-import { insurancePolicies, insurancePolicyEmployees, insuranceProviders, medicalRecords } from "../schemas";
+import { insurancePolicies, insuranceCoverages, insuranceProviders, medicalRecords } from "../schemas";
 import type { NewMedicalRecord, SetMedicalRecord } from "../schemas";
 import type { MedicalRecordListOptions, MedicalRecordSortKey } from "./medicalRecordListTypes";
 import { normalizeEmployeeName } from "./policyEmployeeNames";
@@ -18,6 +18,7 @@ export async function listMedicalRecords(options: MedicalRecordListOptions = {})
   const companyFilter = filters?.clientCompany.trim();
   const referenceFilter = filters?.referenceNumber.trim();
   const victimFilter = filters?.victimName.trim();
+  const nationalIdFilter = filters?.victimNationalId.trim();
   if (policyFilter) {
     conditions.push(sql`instr(lower(${insurancePolicies.policyNumber}), lower(${policyFilter})) > 0`);
   }
@@ -32,6 +33,9 @@ export async function listMedicalRecords(options: MedicalRecordListOptions = {})
     const victimName = sql`coalesce(${medicalRecords.victimFirstName}, '') || ' ' || coalesce(${medicalRecords.victimLastName}, '')`;
     conditions.push(sql`instr(lower(${victimName}), lower(${victimFilter})) > 0`);
   }
+  if (nationalIdFilter) {
+    conditions.push(sql`instr(lower(coalesce(${medicalRecords.victimNationalId}, '')), lower(${nationalIdFilter})) > 0`);
+  }
   const status = getRecordStatusCode(filters?.recordStatus);
   if (status) conditions.push(eq(medicalRecords.status, status));
   const accidentFrom = parseDateBoundary(filters?.accidentFrom, "00:00:00");
@@ -44,7 +48,7 @@ export async function listMedicalRecords(options: MedicalRecordListOptions = {})
     .select({ total: count() })
     .from(medicalRecords)
     .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
-    .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceCompanyId, insuranceCompany.id))
+    .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceProviderId, insuranceCompany.id))
     .where(condition);
   const totalCount = countRow?.total ?? 0;
   const { page, pageSize, offset } = getGridPage(totalCount, options);
@@ -62,6 +66,7 @@ export async function listMedicalRecords(options: MedicalRecordListOptions = {})
       insuranceCompany: insuranceCompany.label,
       victimNameFirst: medicalRecords.victimFirstName,
       victimNameLast: medicalRecords.victimLastName,
+      victimNationalId: medicalRecords.victimNationalId,
       accidentDate: medicalRecords.accidentDate,
       status: medicalRecords.status,
       manager: medicalRecords.manager,
@@ -70,7 +75,7 @@ export async function listMedicalRecords(options: MedicalRecordListOptions = {})
     })
     .from(medicalRecords)
     .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
-    .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceCompanyId, insuranceCompany.id))
+    .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceProviderId, insuranceCompany.id))
     .where(condition)
     .orderBy(orderBy, asc(medicalRecords.id))
     .limit(pageSize)
@@ -94,7 +99,7 @@ export async function getMedicalRecord(id: number) {
     .select()
     .from(medicalRecords)
     .innerJoin(insurancePolicies, eq(medicalRecords.policyId, insurancePolicies.id))
-    .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceCompanyId, insuranceCompany.id))
+    .innerJoin(insuranceCompany, eq(insurancePolicies.insuranceProviderId, insuranceCompany.id))
     .where(eq(medicalRecords.id, id));
 
   if (!row) return null;
@@ -127,10 +132,10 @@ export async function createMedicalRecord(input: NewMedicalRecord) {
       .all();
     if (!coverage) throw new Error("Insurance policy not found.");
 
-    const coveredEmployees = coverage.type === "FIX" && coverage.status === "VALI"
-      ? tx.select({ employee: insurancePolicyEmployees.employee })
-        .from(insurancePolicyEmployees)
-        .where(eq(insurancePolicyEmployees.policyId, input.policyId))
+    const coveredEmployees = coverage.type === "NMT"
+      ? tx.select({ employee: insuranceCoverages.employee })
+        .from(insuranceCoverages)
+        .where(eq(insuranceCoverages.policyId, input.policyId))
         .all()
         .map(({ employee }) => employee)
       : [];
@@ -176,7 +181,7 @@ export async function createMedicalRecord(input: NewMedicalRecord) {
 }
 
 export async function updateMedicalRecord(id: number, input: SetMedicalRecord) {
-  if (input.statusReason !== null && input.statusReason !== "SUS" && input.statusReason !== "TER" && input.statusReason !== "COV") {
+  if (input.statusReason !== null && input.statusReason !== "SPD" && input.statusReason !== "TRM" && input.statusReason !== "LMT") {
     throw new Error("Invalid medical-record status reason.");
   }
   return db.transaction((tx) => {
@@ -197,10 +202,10 @@ export async function updateMedicalRecord(id: number, input: SetMedicalRecord) {
       .all();
     if (!policy) throw new Error("The medical record's insurance policy was not found.");
 
-    const coveredEmployees = input.status === "RJC" && policy.type === "FIX" && policy.status === "VALI"
-      ? tx.select({ employee: insurancePolicyEmployees.employee })
-        .from(insurancePolicyEmployees)
-        .where(eq(insurancePolicyEmployees.policyId, existing.policyId))
+    const coveredEmployees = input.status === "RJC" && policy.type === "NMT"
+      ? tx.select({ employee: insuranceCoverages.employee })
+        .from(insuranceCoverages)
+        .where(eq(insuranceCoverages.policyId, existing.policyId))
         .all()
         .map(({ employee }) => employee)
       : [];
@@ -230,7 +235,6 @@ export async function updateMedicalRecord(id: number, input: SetMedicalRecord) {
         victimJob: input.victimJob,
         status: input.status,
         statusReason: input.status === "RJC" ? input.statusReason ?? calculatedReason : null,
-        delegationDate: input.delegationDate,
         regulatoryDoctor: input.regulatoryDoctor,
         observation: input.observation,
         lastUpdated: new Date(),
@@ -275,7 +279,7 @@ function getRecordStatusCode(label: string | undefined) {
 
 function isMedicalRecordSortKey(value: unknown): value is MedicalRecordSortKey {
   return value === "reference" || value === "policy" || value === "clientCompany" ||
-    value === "insuranceCompany" || value === "victimName" || value === "accidentDate" ||
+    value === "insuranceCompany" || value === "victimName" || value === "victimNationalId" || value === "accidentDate" ||
     value === "status" || value === "manager";
 }
 
@@ -287,6 +291,7 @@ function getMedicalRecordSortColumn(sort: MedicalRecordSortKey, insuranceCompany
     case "clientCompany": return insurancePolicies.clientCompany;
     case "insuranceCompany": return insuranceCompany.label;
     case "victimName": return victimName;
+    case "victimNationalId": return medicalRecords.victimNationalId;
     case "accidentDate": return medicalRecords.accidentDate;
     case "status": return sql`case ${medicalRecords.status}
       when 'PRG' then 'In Progress'
@@ -312,13 +317,13 @@ function getCompactDate(date: Date) {
   return `${year}${month}${day}`;
 }
 
-function getPolicyStatusReason(type: "REV" | "FIX", status: "VALI" | "SUSP" | "TERM", employeeName: string, employees: string[]) {
-  if (status === "SUSP") return "SUS" as const;
-  if (status === "TERM") return "TER" as const;
-  if (type !== "FIX") return null;
+function getPolicyStatusReason(type: "GLB" | "NMT", status: "VLD" | "SPD" | "TRM", employeeName: string, employees: string[]) {
+  if (status === "SPD") return "SPD" as const;
+  if (status === "TRM") return "TRM" as const;
+  if (type !== "NMT") return null;
 
   const normalizedEmployeeName = normalizeEmployeeName(employeeName);
   return employees.some((employee) => normalizeEmployeeName(employee) === normalizedEmployeeName)
     ? null
-    : "COV" as const;
+    : "LMT" as const;
 }

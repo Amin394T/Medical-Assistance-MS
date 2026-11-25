@@ -1,22 +1,27 @@
 ## REMINDER
-- add reference to cachings
 - invoice cancelling
 - show that "table record is used" instead of foreign key error
-- add padding to the right of the dropdown list arrow
-- replace USER with logged-in user
+- fix padding to the right of the dropdown list arrow
 - user authentication
 - server-side input validation
 - document printing from tables
 - make error messages appear as popup notification
-- move-off of full row search
-
-
-## NEEDS
-- go through reports
-- current data model, required for migration
-- remaining columns in certificates
-- invoice per record or can have multiple?
-- is tax the same for all?
++ move-off of full row search
+- remove all accessibility stuff
++ disputed records can still be invoiced
++ add ID number to table and filtre by manager and ID
++ record opening fees should be modifiable
++ add invoices
+- properly position the delta file import  button on the right
+- default values should show in creation form?
+- accident type to record type
+- reports types
+    - fiche de declaration
+    - fiche de verification de couverture
+    - prise en charge
+    - certificats
++ remove seconds from last updated in form, accident date in grid
+- remove filter form sub-grids, replace with title + no paddings
 
 
 ## IMPROVEMENTS
@@ -33,3 +38,8 @@
 - data archiving ;
 - user actions audit ;
 - medical coverages displayed like medical certificates ;
+- notification system :
+    - expired certificates ;
+    - healing + not all services settled ;
+    - victim first/last name, ID number missing ;
+- scan & upload certificates ;

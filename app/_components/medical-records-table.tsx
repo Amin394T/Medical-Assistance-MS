@@ -37,6 +37,7 @@ const columns = columnHelper.columns([
   columnHelper.accessor("clientCompany", { header: "Client Company" }),
   columnHelper.accessor("insuranceCompany", { header: "Insurance Company" }),
   columnHelper.accessor("victimName", { header: "Victim Name", cell: ({ getValue }) => <span className="text-slate-800">{getValue()}</span> }),
+  columnHelper.accessor("victimNationalId", { header: "Victim National ID" }),
   columnHelper.accessor("accidentDate", { header: "Accident Date", sortFn: "datetime", cell: ({ getValue }) => formatDateTime(getValue()) }),
   columnHelper.accessor("status", { header: "Status", cell: ({ getValue }) => <StatusBadge value={getValue()} /> }),
   columnHelper.accessor("manager", { header: "Manager", sortFn: "text" }),
@@ -49,6 +50,7 @@ const EMPTY_FILTERS: MedicalRecordFilters = {
   clientCompany: "",
   referenceNumber: "",
   victimName: "",
+  victimNationalId: "",
   recordStatus: "",
   accidentFrom: "",
   accidentTo: "",
@@ -99,6 +101,7 @@ export function MedicalRecordsTable({ records, totalCount, page, pageSize, filte
               <FilterInput label="Client Company" value={filters.clientCompany} onChange={(value) => updateFilter("clientCompany", value)} />
               <FilterInput label="Reference" value={filters.referenceNumber} onChange={(value) => updateFilter("referenceNumber", value)} />
               <FilterInput label="Victim Name" value={filters.victimName} onChange={(value) => updateFilter("victimName", value)} />
+              <FilterInput label="Victim National ID" value={filters.victimNationalId} onChange={(value) => updateFilter("victimNationalId", value)} />
               <label className="block"><span className="mb-1 block text-[11px] font-semibold text-slate-500">Status</span><select value={filters.recordStatus} onChange={(event) => updateFilter("recordStatus", event.target.value)} className={filterClass}><option value="">All statuses</option>{["In Progress", "Disputed", "Rejected", "Closed", "Abandoned"].map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
               <DateRange label="Date" from={filters.accidentFrom} to={filters.accidentTo} onFromChange={(value) => updateFilter("accidentFrom", value)} onToChange={(value) => updateFilter("accidentTo", value)} />
               <div className="mt-5 flex justify-end"><button type="button" onClick={resetTable} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"><RotateCcw className="h-3.5 w-3.5"/>Reset Table</button></div>
@@ -134,6 +137,7 @@ function filtersEqual(left: MedicalRecordFilters, right: MedicalRecordFilters) {
     left.clientCompany === right.clientCompany &&
     left.referenceNumber === right.referenceNumber &&
     left.victimName === right.victimName &&
+    left.victimNationalId === right.victimNationalId &&
     left.recordStatus === right.recordStatus &&
     left.accidentFrom === right.accidentFrom &&
     left.accidentTo === right.accidentTo;

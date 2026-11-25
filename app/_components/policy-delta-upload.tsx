@@ -37,8 +37,8 @@ export function PolicyDeltaUpload({ providers }: { providers: ProviderOption[] }
 
         <label className="block max-w-2xl">
           <span className="mb-2 block text-xs font-semibold text-slate-600">Insurance Company<span className="ml-1 text-teal-700">*</span></span>
-          <select name="insuranceCompanyId" required defaultValue="" className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100">
-            <option value="" disabled>Select the insurance company</option>
+          <select name="insuranceProviderId" required defaultValue="" className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100">
+            <option value="" disabled>Select the insurance provider</option>
             {providers.map((provider) => <option key={provider.id} value={provider.id}>{provider.label}</option>)}
           </select>
           <span className="mt-2 block text-xs text-slate-500">Owner of the uploaded policies.</span>

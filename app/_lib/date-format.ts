@@ -15,5 +15,5 @@ export function formatDate(value: Date | string) {
 
 export function formatDateTime(value: Date | string) {
   const date = asDate(value);
-  return `${formatDate(date)} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  return `${formatDate(date)} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }

@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, real, text } from "drizzle-orm/sqlite-core";
 
 import { medicalRecords } from "./medicalRecords";
 import { serviceProviders } from "./serviceProviders";
@@ -6,8 +6,9 @@ import { serviceProviders } from "./serviceProviders";
 export const medicalCertificates = sqliteTable("medical_certificates", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   medicalRecordId: integer("medical_record_id").notNull().references(() => medicalRecords.id),
-  type: text("type", { enum: ["INIT", "PROL", "RETU", "AGGR", "INSP", "RECO"] }).notNull(),
+  type: text("type", { enum: ["INIT", "PROL", "AGGR", "ABLA", "RECO", "WORK", "RELA"] }).notNull(),
   serviceProviderId: integer("service_provider_id").references(() => serviceProviders.id),
+  compensationRate: real("compensation_rate"),
   dayCount: integer("day_count").notNull(),
   startDate: integer("start_date", { mode: "timestamp" }),
   endDate: integer("end_date", { mode: "timestamp" }),

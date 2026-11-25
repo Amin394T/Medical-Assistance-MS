@@ -5,14 +5,14 @@ import { Readable } from "node:stream";
 import { eq, inArray } from "drizzle-orm";
 
 import { db } from "../index";
-import { insurancePolicies, insurancePolicyEmployees, insuranceProviders } from "../schemas";
+import { insurancePolicies, insuranceCoverages, insuranceProviders } from "../schemas";
 import { normalizeEmployeeName } from "./policyEmployeeNames";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 
-type PolicyStatus = "VALI" | "SUSP" | "TERM";
-type PolicyType = "REV" | "FIX";
+type PolicyStatus = "VLD" | "SPD" | "TRM";
+type PolicyType = "GLB" | "NMT";
 
 type PolicyDeltaRow = {
   rowNumber: number;
@@ -22,8 +22,8 @@ type PolicyDeltaRow = {
   clientAddress: string | null;
   clientCity: string | null;
   insurer: string | null;
-  type: PolicyType;
-  effectiveDate: Date;
+  type: PolicyType | null;
+  statusDate: Date;
   status: PolicyStatus;
 };
 
@@ -41,7 +41,7 @@ export type PolicyDeltaImportResult = {
 };
 
 export async function uploadPolicyDeltaFiles(formData: FormData): Promise<PolicyDeltaImportResult> {
-  const insuranceCompanyId = requiredId(formData.get("insuranceCompanyId"), "Insurance company");
+  const insuranceProviderId = requiredId(formData.get("insuranceProviderId"), "Insurance provider");
   const policyFile = formData.get("policyFile");
   const employeeFileValue = formData.get("employeeFile");
   if (!(policyFile instanceof File)) throw new Error("Choose an Excel policy delta file.");
@@ -64,7 +64,7 @@ export async function uploadPolicyDeltaFiles(formData: FormData): Promise<Policy
     const [company] = tx
       .select()
       .from(insuranceProviders)
-      .where(eq(insuranceProviders.id, insuranceCompanyId))
+      .where(eq(insuranceProviders.id, insuranceProviderId))
       .all();
     if (!company) throw new Error("Select a valid insurance company.");
 
@@ -79,31 +79,31 @@ export async function uploadPolicyDeltaFiles(formData: FormData): Promise<Policy
         throw new Error(`Row ${row.rowNumber}: insurer "${row.insurer}" does not match the selected insurance company.`);
       }
       const current = policiesByNumber.get(normalize(row.policyNumber));
-      if (current && current.insuranceCompanyId !== insuranceCompanyId) {
+      if (current && current.insuranceProviderId !== insuranceProviderId) {
         throw new Error(`Row ${row.rowNumber}: policy "${row.policyNumber}" belongs to a different insurance company.`);
       }
 
       if (!current) {
         const now = new Date();
+        const rowType = row.type ?? (employeeRows.some((employee) => normalize(employee.policyNumber) === normalize(row.policyNumber)) ? "NMT" : "GLB");
         const [created] = tx.insert(insurancePolicies).values({
           policyNumber: row.policyNumber,
           clientCompany: row.clientCompany,
           clientActivity: row.clientActivity,
           clientAddress: row.clientAddress,
           clientCity: row.clientCity,
-          type: row.type,
-          effectiveDate: row.effectiveDate,
-          insuranceCompanyId,
+          type: rowType,
+          statusDate: row.statusDate,
+          insuranceProviderId,
           status: row.status,
-          creationDate: now,
-          lastUpdated: now,
+          uploadDate: now,
         }).returning().all();
         if (!created) throw new Error(`Row ${row.rowNumber}: the policy could not be created.`);
         policiesByNumber.set(normalize(created.policyNumber), created);
         policiesCreated += 1;
       } else if (current.status !== row.status) {
         const [updated] = tx.update(insurancePolicies)
-          .set({ status: row.status, lastUpdated: new Date() })
+          .set({ status: row.status, statusDate: row.statusDate })
           .where(eq(insurancePolicies.id, current.id))
           .returning()
           .all();
@@ -118,7 +118,7 @@ export async function uploadPolicyDeltaFiles(formData: FormData): Promise<Policy
     const employeesByPolicy = new Map<number, Map<string, string>>();
     for (const row of employeeRows) {
       const policy = policiesByNumber.get(normalize(row.policyNumber));
-      if (!policy || policy.insuranceCompanyId !== insuranceCompanyId || policy.type !== "FIX") {
+      if (!policy || policy.insuranceProviderId !== insuranceProviderId || policy.type !== "NMT") {
         throw new Error(`Row ${row.rowNumber}: policy "${row.policyNumber}" is not a fixed-rate policy for the selected company.`);
       }
       const employees = employeesByPolicy.get(policy.id) ?? new Map<string, string>();
@@ -132,15 +132,15 @@ export async function uploadPolicyDeltaFiles(formData: FormData): Promise<Policy
       [...employees.values()].map((employee) => ({ policyId, employee })),
     );
     if (employeeFile) {
-      const fixedPolicyIds = [...policiesByNumber.values()]
-        .filter((policy) => policy.insuranceCompanyId === insuranceCompanyId && policy.type === "FIX")
+      const nominativePolicyIds = [...policiesByNumber.values()]
+        .filter((policy) => policy.insuranceProviderId === insuranceProviderId && policy.type === "NMT")
         .map((policy) => policy.id);
-      if (fixedPolicyIds.length) {
-        tx.delete(insurancePolicyEmployees)
-          .where(inArray(insurancePolicyEmployees.policyId, fixedPolicyIds))
+      if (nominativePolicyIds.length) {
+        tx        .delete(insuranceCoverages)
+          .where(inArray(insuranceCoverages.policyId, nominativePolicyIds))
           .run();
       }
-      if (employeeRecords.length) tx.insert(insurancePolicyEmployees).values(employeeRecords).run();
+      if (employeeRecords.length) tx.insert(insuranceCoverages).values(employeeRecords).run();
     }
 
     return {
@@ -165,7 +165,7 @@ async function readWorksheet(file: File, label: string) {
 
 function parsePolicyDeltaRows(worksheet: ExcelJS.Worksheet): PolicyDeltaRow[] {
   const headers = getHeaders(worksheet);
-  for (const header of ["policy", "client", "type", "effective date", "status"]) {
+  for (const header of ["policy", "client", "status", "status date"]) {
     if (!headers.has(header)) throw new Error(`The policy workbook is missing the required "${header}" column.`);
   }
 
@@ -177,8 +177,8 @@ function parsePolicyDeltaRows(worksheet: ExcelJS.Worksheet): PolicyDeltaRow[] {
     const value = (header: string) => cellText(row, headers, header);
     const policyNumber = value("policy");
     const clientCompany = value("client");
-    const effectiveDate = parseEffectiveDate(row, headers.get("effective date")!, rowNumber);
-    const type = parsePolicyType(value("type"), rowNumber);
+    const statusDate = parseEffectiveDate(row, headers.get("status date")!, rowNumber);
+    const type = headers.has("type") && value("type") ? parsePolicyType(value("type"), rowNumber) : null;
     const status = parsePolicyStatus(value("status"), rowNumber);
     for (const [label, field] of [["policy", policyNumber], ["client", clientCompany]] as const) {
       if (!field) throw new Error(`Row ${rowNumber}: "${label}" is required.`);
@@ -195,7 +195,7 @@ function parsePolicyDeltaRows(worksheet: ExcelJS.Worksheet): PolicyDeltaRow[] {
       clientCity: value("client city") || null,
       insurer: value("insurer") || null,
       type,
-      effectiveDate,
+      statusDate,
       status,
     });
   }
@@ -237,6 +237,7 @@ function canonicalHeader(value: string) {
     case "policy number": return "policy";
     case "client company": return "client";
     case "policy type": return "type";
+    case "effective date": return "status date";
     case "insurance company": return "insurer";
     case "employee name":
     case "employee full name": return "employee";
@@ -267,22 +268,22 @@ function parseEffectiveDate(row: ExcelJS.Row, columnNumber: number, rowNumber: n
 
 function parsePolicyType(value: string, rowNumber: number): PolicyType {
   switch (value.trim().toUpperCase().replace(/[\s_-]+/g, "")) {
-    case "REV":
-    case "REVISABLE": return "REV";
-    case "FIX":
-    case "FIXEDRATE": return "FIX";
-    default: throw new Error(`Row ${rowNumber}: type must be REVISABLE or FIXED-RATE.`);
+    case "GLB":
+    case "GLOBAL": return "GLB";
+    case "NMT":
+    case "NOMINATIVE": return "NMT";
+    default: throw new Error(`Row ${rowNumber}: type must be GLOBAL or NOMINATIVE.`);
   }
 }
 
 function parsePolicyStatus(value: string, rowNumber: number): PolicyStatus {
   switch (value.trim().toUpperCase()) {
-    case "VALI":
-    case "VALID": return "VALI";
-    case "SUSP":
-    case "SUSPENDED": return "SUSP";
-    case "TERM":
-    case "TERMINATED": return "TERM";
+    case "VLD":
+    case "VALID": return "VLD";
+    case "SPD":
+    case "SUSPENDED": return "SPD";
+    case "TRM":
+    case "TERMINATED": return "TRM";
     default: throw new Error(`Row ${rowNumber}: status must be VALID, SUSPENDED, or TERMINATED.`);
   }
 }

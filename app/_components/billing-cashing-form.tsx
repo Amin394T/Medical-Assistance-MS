@@ -156,7 +156,6 @@ export function BillingCashingForm({
         <div className="mb-3 flex items-end justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Invoices</h2>
-            <p className="text-sm text-slate-500">{isEditing ? "Invoices linked to this cashing are read-only." : "Select non-cashed invoices for this insurance provider."}</p>
           </div>
           <p className="whitespace-nowrap text-sm font-semibold text-slate-700">Total: {totalAmount.toFixed(2)}</p>
         </div>

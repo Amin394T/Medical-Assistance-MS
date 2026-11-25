@@ -25,18 +25,18 @@ type MedicalRecordCallFormProps = {
 type CallFormValues = {
   reportingDate: string;
   accidentDate: string;
-  accidentEvolution: "INIT" | "RELP" | "DEAT" | "COMP";
+  accidentEvolution: "INT" | "RLP" | "DTH" | "CMP";
   policyId: string;
-  type: "AT" | "MD" | "VF" | "SS" | "PR";
+  type: "AT" | "MD" | "VP" | "SS" | "MP";
   reporterName: string;
   reporterPhone: string;
-  accidentPlace: "WS" | "RT" | "OF" | "CT";
+  accidentPlace: "WKS" | "RUT" | "OFC" | "CST" | "";
   victimFirstName: string;
   victimLastName: string;
   victimNationalId: string;
   victimPhone: string;
   victimJob: string;
-  accidentCause: "FALL" | "EQIP" | "FATG" | "HAZD" | "VIOL" | "OBJC" | "";
+  accidentCause: "FAL" | "EQP" | "FTG" | "HZD" | "VLC" | "OBJ" | "";
 };
 
 type RenderableField = {
@@ -56,12 +56,12 @@ type FormRenderer = {
 const initialValues: CallFormValues = {
   reportingDate: "",
   accidentDate: new Date().toISOString().slice(0, 16),
-  accidentEvolution: "INIT",
+  accidentEvolution: "INT",
   policyId: "",
   type: "AT",
   reporterName: "",
   reporterPhone: "",
-  accidentPlace: "WS",
+  accidentPlace: "",
   victimFirstName: "",
   victimLastName: "",
   victimNationalId: "",
@@ -87,14 +87,14 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
           policyId: Number(value.policyId),
           reportingDate: new Date(value.reportingDate),
           reporterName: value.reporterName || null,
-          reporterPhone: value.reporterPhone,
-          accidentPlace: value.accidentPlace,
+          reporterPhone: value.reporterPhone || null,
+          accidentPlace: value.accidentPlace || null,
           accidentDate: new Date(value.accidentDate),
           accidentCause: value.accidentCause || null,
           accidentEvolution: value.accidentEvolution,
-          victimFirstName: value.victimFirstName,
+          victimFirstName: value.victimFirstName || null,
           victimLastName: value.victimLastName || null,
-          victimNationalId: value.victimNationalId,
+          victimNationalId: value.victimNationalId || null,
           victimPhone: value.victimPhone || null,
           victimJob: value.victimJob || null,
         });
@@ -129,25 +129,25 @@ export function MedicalRecordCallForm({ policies, jobs, displayReportingDate }: 
               }} />
               <Field form={form as unknown as FormRenderer} name="reportingDate" label="Reporting Date" required type="datetime-local" />
               <Field form={form as unknown as FormRenderer} name="reporterName" label="Reporter Name" />
-              <Field form={form as unknown as FormRenderer} name="reporterPhone" label="Reporter Phone" required type="tel" />
+              <Field form={form as unknown as FormRenderer} name="reporterPhone" label="Reporter Phone" type="tel" />
             </div>
           </FormSection>
 
           <FormSection title="02 / Accident Data">
             <div className="grid gap-5 md:grid-cols-3">
               <Field form={form as unknown as FormRenderer} name="accidentDate" label="Accident Date" required type="datetime-local" />
-              <form.Field name="type" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Type" required options={[{ value: "AT", label: "Workplace accident" }, { value: "MD", label: "Illness & pain" }, { value: "VF", label: "Policy verification" }, { value: "SS", label: "Special service" }, { value: "PR", label: "Occupational disease" }]} />} />
-              <form.Field name="accidentCause" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Cause" options={[{ value: "FALL", label: "Falling or slipping" }, { value: "EQIP", label: "Machine or equipment" }, { value: "FATG", label: "Overexertion and fatigue" }, { value: "HAZD", label: "Hazardous substance" }, { value: "VIOL", label: "Workplace violence" }, { value: "OBJC", label: "Moving objects" }]} placeholder="Select a cause" />} />
-              <form.Field name="accidentPlace" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Place" required options={[{ value: "WS", label: "Workshop" }, { value: "RT", label: "Route" }, { value: "OF", label: "Office" }, { value: "CT", label: "Construction" }]} />} />
-              <form.Field name="accidentEvolution" children={(field) => <SelectField field={field as unknown as RenderableField} label="Case Evolution" required options={[{ value: "INIT", label: "Initial" }, { value: "RELP", label: "Relapse" }, { value: "DEAT", label: "Death" }, { value: "COMP", label: "Complement" }]} />} />
+              <form.Field name="type" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Type" required options={[{ value: "AT", label: "Workplace accident" }, { value: "MD", label: "Illness & pain" }, { value: "VP", label: "Policy verification" }, { value: "SS", label: "Special service" }, { value: "MP", label: "Occupational disease" }]} />} />
+              <form.Field name="accidentCause" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Cause" options={[{ value: "FAL", label: "Falling or slipping" }, { value: "EQP", label: "Machine or equipment" }, { value: "FTG", label: "Overexertion and fatigue" }, { value: "HZD", label: "Hazardous substance" }, { value: "VLC", label: "Workplace violence" }, { value: "OBJ", label: "Moving objects" }]} placeholder="Select a cause" />} />
+              <form.Field name="accidentPlace" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Place" options={[{ value: "WKS", label: "Workshop" }, { value: "RUT", label: "Route" }, { value: "OFC", label: "Office" }, { value: "CST", label: "Construction" }]} />} />
+              <form.Field name="accidentEvolution" children={(field) => <SelectField field={field as unknown as RenderableField} label="Accident Evolution" required options={[{ value: "INT", label: "Initial" }, { value: "RLP", label: "Relapse" }, { value: "DTH", label: "Death" }, { value: "CMP", label: "Complement" }]} />} />
             </div>
           </FormSection>
 
           <FormSection title="03 / Victim Data">
             <div className="grid gap-5 md:grid-cols-3">
-              <Field form={form as unknown as FormRenderer} name="victimFirstName" label="Victim First Name" required />
+              <Field form={form as unknown as FormRenderer} name="victimFirstName" label="Victim First Name" />
               <Field form={form as unknown as FormRenderer} name="victimLastName" label="Victim Last Name" />
-              <Field form={form as unknown as FormRenderer} name="victimNationalId" label="National ID" required />
+              <Field form={form as unknown as FormRenderer} name="victimNationalId" label="National ID" />
               <Field form={form as unknown as FormRenderer} name="victimPhone" label="Phone" type="tel" />
               <Field form={form as unknown as FormRenderer} name="victimJob" label="Victim Job" options={jobs} />
             </div>

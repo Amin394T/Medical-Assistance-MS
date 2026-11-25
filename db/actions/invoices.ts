@@ -13,25 +13,33 @@ export async function listInvoices() {
     reference: invoice.reference,
     date: invoice.issueDate,
     totalAmount: invoice.totalAmount,
-    insuranceProviderId: invoice.insuranceProviderId,
-    insuranceProvider: invoice.insuranceProvider,
-    bank: invoice.bank,
-    paymentMode: invoice.paymentMode,
-    paymentReference: invoice.paymentReference,
-    cashed: invoice.cashed,
-    cashingDate: invoice.cashingDate,
+    medicalRecordId: invoice.medicalRecordId,
+    medicalRecordReference: invoice.medicalRecordReference,
+    accidentType: invoice.accidentType,
+    collectionId: invoice.collectionId,
+    collected: invoice.collected,
   }));
 }
 
-export async function createInvoice(input: { medicalRecordId: number; medicalServiceIds: number[] }) {
-  return createBillingInvoice(input.medicalRecordId, input.medicalServiceIds);
+export async function createInvoice(input: { medicalRecordId: number; services: { id: number; paymentAmount: number; billingAmount: number; taxRate: number }[] }) {
+  return createBillingInvoice(input.medicalRecordId, input.services);
 }
 
 export async function createInvoiceFromGrid(values: Record<string, unknown>) {
   const medicalRecordId = requiredId(values.medicalRecordId ?? values.recordId, "Medical record");
-  const serviceIds = values.medicalServiceIds ?? values.serviceIds;
-  if (!Array.isArray(serviceIds)) throw new Error("Select the medical services to invoice.");
-  return createBillingInvoice(medicalRecordId, serviceIds.map((id) => requiredId(id, "Medical service")));
+  const serviceRows = values.services;
+  if (!Array.isArray(serviceRows)) throw new Error("Select the medical services to invoice.");
+  const services = serviceRows.map((entry) => {
+    if (!entry || typeof entry !== "object") throw new Error("Invalid medical service.");
+    const row = entry as Record<string, unknown>;
+    return {
+      id: requiredId(row.id, "Medical service"),
+      paymentAmount: Number(row.paymentAmount),
+      billingAmount: Number(row.billingAmount),
+      taxRate: Number(row.taxRate),
+    };
+  });
+  return createBillingInvoice(medicalRecordId, services);
 }
 
 export async function updateInvoice(id: number, input: { totalAmount: number }) {

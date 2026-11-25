@@ -12,8 +12,15 @@ type EntityValue = string | number | boolean | Date | null;
 type EntityRow = Record<string, EntityValue> & { id: number };
 type DraftValue = string | boolean;
 type DraftRow = Record<string, DraftValue>;
-type SelectOption = { value: string | number | null; label: string };
+type SelectOption = { value: string | number | boolean | null; label: string };
 type EditorType = "text" | "date" | "number" | "checkbox" | "select" | "combo-box";
+
+export type EntityColumnFilter = {
+  key: string;
+  label: string;
+  type?: "text" | "select" | "dateRange";
+  options?: SelectOption[];
+};
 
 export type EntityColumn = {
   key: string;
@@ -29,6 +36,7 @@ export type EntityColumn = {
   badgeClasses?: Record<string, string>;
   dialogTitle?: string;
   dialogValues?: EntityValue[];
+  dialogEditable?: boolean;
   linkHrefKey?: string;
 };
 
@@ -46,6 +54,9 @@ type ReferencialDataGridProps<Row extends EntityRow, CreateValues extends object
   createHref?: string;
   createLabel?: string;
   initialSearch?: string;
+  bare?: boolean;
+  hideSearch?: boolean;
+  filters?: EntityColumnFilter[];
   serverPagination?: {
     page: number;
     pageSize: number;
@@ -56,6 +67,7 @@ type ReferencialDataGridProps<Row extends EntityRow, CreateValues extends object
     defaultSortDesc: boolean;
   };
   loadDialogItems?: (id: number) => Promise<string[]>;
+  saveDialogItems?: (id: number, items: string[]) => Promise<unknown>;
   selection?: {
     key: string;
     selectableValues: EntityValue[];
@@ -75,10 +87,11 @@ const features = tableFeatures({
 
 const columnHelper = createColumnHelper<typeof features, EntityRow>();
 
-export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends object = Omit<Row, "id">>({ title, rows, columns, onCreate, onUpdate, onDelete, readOnly = false, canCreate = true, canDelete = true, detailsHrefPrefix, createHref, createLabel = "New Record", initialSearch = "", serverPagination, loadDialogItems, selection }: ReferencialDataGridProps<Row, CreateValues>) {
+export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends object = Omit<Row, "id">>({ title, rows, columns, onCreate, onUpdate, onDelete, readOnly = false, canCreate = true, canDelete = true, detailsHrefPrefix, createHref, createLabel = "New Record", initialSearch = "", bare = false, hideSearch = true, filters = [], serverPagination, loadDialogItems, saveDialogItems, selection }: ReferencialDataGridProps<Row, CreateValues>) {
   const pathname = usePathname();
   const router = useRouter();
   const [query, setQuery] = useState(initialSearch);
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>(
     serverPagination ? [{ id: serverPagination.sort, desc: serverPagination.sortDesc }] : [],
   );
@@ -90,13 +103,31 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
   const [newDraft, setNewDraft] = useState<DraftRow | null>(null);
   const [selectionPending, setSelectionPending] = useState(false);
   const [selectionError, setSelectionError] = useState("");
+  const [dialogSaving, setDialogSaving] = useState(false);
   const [dialog, setDialog] = useState<{ key: string; title: string; items: string[]; loading: boolean; error: string } | null>(null);
   const [dialogQuery, setDialogQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
   const filteredRows = useMemo(
-    () => serverPagination ? rows : rows.filter((row) => !normalizedQuery || columns.some((column) =>
-      formatValue(row[column.key], { ...column, options: resolveOptions(column, row) }).toLowerCase().includes(normalizedQuery))),
-    [columns, normalizedQuery, rows, serverPagination],
+    () => rows.filter((row) => {
+      if (!serverPagination && normalizedQuery && !columns.some((column) =>
+        formatValue(row[column.key], { ...column, options: resolveOptions(column, row) }).toLowerCase().includes(normalizedQuery))) return false;
+      return filters.every((filter) => {
+        const value = filterValues[filter.key] ?? "";
+        if (filter.type === "dateRange") {
+          const from = filterValues[`${filter.key}From`];
+          const to = filterValues[`${filter.key}To`];
+          if (!from && !to) return true;
+          const date = row[filter.key];
+          if (!(date instanceof Date)) return false;
+          const normalized = toDateInputValue(date);
+          return (!from || normalized >= from) && (!to || normalized <= to);
+        }
+        if (!value) return true;
+        const actual = String(row[filter.key] ?? "").toLowerCase();
+        return filter.type === "select" ? actual === value.toLowerCase() : actual.includes(value.trim().toLowerCase());
+      });
+    }),
+    [columns, filterValues, filters, normalizedQuery, rows, serverPagination],
   );
   const tableColumns = useMemo(
     () => columnHelper.columns(columns.map((column) => columnHelper.accessor((row) => row[column.key], {
@@ -237,6 +268,7 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
 
   const resetTable = () => {
     setQuery("");
+    setFilterValues({});
     setSorting(serverPagination ? [{
       id: serverPagination.defaultSort,
       desc: serverPagination.defaultSortDesc,
@@ -272,20 +304,43 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
     }
   };
 
+  const saveDialog = async () => {
+    if (!dialog || !saveDialogItems) return;
+    const id = Number(dialog.key.split(":")[0]);
+    setDialogSaving(true);
+    setDialog((current) => current ? { ...current, error: "" } : current);
+    try {
+      await saveDialogItems(id, dialog.items);
+      setDialog((current) => current ? { ...current, loading: false, error: "" } : current);
+      router.refresh();
+    } catch (error) {
+      setDialog((current) => current ? { ...current, error: errorMessage(error) } : current);
+    } finally {
+      setDialogSaving(false);
+    }
+  };
+
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className={bare ? "overflow-hidden" : "overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"}>
       <div className="flex items-center justify-between gap-4 px-5 py-5">
-        <label className="relative block w-full sm:max-w-sm">
+        {!hideSearch ? <label className="relative block w-full sm:max-w-sm">
           <span className="sr-only">Search {title}</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all fields" className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100" />
-        </label>
+        </label> : <span />}
         <div className="flex shrink-0 gap-2">
-          <button type="button" onClick={resetTable} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"><RotateCcw className="h-3.5 w-3.5" />Reset Table</button>
+          <button type="button" onClick={resetTable} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"><RotateCcw className="h-3.5 w-3.5" />Reset Grid</button>
           {selection && <button type="button" onClick={() => void runSelectionAction()} disabled={selectionPending || !selectedIds.length} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50">{selectionPending ? "Processing..." : selection.actionLabel} ({selectedIds.length})</button>}
           {createHref ? <Link href={createHref} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-800"><SquarePlus className="h-3.5 w-3.5" />{createLabel}</Link> : null}
           {!readOnly && canCreate && !createHref && <button type="button" onClick={startCreate} disabled={newDraft !== null} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"><SquarePlus className="h-3.5 w-3.5" />{createLabel}</button>}
         </div>
+        {filters.length ? <div className="grid gap-3 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filters.map((filter) => filter.type === "select"
+            ? <label key={filter.key} className="block"><span className="mb-1 block text-[11px] font-semibold text-slate-500">{filter.label}</span><select value={filterValues[filter.key] ?? ""} onChange={(event) => setFilterValues((current) => ({ ...current, [filter.key]: event.target.value }))} className="h-9 w-full rounded-md border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-800"><option value="">All</option>{filter.options?.map((option) => <option key={String(option.value)} value={String(option.value ?? "")}>{option.label}</option>)}</select></label>
+            : filter.type === "dateRange"
+              ? <div key={filter.key}><span className="mb-1 block text-[11px] font-semibold text-slate-500">{filter.label}</span><div className="grid grid-cols-2 gap-2"><input type="date" aria-label={`${filter.label} from`} value={filterValues[`${filter.key}From`] ?? ""} onChange={(event) => setFilterValues((current) => ({ ...current, [`${filter.key}From`]: event.target.value }))} className="h-9 w-full rounded-md border border-slate-200 bg-slate-50 px-2.5 text-xs" /><input type="date" aria-label={`${filter.label} to`} value={filterValues[`${filter.key}To`] ?? ""} onChange={(event) => setFilterValues((current) => ({ ...current, [`${filter.key}To`]: event.target.value }))} className="h-9 w-full rounded-md border border-slate-200 bg-slate-50 px-2.5 text-xs" /></div></div>
+              : <label key={filter.key} className="block"><span className="mb-1 block text-[11px] font-semibold text-slate-500">{filter.label}</span><input value={filterValues[filter.key] ?? ""} onChange={(event) => setFilterValues((current) => ({ ...current, [filter.key]: event.target.value }))} className="h-9 w-full rounded-md border border-slate-200 bg-slate-50 px-2.5 text-xs" /></label>)}
+        </div> : null}
       </div>
       {selectionError ? <p role="alert" className="px-5 pb-3 text-sm text-rose-700">{selectionError}</p> : null}
 
@@ -319,7 +374,7 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
               </td>
               {columns.map((column) => <td key={column.key} className="max-w-xs px-3 py-3">{column.readOnly ? <span className="text-xs text-slate-400">Set automatically</span> : <GridEditor column={{ ...column, options: resolveOptions(column, newDraft) }} value={newDraft[column.key]} onChange={(value) => setNewDraft((current) => current ? updateDraft(current, column, value, columns, true) : current)} />}</td>)}
             </tr> : null}
-            {table.getRowModel().rows.length === 0 && !newDraft ? <tr><td colSpan={columns.length + 1 + Number(Boolean(selection))} className="px-5 py-16 text-center text-sm text-slate-500">No {title.toLowerCase()} match your search.</td></tr> : table.getRowModel().rows.map((row) => {
+            {table.getRowModel().rows.length === 0 && !newDraft ? <tr><td colSpan={columns.length + 1 + Number(Boolean(selection))} className="px-5 py-16 text-center text-sm text-slate-500">No matching {title.toLowerCase()}.</td></tr> : table.getRowModel().rows.map((row) => {
               const original = row.original as Row;
               const key = String(original.id);
               const draft = drafts[key];
@@ -353,7 +408,7 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
                 </td> : null}
                 {row.getAllCells().map((cell, index) => {
                   const column = columns[index];
-                  const canOpenDialog = Boolean(column.dialogTitle && column.dialogValues?.includes(original[column.key]) && loadDialogItems);
+                  const canOpenDialog = Boolean(column.dialogTitle && (!column.dialogValues || column.dialogValues.includes(original[column.key])) && loadDialogItems);
                   return <td key={cell.id} className={`max-w-xs whitespace-nowrap px-5 py-4 ${markedForDeletion ? "bg-rose-50 text-rose-800" : "text-slate-700"}`}>
                     {draft && !readOnly ? column.readOnly
                       ? formatValue(original[column.key], { ...column, options: resolveOptions(column, original) })
@@ -386,28 +441,33 @@ export function ReferencialDataGrid<Row extends EntityRow, CreateValues extends 
           <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
             <div>
               <h2 id="grid-dialog-title" className="text-lg font-semibold text-slate-900">{dialog.title}</h2>
-              <p className="mt-1 text-sm text-slate-500">{dialog.loading ? "Loading covered employees..." : dialog.error || `${dialog.items.length} covered employees`}</p>
+              <p className="mt-1 text-sm text-slate-500">{dialog.loading ? "Loading..." : dialog.error || `${dialog.items.length} ${columns.some((column) => column.dialogEditable) ? "record fees" : "covered employees"}`}</p>
             </div>
             <button type="button" aria-label="Close dialog" onClick={() => setDialog(null)} className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100"><X className="h-4 w-4" /></button>
           </div>
           <div className="p-5">
-            <label className="relative block">
+            {!columns.some((column) => column.dialogEditable) ? <label className="relative block">
               <span className="sr-only">Search covered employees</span>
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input value={dialogQuery} onChange={(event) => setDialogQuery(event.target.value)} disabled={dialog.loading || Boolean(dialog.error)} placeholder="Search covered employees" className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 disabled:opacity-50" />
-            </label>
+            </label> : null}
             <ul className="mt-4 max-h-72 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200">
-              {!dialog.loading && !dialog.error && dialog.items.filter((employee) => employee.toLowerCase().includes(dialogQuery.trim().toLowerCase())).map((employee, index) => (
-                <li key={`${employee}-${index}`} className="px-4 py-3 text-sm text-slate-700">{employee}</li>
+              {!dialog.loading && !dialog.error && (columns.some((column) => column.dialogEditable) ? dialog.items : dialog.items.filter((employee) => employee.toLowerCase().includes(dialogQuery.trim().toLowerCase()))).map((item, index) => (
+                <li key={`${item}-${index}`} className="px-4 py-3 text-sm text-slate-700">
+                  {columns.some((column) => column.dialogEditable)
+                    ? <input value={item} aria-label={`Record fee ${index + 1}`} onChange={(event) => setDialog((current) => current ? { ...current, items: current.items.map((value, itemIndex) => itemIndex === index ? event.target.value : value) } : current)} className="h-9 w-full rounded-md border border-slate-200 px-3" />
+                    : item}
+                </li>
               ))}
               {dialog.loading
                 ? <li className="px-4 py-8 text-center text-sm text-slate-500">Loading covered employees...</li>
                 : dialog.error
                   ? <li role="alert" className="px-4 py-8 text-center text-sm text-rose-700">{dialog.error}</li>
-                  : dialog.items.filter((employee) => employee.toLowerCase().includes(dialogQuery.trim().toLowerCase())).length === 0
+                  : (columns.some((column) => column.dialogEditable) ? dialog.items.length === 0 : dialog.items.filter((employee) => employee.toLowerCase().includes(dialogQuery.trim().toLowerCase())).length === 0)
                     ? <li className="px-4 py-8 text-center text-sm text-slate-500">{dialog.items.length ? "No employees match your search." : "No covered employees are listed for this policy."}</li>
                 : null}
             </ul>
+            {columns.some((column) => column.dialogEditable) && saveDialogItems ? <div className="mt-4 flex justify-end"><button type="button" onClick={() => void saveDialog()} disabled={dialogSaving || dialog.loading || Boolean(dialog.error)} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{dialogSaving ? "Saving..." : "Save Fees"}</button></div> : null}
           </div>
         </section>
       </div> : null}
@@ -419,8 +479,8 @@ function GridEditor({ column, value, disabled, onChange }: { column: EntityColum
   const listId = useId();
   const commonClass = "h-9 w-full min-w-32 rounded-md border border-slate-200 bg-white px-2.5 text-sm text-slate-800 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 disabled:bg-slate-100";
   if (column.editor === "checkbox") return <input type="checkbox" aria-label={column.label} checked={value === true} disabled={disabled} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 accent-teal-700 disabled:opacity-50" />;
-  if (column.editor === "select") return <select aria-label={column.label} value={String(value ?? "")} required={column.required} disabled={disabled} onChange={(event) => onChange(event.target.value)} className={commonClass}>{column.options?.map((option) => <option key={String(option.value)} value={option.value ?? ""}>{option.label}</option>)}</select>;
-  if (column.editor === "combo-box") return <><input type="text" aria-label={column.label} list={listId} value={String(value ?? "")} required={column.required} disabled={disabled} onChange={(event) => onChange(event.target.value)} className={commonClass} /><datalist id={listId}>{column.options?.map((option) => <option key={String(option.value)} value={option.value ?? ""}>{option.label}</option>)}</datalist></>;
+  if (column.editor === "select") return <select aria-label={column.label} value={String(value ?? "")} required={column.required} disabled={disabled} onChange={(event) => onChange(event.target.value)} className={commonClass}>{column.options?.map((option) => <option key={String(option.value)} value={String(option.value ?? "")}>{option.label}</option>)}</select>;
+  if (column.editor === "combo-box") return <><input type="text" aria-label={column.label} list={listId} value={String(value ?? "")} required={column.required} disabled={disabled} onChange={(event) => onChange(event.target.value)} className={commonClass} /><datalist id={listId}>{column.options?.map((option) => <option key={String(option.value)} value={String(option.value ?? "")}>{option.label}</option>)}</datalist></>;
   return <input type={column.editor === "date" ? "date" : column.editor === "number" ? "number" : "text"} aria-label={column.label} value={String(value ?? "")} required={column.required} disabled={disabled} onChange={(event) => onChange(event.target.value)} className={commonClass} />;
 }
 

@@ -40,17 +40,16 @@ export function MedicalRecordEditForm({ record, jobs, created }: MedicalRecordEd
           accidentType: String(data.get("accidentType")) as SetMedicalRecord["accidentType"],
           reportingDate: parseDate("reportingDate") ?? new Date(),
           reporterName: String(data.get("reporterName") ?? "") || null,
-          reporterPhone: String(data.get("reporterPhone") ?? ""),
+          reporterPhone: String(data.get("reporterPhone") ?? "") || null,
           accidentPlace: String(data.get("accidentPlace")) as SetMedicalRecord["accidentPlace"],
           accidentDate: parseDate("accidentDate") ?? new Date(),
           accidentCause: (String(data.get("accidentCause") ?? "") || null) as SetMedicalRecord["accidentCause"],
-          victimFirstName: String(data.get("victimFirstName") ?? ""),
+          victimFirstName: String(data.get("victimFirstName") ?? "") || null,
           victimLastName: String(data.get("victimLastName") ?? "") || null,
           victimPhone: String(data.get("victimPhone") ?? "") || null,
-          victimNationalId: String(data.get("victimNationalId") ?? ""),
+          victimNationalId: String(data.get("victimNationalId") ?? "") || null,
           victimJob: String(data.get("victimJob") ?? "") || null,
           accidentEvolution: String(data.get("accidentEvolution")) as SetMedicalRecord["accidentEvolution"],
-          delegationDate: parseDate("delegationDate"),
           regulatoryDoctor: String(data.get("regulatoryDoctor") ?? "") || null,
           status: String(data.get("status")) as SetMedicalRecord["status"],
           statusReason: record.statusReason,
@@ -81,7 +80,7 @@ export function MedicalRecordEditForm({ record, jobs, created }: MedicalRecordEd
           <ReadOnly label="Insurance Provider" value={record.insuranceCompany} />
           <DateTimeField name="reportingDate" label="Reporting Date" value={record.reportingDate} required />
           <TextField name="reporterName" label="Reporter Name" defaultValue={record.reporterName ?? ""} />
-          <TextField name="reporterPhone" label="Reporter Phone" defaultValue={record.reporterPhone} required type="tel" />
+          <TextField name="reporterPhone" label="Reporter Phone" defaultValue={record.reporterPhone ?? ""} type="tel" />
         </div>
       </Section>
 
@@ -89,25 +88,25 @@ export function MedicalRecordEditForm({ record, jobs, created }: MedicalRecordEd
         <div className="grid gap-5 md:grid-cols-3">
           <DateTimeField name="accidentDate" label="Accident Date" value={record.accidentDate} required />
           <SelectField name="accidentType" label="Accident Type" defaultValue={record.accidentType} required options={[
-            ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VF", "Policy verification"], ["SS", "Special service"], ["PR", "Occupational disease"],
+            ["AT", "Workplace accident"], ["MD", "Illness & pain"], ["VP", "Policy verification"], ["SS", "Special service"], ["MP", "Occupational disease"],
           ]} />
           <SelectField name="accidentCause" label="Accident Cause" defaultValue={record.accidentCause ?? ""} options={[
-            ["", "Not specified"], ["FALL", "Falling or slipping"], ["EQIP", "Machine or equipment"], ["FATG", "Overexertion and fatigue"], ["HAZD", "Hazardous substance"], ["VIOL", "Workplace violence"], ["OBJC", "Moving objects"],
+            ["", "Not specified"], ["FAL", "Falling or slipping"], ["EQP", "Machine or equipment"], ["FTG", "Overexertion and fatigue"], ["HZD", "Hazardous substance"], ["VLC", "Workplace violence"], ["OBJ", "Moving objects"],
           ]} />
-          <SelectField name="accidentPlace" label="Accident Place" defaultValue={record.accidentPlace} required options={[
-            ["WS", "Workshop"], ["RT", "Route"], ["OF", "Office"], ["CT", "Construction"],
+          <SelectField name="accidentPlace" label="Accident Place" defaultValue={record.accidentPlace ?? ""} options={[
+            ["", "Not specified"], ["WKS", "Workshop"], ["RUT", "Route"], ["OFC", "Office"], ["CST", "Construction"],
           ]} />
           <SelectField name="accidentEvolution" label="Case Evolution" defaultValue={record.accidentEvolution} required options={[
-            ["INIT", "Initial"], ["RELP", "Relapse"], ["DEAT", "Death"], ["COMP", "Complement"],
+            ["INT", "Initial"], ["RLP", "Relapse"], ["DTH", "Death"], ["CMP", "Complement"],
           ]} />
         </div>
       </Section>
 
       <Section title="03 / Victim Data">
         <div className="grid gap-5 md:grid-cols-3">
-          <TextField name="victimFirstName" label="Victim First Name" defaultValue={record.victimFirstName} required />
+          <TextField name="victimFirstName" label="Victim First Name" defaultValue={record.victimFirstName ?? ""} />
           <TextField name="victimLastName" label="Victim Last Name" defaultValue={record.victimLastName ?? ""} />
-          <TextField name="victimNationalId" label="Victim National ID" defaultValue={record.victimNationalId} required />
+          <TextField name="victimNationalId" label="Victim National ID" defaultValue={record.victimNationalId ?? ""} />
           <TextField name="victimPhone" label="Victim Phone" defaultValue={record.victimPhone ?? ""} type="tel" />
           <TextField name="victimJob" label="Victim Job" defaultValue={record.victimJob ?? ""} options={jobs} />
         </div>
@@ -119,7 +118,6 @@ export function MedicalRecordEditForm({ record, jobs, created }: MedicalRecordEd
             ["PRG", "In progress"], ["DSP", "Disputed"], ["RJC", "Rejected"], ["CLS", "Closed"], ["ABN", "Abandoned"],
           ]} />
           <ReadOnly label="Status Reason" value={getStatusReasonLabel(record.statusReason)} />
-          <DateTimeField name="delegationDate" label="Delegation Date" value={record.delegationDate} />
           <TextField name="regulatoryDoctor" label="Regulatory Doctor" defaultValue={record.regulatoryDoctor ?? ""} />
           <ReadOnly label="Manager" value={record.manager} />
           <TextField name="observation" label="Observation" defaultValue={record.observation ?? ""} />
@@ -128,8 +126,7 @@ export function MedicalRecordEditForm({ record, jobs, created }: MedicalRecordEd
 
       <div className="mb-12 flex items-end justify-between border-t border-slate-200 pt-6">
         <div className="space-y-1 text-xs text-slate-500">
-          <p>Last updated: {formatDateTime(record.lastUpdated)}</p>
-          <p>Last updater: {record.lastUpdater}</p>
+          <p>Modified by {record.lastUpdater} at {formatDateTime(record.lastUpdated)}</p>
         </div>
         <button type="submit" disabled={pending} className="rounded-lg bg-teal-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300">
           {pending ? "Saving..." : "Save Changes"}
@@ -168,9 +165,9 @@ function Notice({ tone, children }: { tone: "error" | "success"; children: React
 
 function getStatusReasonLabel(reason: MedicalRecordDetails["statusReason"]) {
   switch (reason) {
-    case "SUS": return "Policy suspended";
-    case "TER": return "Policy terminated";
-    case "COV": return "Coverage limited";
+    case "SPD": return "Policy suspended";
+    case "TRM": return "Policy terminated";
+    case "LMT": return "Coverage limited";
     default: return "-";
   }
 }

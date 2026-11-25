@@ -8,20 +8,19 @@ export const medicalRecords = sqliteTable("medical_records", {
   policyId: integer("policy_id").notNull().references(() => insurancePolicies.id),
   reportingDate: integer("reporting_date", { mode: "timestamp" }).notNull(),
   reporterName: text("reporter_name"),
-  reporterPhone: text("reporter_phone").notNull(),
+  reporterPhone: text("reporter_phone"),
   accidentDate: integer("accident_date", { mode: "timestamp" }).notNull(),
-  accidentType: text("accident_type", { enum: ["AT", "MD", "VF", "SS", "PR"] }).notNull(),
-  accidentPlace: text("accident_place", { enum: ["WS", "RT", "OF", "CT"] }).notNull(),
-  accidentCause: text("accident_cause", { enum: ["FALL", "EQIP", "FATG", "HAZD", "VIOL", "OBJC"] }),
-  accidentEvolution: text("accident_evolution", { enum: ["INIT", "RELP", "DEAT", "COMP"] }).notNull(),
-  victimFirstName: text("victim_first_name").notNull(),
+  accidentType: text("accident_type", { enum: ["AT", "MD", "VP", "SS", "MP"] }).notNull(),
+  accidentPlace: text("accident_place", { enum: ["WKS", "RUT", "OFC", "CST"] }),
+  accidentCause: text("accident_cause", { enum: ["FAL", "EQP", "FTG", "HZD", "VLC", "OBJ"] }),
+  accidentEvolution: text("accident_evolution", { enum: ["INT", "RLP", "DTH", "CMP"] }).notNull(),
+  victimFirstName: text("victim_first_name"),
   victimLastName: text("victim_last_name"),
   victimPhone: text("victim_phone"),
-  victimNationalId: text("victim_national_id").notNull(),
+  victimNationalId: text("victim_national_id"),
   victimJob: text("victim_job"),
   status: text("status", { enum: ["PRG", "RJC", "DSP", "CLS", "ABN"] }).notNull(),
-  statusReason: text("status_reason", { enum: ["SUS", "TER", "COV"] }),
-  delegationDate: integer("delegation_date", { mode: "timestamp" }),
+  statusReason: text("status_reason", { enum: ["SPD", "TRM", "LMT"] }),
   regulatoryDoctor: text("regulatory_doctor"),
   manager: text("manager").notNull(),
   observation: text("observation"),
@@ -35,36 +34,35 @@ export type NewMedicalRecord = {
   policyId: number;
   reportingDate: Date;
   reporterName: string | null;
-  reporterPhone: string;
+  reporterPhone: string | null;
   accidentDate: Date;
-  accidentType: "AT" | "MD" | "VF" | "SS" | "PR";
-  accidentPlace: "WS" | "RT" | "OF" | "CT";
-  accidentCause: "FALL" | "EQIP" | "FATG" | "HAZD" | "VIOL" | "OBJC" | null;
-  accidentEvolution: "INIT" | "RELP" | "DEAT" | "COMP";
-  victimFirstName: string;
+  accidentType: "AT" | "MD" | "VP" | "SS" | "MP";
+  accidentPlace: "WKS" | "RUT" | "OFC" | "CST" | null;
+  accidentCause: "FAL" | "EQP" | "FTG" | "HZD" | "VLC" | "OBJ" | null;
+  accidentEvolution: "INT" | "RLP" | "DTH" | "CMP";
+  victimFirstName: string | null;
   victimLastName: string | null;
   victimPhone: string | null;
-  victimNationalId: string;
+  victimNationalId: string | null;
   victimJob: string | null;
 };
 
 export type SetMedicalRecord = {
   reportingDate: Date;
   reporterName: string | null;
-  reporterPhone: string;
+  reporterPhone: string | null;
   accidentDate: Date;
-  accidentType: "AT" | "MD" | "VF" | "SS" | "PR";
-  accidentPlace: "WS" | "RT" | "OF" | "CT";
-  accidentCause: "FALL" | "EQIP" | "FATG" | "HAZD" | "VIOL" | "OBJC" | null;
-  accidentEvolution: "INIT" | "RELP" | "DEAT" | "COMP";
-  victimFirstName: string;
+  accidentType: "AT" | "MD" | "VP" | "SS" | "MP";
+  accidentPlace: "WKS" | "RUT" | "OFC" | "CST" | null;
+  accidentCause: "FAL" | "EQP" | "FTG" | "HZD" | "VLC" | "OBJ" | null;
+  accidentEvolution: "INT" | "RLP" | "DTH" | "CMP";
+  victimFirstName: string | null;
   victimLastName: string | null;
   victimPhone: string | null;
-  victimNationalId: string;
+  victimNationalId: string | null;
   victimJob: string | null;
   status: "PRG" | "RJC" | "DSP" | "CLS" | "ABN";
-  statusReason: "SUS" | "TER" | "COV" | null;
-  delegationDate: Date | null;
+  statusReason: "SPD" | "TRM" | "LMT" | null;
   regulatoryDoctor: string | null;
   observation: string | null;
 };

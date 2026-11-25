@@ -32,17 +32,18 @@ Find the tables definitions in `README.md`, in the "DATA STRUCTURE" section.
 Things to keep in mind:
 - Primary keys are not mentionned, should be "id" for all tables ;
 - Do not create extra columns, like created_at and update_at, other than "id" ;
-- "selectable" means that its a foreign key, add "_id" to the name ;
+- "selectable" means that its a foreign key, add "_id" to the name, if the foreign table is not specified, then it most-likely has the same name as the column ;
 - "list" means an enumeration, values are those separated by comma, when a value contains 2 parts separated by dash, the second part is the DB value, while the first is the UI display value ;
 - "UI-only" indicates that the field is not a table column, rather it is fetched with joins, and is automatically read-only ;
 - "combo-box" is a UI directive, does not indicate an enumeration ;
 - "read-only" is a UI directive, the field can still be set, just not by the user from the UI ;
 - "boolean" columns are not required, defaults to FALSE, NULL is equivalent to FALSE ;
 - "NOW" means current date + time ;
-- "USER" means current application user, a UI directive, do not put any default value ;
-- "date-time" means date with time, displays in DD-MM-YYYY HH24:MI format ;
-- "date" means date without time, displays in DD-MM-YYYY format, but still stored as timestamp like date-time ;
-- "defaults to" should not be treated as a table column constraint unless the filed is also "read-only" or hidden at creation. additionally, the default value should display in the UI forms if the field is visible, while being editable unless it's a "read-only" field ;
+- "USER" means current application user, a UI directive, do not put any default value at schema level ;
+- "date-time" means date with time ;
+- "date" means date without time, but still stored as timestamp like date-time ;
+- "defaults to" should not be treated as a table column constraint unless the field is also "read-only" or hidden at creation. additionally, the default value should display in the UI forms if the field is visible, while being editable unless it's a "read-only" field ;
+- "audit" means the column should be updated at modification, with the user or time of modification ;
 - "hidden" is a UI directive, it means the field or group of fields are not to be displayed ;
 - if "required" is not meantionned, then the field is optional ;
 - if the type is not mentionned, then the field is of text type ;
@@ -53,12 +54,19 @@ Things to keep in mind:
 
 <!-- UI-design-directives:start -->
 
+Find the screens description in `README.md`, in the "SCREEN DESCRIPTION" section.
+
+About generale template:
+- side-bar menu, branding on the top, user info at the bottom, navigation entries in between ;
+- page header has page title, above it page domain, opposit of it an icon ;
+
 About form pages:
 - Forms should spread fields on a 3 columns grid ;
 - init-cap field labels ;
 - required fields are marked with a green asterisk right of the label ;
 
 About table pages:
+- by default, all table columns are displayed except the primary key, unless shown columns are explicitly specified ;
 - init-cap table column labels ;
 - sorting is available for all columns ;
 - row filtering by default unless custom column filters are specified ;
@@ -70,6 +78,16 @@ About table pages:
     + clicking the edit row button transforms columns into fields ;
     + the "edit" button turns into "save", "cancel", and "delete" buttons ;
     + deleting only marks the row for deletion, until "save" is pressed ;
+- date range filters should be 2 date fields side by side in the same column, like 2 fields in 1 ;
+- table columns should be in the same order they're mentionned ;
+- editable grids have full CRUD unless otherwise is specified ;
+- displaying all columns does exclude the primary key, unless otherwise is specified ;
+
+About data display:
+- medical record reference should have record type folowed by dash prepended, and a dash inserted before the sequence part, ending up with this display format TYPE-YYMMDD-SEQ (ex: AT-261109-03) ;
+- date format should be DD-MM-YYYY, while time format should be HH24:MI:SS ;
+
+
 
 <!-- UI-design-directives:end -->
 
