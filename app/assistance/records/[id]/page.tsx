@@ -47,10 +47,9 @@ export default async function MedicalRecordDetailsPage({ params, searchParams }:
 					created={query.created === "1"}
 				/>
 				<section className="mb-8">
-					<h2 className="mb-4 text-xl font-bold text-teal-800">Medical Services</h2>
 					<ReferencialDataGrid
 						title="Medical Services"
-						bare
+						showTitle
 						hideSearch
 						rows={services.map(({ id, medicalRecordId, serviceProviderId, serviceTypeId, date, place, paymentAmount, billingAmount, taxRate, settlementId, settlementSettled, invoiceId, invoiceReference, observation }) => ({
 							id,
@@ -84,10 +83,9 @@ export default async function MedicalRecordDetailsPage({ params, searchParams }:
 					/>
 				</section>
 				<section className="mb-8">
-					<h2 className="mb-4 text-xl font-bold text-teal-800">Medical Certificates</h2>
 					<ReferencialDataGrid
 						title="Medical Certificates"
-						bare
+						showTitle
 						hideSearch
 						rows={certificates.map(({ id, medicalRecordId, type, serviceProviderId, compensationRate, dayCount, startDate, endDate, observation }) => ({ id, medicalRecordId, type, serviceProviderId, compensationRate, dayCount, startDate, endDate, observation }))}
 						columns={[

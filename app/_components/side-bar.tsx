@@ -1,7 +1,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Activity, Ambulance, Building2, ClipboardList, FileText, HandCoins, Headset, LogOut, ShieldHalf, Triangle, User } from "lucide-react";
+import { Activity, Ambulance, Building2, ClipboardList, ReceiptText, HandCoins, Headset, LogOut, ShieldHalf, Triangle, User, Wallet } from "lucide-react";
 
 const navigation = [
   {
@@ -29,9 +29,9 @@ const navigation = [
   {
     category: "Billing",
     items: [
+      { label: "Record Billing", href: "/billing/invoices", icon: ReceiptText },
+      { label: "Invoice Collection", href: "/billing/collections", icon: Wallet },
       { label: "Service Settlement", href: "/billing/settlements", icon: HandCoins },
-      { label: "Record Billing", href: "/billing/invoices", icon: FileText },
-      { label: "Invoice Collection", href: "/billing/collections", icon: HandCoins },
     ],
   },
 ];

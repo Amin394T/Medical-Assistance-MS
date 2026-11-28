@@ -1,7 +1,7 @@
-import { createServiceType, deleteServiceType, listProfiles, listServiceTypes, updateServiceType } from "@/db/actions/serviceTypes";
-import { ReferencialDataGrid } from "@/app/_components/referential-data-grid";
-import { PageHeader } from "@/app/_components/page-header";
 import { Activity } from "lucide-react";
+import { listProfiles, listServiceTypes } from "@/db/actions/serviceTypes";
+import { ServiceTypesTable } from "@/app/_components/service-types-table";
+import { PageHeader } from "@/app/_components/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -12,16 +12,7 @@ export default async function ServiceTypesPage() {
 		<section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10">
 			<div className="mx-auto max-w-375">
 				<PageHeader section="Services" title="Medical Services" icon={<Activity className="h-6 w-6" />} />
-				<ReferencialDataGrid title="Medical Services" rows={rows} columns={[
-					{ key: "label", label: "Label", required: true },
-					{ key: "paymentAmount", label: "Payment Amount", editor: "number", required: true },
-					{ key: "billingAmount", label: "Billing Amount", editor: "number", required: true },
-					{ key: "taxRate", label: "Tax Rate", editor: "number", required: true },
-					{ key: "targetProfile", label: "Target Profile", editor: "combo-box", options: profiles.filter((profile): profile is string => profile !== null).map((profile) => ({ value: profile, label: profile })), required: true },
-				]} onCreate={createServiceType} onUpdate={updateServiceType} onDelete={deleteServiceType} filters={[
-					{ key: "label", label: "Label" },
-					{ key: "targetProfile", label: "Target Profile" },
-				]} />
+				<ServiceTypesTable rows={rows} profiles={profiles} />
 			</div>
 		</section>
 	);

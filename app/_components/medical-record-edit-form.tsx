@@ -124,9 +124,9 @@ export function MedicalRecordEditForm({ record, jobs, created }: MedicalRecordEd
         </div>
       </Section>
 
-      <div className="mb-12 flex items-end justify-between border-t border-slate-200 pt-6">
+      <div className="mb-12 flex items-start justify-between border-t border-slate-200 pt-6">
         <div className="space-y-1 text-xs text-slate-500">
-          <p>Modified by {record.lastUpdater} at {formatDateTime(record.lastUpdated)}</p>
+          <p>Modified by <b>{record.lastUpdater}</b> at <b>{formatDateTime(record.lastUpdated)}</b></p>
         </div>
         <button type="submit" disabled={pending} className="rounded-lg bg-teal-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300">
           {pending ? "Saving..." : "Save Changes"}

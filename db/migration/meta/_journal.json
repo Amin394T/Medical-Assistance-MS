@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1794266011568,
-      "tag": "0000_medical_adam_warlock",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1794524582641,
-      "tag": "0001_add_policy_coverage",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1794699437784,
-      "tag": "0002_quiet_arclight",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1794745762184,
-      "tag": "0003_high_viper",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1795650481354,
-      "tag": "0004_data_structure_update",
+      "when": 1795813641861,
+      "tag": "0000_lethal_microchip",
       "breakpoints": true
     }
   ]

@@ -1,97 +1,9 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "110c81dd-f477-4fbd-a8bd-de206eb83a9a",
+  "id": "5fdc75ab-769e-4c5a-9652-2c01a625037b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "billing_cashings": {
-      "name": "billing_cashings",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "insurance_provider_id": {
-          "name": "insurance_provider_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "request_date": {
-          "name": "request_date",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "total_amount": {
-          "name": "total_amount",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "bank": {
-          "name": "bank",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "payment_mode": {
-          "name": "payment_mode",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "payment_reference": {
-          "name": "payment_reference",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "cashed": {
-          "name": "cashed",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": false
-        },
-        "cashing_date": {
-          "name": "cashing_date",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "billing_cashings_insurance_provider_id_insurance_providers_id_fk": {
-          "name": "billing_cashings_insurance_provider_id_insurance_providers_id_fk",
-          "tableFrom": "billing_cashings",
-          "tableTo": "insurance_providers",
-          "columnsFrom": [
-            "insurance_provider_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "billing_invoices": {
       "name": "billing_invoices",
       "columns": {
@@ -130,8 +42,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "cashing_id": {
-          "name": "cashing_id",
+        "collection_id": {
+          "name": "collection_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -161,12 +73,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "billing_invoices_cashing_id_billing_cashings_id_fk": {
-          "name": "billing_invoices_cashing_id_billing_cashings_id_fk",
+        "billing_invoices_collection_id_invoice_collections_id_fk": {
+          "name": "billing_invoices_collection_id_invoice_collections_id_fk",
           "tableFrom": "billing_invoices",
-          "tableTo": "billing_cashings",
+          "tableTo": "invoice_collections",
           "columnsFrom": [
-            "cashing_id"
+            "collection_id"
           ],
           "columnsTo": [
             "id"
@@ -196,20 +108,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "corporate_id": {
-          "name": "corporate_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "phone": {
           "name": "phone",
           "type": "text",
@@ -220,13 +118,6 @@
         "email": {
           "name": "email",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "balance": {
-          "name": "balance",
-          "type": "real",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -270,9 +161,30 @@
           "notNull": true,
           "autoincrement": false
         },
-        "effective_date": {
-          "name": "effective_date",
-          "type": "integer",
+        "client_activity": {
+          "name": "client_activity",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "client_address": {
+          "name": "client_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "client_city": {
+          "name": "client_city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -284,29 +196,22 @@
           "notNull": true,
           "autoincrement": false
         },
-        "insurance_company_id": {
-          "name": "insurance_company_id",
+        "status_date": {
+          "name": "status_date",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "intermediary_id": {
-          "name": "intermediary_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "creation_date": {
-          "name": "creation_date",
+        "upload_date": {
+          "name": "upload_date",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "last_updated": {
-          "name": "last_updated",
+        "insurance_provider_id": {
+          "name": "insurance_provider_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -323,25 +228,333 @@
         }
       },
       "foreignKeys": {
-        "insurance_policies_insurance_company_id_insurance_providers_id_fk": {
-          "name": "insurance_policies_insurance_company_id_insurance_providers_id_fk",
+        "insurance_policies_insurance_provider_id_insurance_providers_id_fk": {
+          "name": "insurance_policies_insurance_provider_id_insurance_providers_id_fk",
           "tableFrom": "insurance_policies",
           "tableTo": "insurance_providers",
           "columnsFrom": [
-            "insurance_company_id"
+            "insurance_provider_id"
           ],
           "columnsTo": [
             "id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "insurance_coverages": {
+      "name": "insurance_coverages",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
         },
-        "insurance_policies_intermediary_id_insurance_providers_id_fk": {
-          "name": "insurance_policies_intermediary_id_insurance_providers_id_fk",
-          "tableFrom": "insurance_policies",
+        "policy_id": {
+          "name": "policy_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "employee": {
+          "name": "employee",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "insurance_coverages_policy_employee_unique": {
+          "name": "insurance_coverages_policy_employee_unique",
+          "columns": [
+            "policy_id",
+            "employee"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "insurance_coverages_policy_id_insurance_policies_id_fk": {
+          "name": "insurance_coverages_policy_id_insurance_policies_id_fk",
+          "tableFrom": "insurance_coverages",
+          "tableTo": "insurance_policies",
+          "columnsFrom": [
+            "policy_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "insurance_commissions": {
+      "name": "insurance_commissions",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "provider_id": {
+          "name": "provider_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "record_type": {
+          "name": "record_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "commission": {
+          "name": "commission",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "insurance_commissions_provider_record_type_unique": {
+          "name": "insurance_commissions_provider_record_type_unique",
+          "columns": [
+            "provider_id",
+            "record_type"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "insurance_commissions_provider_id_insurance_providers_id_fk": {
+          "name": "insurance_commissions_provider_id_insurance_providers_id_fk",
+          "tableFrom": "insurance_commissions",
           "tableTo": "insurance_providers",
           "columnsFrom": [
-            "intermediary_id"
+            "provider_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "invoice_collections": {
+      "name": "invoice_collections",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "reference": {
+          "name": "reference",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "insurance_provider_id": {
+          "name": "insurance_provider_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "request_date": {
+          "name": "request_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "total_amount": {
+          "name": "total_amount",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payment_mode": {
+          "name": "payment_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "payment_reference": {
+          "name": "payment_reference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "bank": {
+          "name": "bank",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "collected": {
+          "name": "collected",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "collection_date": {
+          "name": "collection_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "invoice_collections_reference_unique": {
+          "name": "invoice_collections_reference_unique",
+          "columns": [
+            "reference"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "invoice_collections_insurance_provider_id_insurance_providers_id_fk": {
+          "name": "invoice_collections_insurance_provider_id_insurance_providers_id_fk",
+          "tableFrom": "invoice_collections",
+          "tableTo": "insurance_providers",
+          "columnsFrom": [
+            "insurance_provider_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "invoice_settlements": {
+      "name": "invoice_settlements",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "reference": {
+          "name": "reference",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "service_provider_id": {
+          "name": "service_provider_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "reception_date": {
+          "name": "reception_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "total_amount": {
+          "name": "total_amount",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payment_mode": {
+          "name": "payment_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "payment_reference": {
+          "name": "payment_reference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "bank": {
+          "name": "bank",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "settled": {
+          "name": "settled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "settlement_date": {
+          "name": "settlement_date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "invoice_settlements_reference_unique": {
+          "name": "invoice_settlements_reference_unique",
+          "columns": [
+            "reference"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "invoice_settlements_service_provider_id_service_providers_id_fk": {
+          "name": "invoice_settlements_service_provider_id_service_providers_id_fk",
+          "tableFrom": "invoice_settlements",
+          "tableTo": "service_providers",
+          "columnsFrom": [
+            "service_provider_id"
           ],
           "columnsTo": [
             "id"
@@ -371,13 +584,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "corporate_name": {
-          "name": "corporate_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "profile": {
           "name": "profile",
           "type": "text",
@@ -401,20 +607,6 @@
         },
         "email": {
           "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "bank": {
-          "name": "bank",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "bank_account": {
-          "name": "bank_account",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -537,7 +729,7 @@
           "name": "reporter_phone",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "accident_date": {
@@ -558,7 +750,7 @@
           "name": "accident_place",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "accident_cause": {
@@ -579,7 +771,7 @@
           "name": "victim_first_name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "victim_last_name": {
@@ -600,7 +792,7 @@
           "name": "victim_national_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "victim_job": {
@@ -617,9 +809,9 @@
           "notNull": true,
           "autoincrement": false
         },
-        "delegation_date": {
-          "name": "delegation_date",
-          "type": "integer",
+        "status_reason": {
+          "name": "status_reason",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -723,7 +915,7 @@
           "name": "date",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "observation": {
@@ -733,24 +925,23 @@
           "notNull": false,
           "autoincrement": false
         },
-        "settlement_status": {
-          "name": "settlement_status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'WAIT'"
-        },
-        "settling_date": {
-          "name": "settling_date",
+        "invoice_id": {
+          "name": "invoice_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "invoice_id": {
-          "name": "invoice_id",
+        "settlement_id": {
+          "name": "settlement_id",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "place": {
+          "name": "place",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -774,27 +965,6 @@
           "type": "real",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
-        },
-        "bank": {
-          "name": "bank",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "payment_mode": {
-          "name": "payment_mode",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "payment_reference": {
-          "name": "payment_reference",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
           "autoincrement": false
         }
       },
@@ -851,6 +1021,19 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "medical_services_settlement_id_invoice_settlements_id_fk": {
+          "name": "medical_services_settlement_id_invoice_settlements_id_fk",
+          "tableFrom": "medical_services",
+          "tableTo": "invoice_settlements",
+          "columnsFrom": [
+            "settlement_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -884,6 +1067,13 @@
         "service_provider_id": {
           "name": "service_provider_id",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "compensation_rate": {
+          "name": "compensation_rate",
+          "type": "real",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

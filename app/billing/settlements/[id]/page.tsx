@@ -18,7 +18,7 @@ export default async function InvoiceSettlementDetailsPage({ params }: { params:
   ]);
   if (!settlement) notFound();
   return <section className="min-h-screen bg-[#f7f8fa] px-6 py-8 lg:px-10"><div className="mx-auto max-w-375">
-    <PageHeader section="Billing Management" title={`Settlement ${settlement.reference}`} icon={<HandCoins className="h-6 w-6" />} />
+    <PageHeader section="Billing" title={`Settlement ${settlement.reference}`} icon={<HandCoins className="h-6 w-6" />} />
     <InvoiceSettlementForm providers={providers.map(({ id: providerId, label }) => ({ id: providerId, label }))} services={services} settlement={settlement} />
   </div></section>;
 }

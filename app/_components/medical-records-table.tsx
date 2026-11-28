@@ -96,14 +96,14 @@ export function MedicalRecordsTable({ records, totalCount, page, pageSize, filte
 
   return (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 px-5 py-5">
+            <div className="grid gap-3 lg:grid-cols-3 xl:grid-cols-4 px-5 py-5">
               <FilterInput label="Policy Number" value={filters.policyNumber} onChange={(value) => updateFilter("policyNumber", value)} />
               <FilterInput label="Client Company" value={filters.clientCompany} onChange={(value) => updateFilter("clientCompany", value)} />
               <FilterInput label="Reference" value={filters.referenceNumber} onChange={(value) => updateFilter("referenceNumber", value)} />
               <FilterInput label="Victim Name" value={filters.victimName} onChange={(value) => updateFilter("victimName", value)} />
               <FilterInput label="Victim National ID" value={filters.victimNationalId} onChange={(value) => updateFilter("victimNationalId", value)} />
               <label className="block"><span className="mb-1 block text-[11px] font-semibold text-slate-500">Status</span><select value={filters.recordStatus} onChange={(event) => updateFilter("recordStatus", event.target.value)} className={filterClass}><option value="">All statuses</option>{["In Progress", "Disputed", "Rejected", "Closed", "Abandoned"].map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
-              <DateRange label="Date" from={filters.accidentFrom} to={filters.accidentTo} onFromChange={(value) => updateFilter("accidentFrom", value)} onToChange={(value) => updateFilter("accidentTo", value)} />
+              <div><span className="mb-1 block text-[11px] font-semibold text-slate-500">Accident Date</span><div className="grid grid-cols-2 gap-2"><input type="date" aria-label="Request Date from" value={filters.accidentFrom} onChange={(event) => updateFilter("accidentFrom", event.target.value)} className={filterClass} /><input type="date" aria-label="Request Date to" value={filters.accidentTo} onChange={(event) => updateFilter("accidentTo", event.target.value)} className={filterClass} /></div></div>
               <div className="mt-5 flex justify-end"><button type="button" onClick={resetTable} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"><RotateCcw className="h-3.5 w-3.5"/>Reset Table</button></div>
             </div>
 
@@ -129,8 +129,6 @@ export function MedicalRecordsTable({ records, totalCount, page, pageSize, filte
 }
 
 function FilterInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label className="block"><span className="mb-1 block text-[11px] font-semibold text-slate-500">{label}</span><input value={value} onChange={(event) => onChange(event.target.value)} className={filterClass} placeholder="Any" /></label>; }
-
-function DateRange({ label, from, to, onFromChange, onToChange }: { label: string; from: string; to: string; onFromChange: (value: string) => void; onToChange: (value: string) => void }) { return <div className="sm:col-span-2"><span className="mb-1 block text-[11px] font-semibold text-slate-500">{label} Range</span><div className="grid grid-cols-2 gap-2"><input type="date" value={from} onChange={(event) => onFromChange(event.target.value)} className={filterClass} /><input type="date" value={to} onChange={(event) => onToChange(event.target.value)} className={filterClass} /></div></div>; }
 
 function filtersEqual(left: MedicalRecordFilters, right: MedicalRecordFilters) {
   return left.policyNumber === right.policyNumber &&
